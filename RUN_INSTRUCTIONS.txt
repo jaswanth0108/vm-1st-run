@@ -1,0 +1,77 @@
+================================================================================
+          EXAMINATION PORTAL - FULL SYSTEM STARTUP PROCEDURE
+================================================================================
+
+To run the complete system (Frontend UI + Backend API + PostgreSQL Database), 
+you must start three separate components. Follow these exact steps:
+
+--------------------------------------------------------------------------------
+STEP 1: START THE DATABASE (PostgreSQL)
+--------------------------------------------------------------------------------
+Since you are using a local PostgreSQL installation, the database service 
+usually runs automatically in the background on Windows.
+
+To verify it is running:
+1. Open "pgAdmin 4" from your Windows Start Menu.
+2. Enter your master password.
+3. On the left sidebar, expand "Servers" -> "PostgreSQL".
+4. Expand "Databases" and ensure "college_exam_portal" has a green connection 
+   icon (or just click on it to connect).
+   
+As long as the PostgreSQL service is running and pgAdmin can connect to it, 
+your database is ready!
+
+--------------------------------------------------------------------------------
+STEP 2: START THE BACKEND SERVER (Node.js API)
+--------------------------------------------------------------------------------
+This server handles logins, database interactions, and exam data.
+
+1. Open a new Terminal window (or Command Prompt).
+2. Navigate to your backend directory:
+   cd "C:\Users\Jaswanth N.V.S\OneDrive\Desktop\1st run\Backend\college-exam-api"
+3. Run the development server:
+   npm run dev
+   
+-> SUCCESS: You should see: "Server is listening on port 5000 in development mode"
+-> LEAVE THIS TERMINAL WINDOW OPEN AND RUNNING.
+
+--------------------------------------------------------------------------------
+STEP 3: START THE FRONTEND COMPILER PROXY
+--------------------------------------------------------------------------------
+This server strictly handles proxying code execution for the coding exams.
+
+1. Open a SECOND (new) Terminal window.
+2. Navigate to your frontend directory:
+   cd "C:\Users\Jaswanth N.V.S\OneDrive\Desktop\1st run\Frontend\masteryv1-main - Copy"
+3. Run the compiler proxy:
+   node server.js
+   
+-> SUCCESS: You should see: "Backend server running at http://localhost:3000"
+-> LEAVE THIS TERMINAL WINDOW OPEN AND RUNNING.
+
+--------------------------------------------------------------------------------
+STEP 4: OPEN AND VIEW THE FRONTEND UI
+--------------------------------------------------------------------------------
+Since the UI is built with static HTML/JS/CSS files, you do NOT type 
+"localhost:3000" in your browser. Instead, you serve the files directly.
+
+METHOD A (Recommended):
+1. Open VS Code.
+2. Go to File -> Open Folder... -> Select "Frontend\masteryv1-main - Copy".
+3. Right-click on "index.html" in the file explorer.
+4. Click "Open with Live Server".
+5. Your browser will automatically open to http://127.0.0.1:5500/index.html
+
+METHOD B (Alternative):
+1. Open Windows File Explorer.
+2. Navigate to "Desktop\1st run\Frontend\masteryv1-main - Copy"
+3. Double-click the "index.html" file.
+4. It will open in your browser (URL will start with file:///C:/...)
+
+--------------------------------------------------------------------------------
+FINAL CHECK
+--------------------------------------------------------------------------------
+Login with an Admin account (admin / admin123) or a Student account. If it 
+logs in successfully and redirects to the dashboard, your Frontend, Backend, 
+and Postgres Database are all talking to each other correctly!
+================================================================================

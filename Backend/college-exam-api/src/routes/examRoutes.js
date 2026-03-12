@@ -1,0 +1,31 @@
+const express = require('express');
+const examController = require('../controllers/examController');
+const { protect } = require('../middleware/authMiddleware');
+const { restrictTo } = require('../middleware/roleCheck');
+const authValidator = require('../validators/authValidator');
+const { createExamSchema, addQuestionsSchema, submitExamSchema } = require('../validators/examValidator');
+
+const router = express.Router();
+
+router.use(protect);
+
+router.get('/', examController.getExams);
+
+router.post(
+    '/',
+    restrictTo('Teacher', 'admin'),
+    authValidator.validate(createExamSchema),
+    examController.createExam
+);
+
+router.post(
+    '/:id/questions',
+    restrictTo('Teacher', 'admin'),
+    authValidator.validate(addQuestionsSchema),
+    examController.addQuestions
+);
+
+router.post('/:id/attempt', restrictTo('Student'), examController.attemptExam);
+router.post('/:id/submit', restrictTo('Student'), authValidator.validate(submitExamSchema), examController.submitExam);
+
+module.exports = router;
