@@ -68,15 +68,17 @@ class ExamService {
             throw new Error(data.message || data.error?.message || 'Failed to sync exam to server');
         }
 
-        // Backup to localStorage for offline fallback
+        const serverExam = data.data || data;
+
+        // Backup to localStorage for offline fallback using the server's real object
         const localData = localStorage.getItem(DB_EXAMS);
         const exams = localData ? JSON.parse(localData) : [];
-        const index = exams.findIndex(e => e.id === exam.id);
-        if (index > -1) exams[index] = exam;
-        else exams.push(exam);
+        const index = exams.findIndex(e => String(e.id) === String(exam.id) || String(e.id) === String(serverExam.id));
+        if (index > -1) exams[index] = serverExam;
+        else exams.push(serverExam);
         localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
         
-        return data.data || data;
+        return serverExam;
     }
 
     static async deleteExam(id) {
