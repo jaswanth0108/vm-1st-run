@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Examination</title>
+    <!-- Premium Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        /* ── Override font globally for this page ── */
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .logo,
+        .stat-label,
+        .section-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* ── NAV ENHANCEMENTS ── */
+        .portal-nav {
+            position: sticky;
+            top: 1rem;
+            z-index: 100;
+            margin: 1rem auto;
+            width: 95%;
+            max-width: 1200px;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 99px;
+            background: rgba(15, 14, 23, 0.75);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(108, 99, 255, 0.18);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.35), 0 0 60px -20px rgba(108, 99, 255, 0.25);
+        }
+
+        .portal-logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #6c63ff, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .portal-logo span {
+            font-weight: 400;
+            font-size: 0.75rem;
+            background: none;
+            -webkit-text-fill-color: #94a3b8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-left: 0.35rem;
+        }
+
+        .nav-student-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            background: rgba(108, 99, 255, 0.12);
+            border: 1px solid rgba(108, 99, 255, 0.25);
+            padding: 0.3rem 0.85rem;
+            border-radius: 99px;
+        }
+
+        /* ── WELCOME HERO ── */
+        .welcome-hero {
+            margin-bottom: 3.5rem;
+            padding: 3rem 0 1rem;
+            position: relative;
+        }
+
+        .welcome-greeting {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #a78bfa;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .welcome-greeting::before {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 2px;
+            background: linear-gradient(90deg, #6c63ff, #a78bfa);
+            border-radius: 2px;
+        }
+
+        .welcome-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.85rem;
+            color: #f1f5f9;
+        }
+
+        .welcome-title .highlight {
+            background: linear-gradient(135deg, #6c63ff 0%, #a78bfa 40%, #22d3ee 70%, #ec4899 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 5s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .welcome-sub {
+            font-size: 1.05rem;
+            color: #94a3b8;
+            max-width: 500px;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3.5rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 1.25rem;
+            padding: 1.75rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .stat-card.rank::before {
+            background: linear-gradient(90deg, #6c63ff, #a78bfa);
+        }
+
+        .stat-card.taken::before {
+            background: linear-gradient(90deg, #22d3ee, #6c63ff);
+        }
+
+        .stat-card.avg::before {
+            background: linear-gradient(90deg, #ec4899, #a78bfa);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            opacity: 0.07;
+        }
+
+        .stat-card.rank::after {
+            background: #6c63ff;
+        }
+
+        .stat-card.taken::after {
+            background: #22d3ee;
+        }
+
+        .stat-card.avg::after {
+            background: #ec4899;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 40px -8px rgba(108, 99, 255, 0.35);
+        }
+
+        .stat-icon {
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .stat-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+
+        .stat-card.rank .stat-value {
+            color: #a78bfa;
+        }
+
+        .stat-card.taken .stat-value {
+            color: #22d3ee;
+        }
+
+        .stat-card.avg .stat-value {
+            color: #f472b6;
+        }
+
+        .stat-sub {
+            font-size: 0.8rem;
+            color: #34d399;
+            margin-top: 0.4rem;
+            font-weight: 500;
+        }
+
+        /* ── SECTION HEADING ── */
+        .exams-section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .exams-section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            letter-spacing: -0.02em;
+        }
+
+        .live-pulse-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(52, 211, 153, 0.12);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            color: #34d399;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.75rem;
+            border-radius: 99px;
+        }
+
+        .live-pulse-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: #34d399;
+            border-radius: 50%;
+            animation: livePulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.7);
+            }
+        }
+
+        /* ── EXAM CARDS ── */
+        .exam-card {
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ── ACTIVE / UNTAKEN: vibrant ── */
+        .exam-card--active {
+            background: linear-gradient(135deg,
+                    rgba(108, 99, 255, 0.22) 0%,
+                    rgba(167, 139, 250, 0.14) 50%,
+                    rgba(34, 211, 238, 0.10) 100%);
+            border: 1px solid rgba(108, 99, 255, 0.55);
+            box-shadow:
+                0 0 0 1px rgba(108, 99, 255, 0.2),
+                0 4px 24px -4px rgba(108, 99, 255, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .exam-card--active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6c63ff, #a78bfa, #22d3ee, #ec4899, #6c63ff);
+            background-size: 200% 100%;
+            animation: shimmerBar 3s linear infinite;
+        }
+
+        @keyframes shimmerBar {
+            0% {
+                background-position: 0% 0%;
+            }
+
+            100% {
+                background-position: 200% 0%;
+            }
+        }
+
+        .exam-card--active:hover {
+            transform: translateY(-8px) scale(1.025);
+            box-shadow:
+                0 0 0 1px rgba(108, 99, 255, 0.5),
+                0 12px 40px -6px rgba(108, 99, 255, 0.55),
+                0 0 60px -10px rgba(167, 139, 250, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border-color: rgba(108, 99, 255, 0.85);
+        }
+
+        /* ── COMPLETED / TAKEN: soft muted ── */
+        .exam-card--completed {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            filter: saturate(0.45) brightness(0.85);
+        }
+
+        .exam-card--completed::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #34d399, #6ee7b7);
+            opacity: 0.6;
+        }
+
+        .exam-card--completed:hover {
+            transform: translateY(-4px);
+            filter: saturate(0.6) brightness(0.9);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.15);
+        }
+
+        /* ── DRAFT: neutral dim ── */
+        .exam-card--draft {
+            background: var(--glass-bg);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: var(--shadow-sm);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .exam-card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin: 0.5rem 0 0.3rem;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+        }
+
+        .exam-card-subject {
+            font-size: 0.88rem;
+            color: #a5b4fc;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .exam-meta {
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.82rem;
+            color: #c4b5fd;
+            background: rgba(108, 99, 255, 0.08);
+            padding: 0.55rem 0.85rem;
+            border-radius: 0.6rem;
+            border: 1px solid rgba(108, 99, 255, 0.12);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .exam-card--completed .exam-meta {
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ── STATUS BADGES ── */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-block;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .status-active {
+            background: rgba(108, 99, 255, 0.2);
+            color: #a78bfa;
+            border: 1px solid rgba(108, 99, 255, 0.4);
+        }
+
+        .status-upcoming {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #475569;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* ── DIVIDER ── */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.3), transparent);
+            margin: 2.5rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header image -->
+    <img src="../assets/img/vignan_header.png" alt="Header"
+        style="display: block; width: 100%; max-height: 120px; object-fit: contain; background: white;">
+
+    <!-- Navbar -->
+    <nav class="portal-nav">
+        <div class="portal-logo">
+            ExamiNation <span>Student</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="nav-student-name" id="studentName">Student</div>
+            <a href="report_card.html" class="btn"
+                style="padding: 0.45rem 1.1rem; font-size: 0.85rem; font-family: 'Space Grotesk', sans-serif; font-weight: 600; border: none; color: white; background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); box-shadow: 0 4px 15px -3px rgba(139,92,246,0.5); letter-spacing: 0.01em;">
+                📊 Report Card
+            </a>
+            <button onclick="Auth.logout()" class="btn btn-outline"
+                style="padding: 0.45rem 1rem; font-size: 0.85rem; font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: #f87171; border-color: rgba(248,113,113,0.25);">
+                Logout
+            </button>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 1rem; padding-bottom: 4rem;">
+
+        <!-- Welcome Hero -->
+        <section class="welcome-hero fade-in">
+            <div class="welcome-greeting">Welcome back</div>
+            <h1 class="welcome-title">
+                Ready to <span class="highlight">excel?</span>
+            </h1>
+            <p class="welcome-sub">Track your performance, attempt exams, and climb the leaderboard. Your academic
+                journey starts here.</p>
+        </section>
+
+        <!-- Stats Row -->
+        <section class="stats-grid fade-in">
+            <div class="stat-card rank">
+                <span class="stat-icon">🏆</span>
+                <div class="stat-label">My Rank</div>
+                <div class="stat-value" id="stat-rank">--</div>
+                <div class="stat-sub" id="stat-percentile">--</div>
+            </div>
+            <div class="stat-card taken">
+                <span class="stat-icon">📋</span>
+                <div class="stat-label">Exams Taken</div>
+                <div class="stat-value" id="stat-exams-taken">0</div>
+                <div class="stat-sub">Completed attempts</div>
+            </div>
+            <div class="stat-card avg">
+                <span class="stat-icon">📈</span>
+                <div class="stat-label">Avg. Score</div>
+                <div class="stat-value" id="stat-avg-score">--</div>
+                <div class="stat-sub">Across all exams</div>
+            </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Available Exams -->
+        <section>
+            <div class="exams-section-header">
+                <h2 class="exams-section-title">Available Exams</h2>
+                <span class="live-pulse-badge">Live</span>
+            </div>
+
+            <div id="examList"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- Content Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        const session = Auth.checkSession();
+        if (!session || (session.role !== 'student' && session.role !== 'admin')) {
+            window.location.href = '../index.html';
+        }
+        if (session) {
+            document.getElementById('studentName').innerText = session.name;
+        }
+
+        // Wrap everything dependent on API in an IIFE
+        (async () => {
+            // Stats
+            const results = await ExamService.getStudentResults(session.id);
+            const totalExams = results.length;
+            const avgScore = totalExams > 0
+                ? Math.round(results.reduce((acc, r) => acc + r.score, 0) / totalExams)
+                : 0;
+
+            // Rank calculation
+            const allResults = await ExamService.getResults();
+            let rank = '--';
+            let percentile = '--';
+
+            if (totalExams > 0 && allResults.length > 0) {
+                const studentScores = {};
+                allResults.forEach(r => {
+                    if (!studentScores[r.studentId]) studentScores[r.studentId] = [];
+                    studentScores[r.studentId].push(r.score);
+                });
+
+                const averages = Object.keys(studentScores).map(sid => {
+                    const scores = studentScores[sid];
+                    return { sid, avg: scores.reduce((a, b) => a + b, 0) / scores.length };
+                });
+
+                averages.sort((a, b) => b.avg - a.avg);
+                const myRankIndex = averages.findIndex(a => a.sid === session.id);
+                if (myRankIndex > -1) {
+                    rank = `#${myRankIndex + 1}`;
+                    const p = ((averages.length - myRankIndex) / averages.length) * 100;
+                    percentile = `Top ${Math.round(100 - p + 1)}%`;
+                }
+            }
+
+            document.getElementById('stat-rank').innerHTML = rank;
+            document.getElementById('stat-percentile').innerText = percentile;
+            document.getElementById('stat-exams-taken').innerText = totalExams;
+            document.getElementById('stat-avg-score').innerText = totalExams > 0 ? avgScore + '%' : '--';
+
+            // Fetch Exams
+            const exams = await ExamService.getExams();
+            const container = document.getElementById('examList');
+
+            if (exams.length === 0) {
+                container.innerHTML = `
+                <div class="empty-state">
+                    <span class="empty-state-icon">📭</span>
+                    <p>No exams available at the moment. Check back soon!</p>
+                </div>`;
+            } else {
+                const filteredExams = (session.role === 'admin')
+                    ? exams
+                    : exams.filter(e => {
+                        const studentBatch = String(session.batch || '').trim();
+                        const studentBranch = String(session.branch || '').toUpperCase().trim();
+
+                        // === Batch Matching ===
+                        // If student has no batch in session, show all exams (backend login doesn't store batch)
+                        let batchMatch = !studentBatch; // true if batch unknown - show everything
+                        if (studentBatch) {
+                            if (Array.isArray(e.batch)) {
+                                batchMatch = e.batch.length === 0 || e.batch.some(b => String(b).trim() === studentBatch);
+                            } else {
+                                const examBatches = String(e.batch || '').split(',').map(b => b.trim()).filter(Boolean);
+                                batchMatch = examBatches.length === 0 || examBatches.includes(studentBatch);
+                            }
+                        }
+
+                        // === Branch Matching ===
+                        // If student has no branch in session, show all exams
+                        let branchMatch = !studentBranch; // true if branch unknown - show everything
+                        if (studentBranch) {
+                            if (Array.isArray(e.branch)) {
+                                const upperBranches = e.branch.map(b => String(b).toUpperCase().trim());
+                                branchMatch = upperBranches.length === 0 || upperBranches.includes('ALL') || upperBranches.includes(studentBranch);
+                            } else {
+                                const examBranch = String(e.branch || '').toUpperCase().trim();
+                                branchMatch = !examBranch || examBranch === 'ALL' || examBranch === studentBranch;
+                            }
+                        }
+
+                        return batchMatch && branchMatch;
+                    });
+
+                if (filteredExams.length === 0) {
+                    container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-state-icon">🔍</span>
+                        <p>No exams available for your Batch & Branch at the moment.</p>
+                    </div>`;
+                } else {
+                    container.innerHTML = filteredExams.map(exam => {
+                        const isTaken = results.some(r => r.examId === exam.id);
+                        const isDraft = exam.status !== 'published';
+                        const attempts = results.filter(r => r.examId === exam.id);
+                        const attemptCount = attempts.length;
+                        const limit = exam.attemptLimit || 1;
+                        const canAttempt = limit === -1 || attemptCount < limit;
+
+                        let statusBadge;
+                        if (isDraft) {
+                            statusBadge = `<span class="status-badge" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.3); color:#fbbf24;">⏳ Coming Soon</span>`;
+                        } else if (attemptCount > 0) {
+                            statusBadge = `<span class="status-badge" style="background:${canAttempt ? 'rgba(108,99,255,0.15)' : 'rgba(52,211,153,0.12)'}; color:${canAttempt ? '#818cf8' : '#34d399'}; border:1px solid ${canAttempt ? 'rgba(108,99,255,0.3)' : 'rgba(52,211,153,0.3)'};">Attempts: ${attemptCount}${limit === -1 ? '' : '/' + limit}</span>`;
+                        } else {
+                            statusBadge = `<span class="status-badge status-active">🟢 Active</span>`;
+                        }
+
+                        let actionBtn;
+                        const isAdmin = session.role === 'admin';
+
+                        if (isAdmin) {
+                            actionBtn = `<button class="btn btn-outline" disabled style="margin-top: auto; width: 100%; cursor: not-allowed; opacity: 0.5; font-family:'Space Grotesk',sans-serif; font-weight:600;">Admin View Only</button>`;
+                        } else if (isDraft) {
+                            actionBtn = `<button class="btn btn-outline" disabled style="margin-top: auto; width: 100%; opacity: 0.4; cursor: not-allowed; font-family:'Space Grotesk',sans-serif;">Not Published Yet</button>`;
+                        } else if (!canAttempt) {
+                            const bestScore = Math.max(...attempts.map(a => a.score));
+                            actionBtn = `
+                            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; width: 100%;">
+                                <div style="text-align: center; font-size: 0.85rem; color: #34d399; font-weight: 700; font-family:'Space Grotesk',sans-serif; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2); border-radius:0.5rem; padding:0.4rem;">
+                                    🏅 Best Score: ${bestScore}%
+                                </div>
+                                <a href="report.html?id=${exam.id}" class="btn" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; border: none; box-shadow: 0 4px 15px -3px rgba(16,185,129,0.4); font-family:'Space Grotesk',sans-serif; font-weight:600;">📄 View Report</a>
+                            </div>`;
+                        } else {
+                            actionBtn = `
+                            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; width: 100%;">
+                                <a href="../exam/index.html?id=${exam.id}" class="btn btn-primary" style="text-align: center; width: 100%; justify-content: center; font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:0.02em;">${attemptCount > 0 ? '🔁 Retake Exam' : '🚀 Start Exam'}</a>
+                                ${attemptCount > 0 ? `<a href="report.html?id=${exam.id}" class="btn" style="width: 100%; justify-content: center; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; border: none; box-shadow: 0 4px 12px -3px rgba(16,185,129,0.4); font-family:'Space Grotesk',sans-serif; font-weight:600;">📄 View Report</a>` : ''}
+                            </div>`;
+                        }
+
+                        const cardClass = isDraft ? 'exam-card--draft'
+                            : (isTaken && !canAttempt) ? 'exam-card--completed'
+                                : 'exam-card--active';
+
+                        return `
+                        <div class="exam-card fade-in ${cardClass}">
+                            <div>
+                                <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.25rem;">
+                                    ${statusBadge}
+                                    ${isTaken ? '<span class="status-badge" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ Completed</span>' : ''}
+                                </div>
+                                <h3 class="exam-card-title">${exam.title}</h3>
+                                <p class="exam-card-subject">${exam.subject}</p>
+                            </div>
+
+                            <div class="exam-meta">
+                                <span>⏱ ${exam.duration} mins</span>
+                                <span>📝 ${exam.questions.length} questions</span>
+                            </div>
+
+                            ${actionBtn}
+                        </div>`;
+                    }).join('');
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

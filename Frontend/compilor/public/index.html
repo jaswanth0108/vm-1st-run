@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compilor — Online Code Compiler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Variables ─────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #1a1f35;
+      --bg-editor: #0d1117;
+      --bg-input: #161b2e;
+      --border: #2d3555;
+      --border-glow: #6366f1;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.1);
+      --error: #ef4444;
+      --error-bg: rgba(239, 68, 68, 0.1);
+      --warning: #f59e0b;
+      --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      --font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.15);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated Background ──────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(168, 85, 247, 0.04) 0%, transparent 50%);
+      animation: bgFloat 20s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    @keyframes bgFloat {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(2%, -2%) rotate(1deg); }
+      66% { transform: translate(-1%, 1%) rotate(-0.5deg); }
+    }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    .header {
+      position: relative; z-index: 10;
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 14, 26, 0.8);
+      backdrop-filter: blur(20px);
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; }
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--gradient-1);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo-text {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+      background: var(--gradient-1);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-tag {
+      font-size: 10px; color: var(--text-muted);
+      font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .status-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px;
+      background: var(--success-bg);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: 20px;
+      font-size: 11px; color: var(--success); font-weight: 600;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      background: var(--success); border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* ── Main Container ───────────────────────────────────────── */
+    .container {
+      position: relative; z-index: 10;
+      max-width: 1440px; margin: 0 auto; padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      height: calc(100vh - 72px);
+    }
+
+    /* ── Toolbar ──────────────────────────────────────────────── */
+    .toolbar {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+    }
+
+    .lang-selector { display: flex; align-items: center; gap: 8px; }
+
+    .lang-selector label {
+      font-size: 12px; font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .lang-select {
+      appearance: none;
+      padding: 8px 36px 8px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      min-width: 150px;
+    }
+
+    .lang-select:hover { border-color: var(--accent); }
+    .lang-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .toolbar-divider { width: 1px; height: 24px; background: var(--border); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 20px; border: none; border-radius: var(--radius-sm);
+      font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.25s ease;
+      position: relative; overflow: hidden;
+    }
+
+    .btn-run {
+      background: var(--gradient-1); color: white;
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+    .btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); }
+    .btn-run:active { transform: translateY(0); }
+    .btn-run.loading { pointer-events: none; opacity: 0.8; }
+    .btn-run.loading::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 1.2s infinite;
+    }
+
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+    .btn-clear {
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-clear:hover { background: var(--bg-input); color: var(--text-primary); border-color: var(--text-muted); }
+
+    .exec-time {
+      margin-left: auto; font-size: 12px; color: var(--text-muted);
+      font-family: var(--font-code);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .exec-time.visible { color: var(--text-secondary); }
+
+    .kbd {
+      display: inline-flex; padding: 2px 5px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 4px; font-family: var(--font-code);
+      font-size: 10px; color: var(--text-secondary);
+    }
+
+    /* ── Panels ───────────────────────────────────────────────── */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex; flex-direction: column;
+      overflow: hidden; transition: border-color 0.3s;
+    }
+
+    .panel:focus-within { border-color: var(--border-glow); box-shadow: var(--shadow-glow); }
+
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 11px; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .panel-title-icon { font-size: 13px; }
+
+    .line-count {
+      font-size: 10px; color: var(--text-muted);
+      font-family: var(--font-code);
+    }
+
+    /* ── Monaco Editor Container ──────────────────────────────── */
+    #monaco-container {
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Right Column ─────────────────────────────────────────── */
+    .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── Input Panel ──────────────────────────────────────────── */
+    .input-panel { flex: 0 0 auto; }
+
+    .stdin-input {
+      padding: 12px 14px;
+      background: var(--bg-editor); border: none;
+      color: var(--text-primary);
+      font-family: var(--font-code);
+      font-size: 13px; line-height: 1.6;
+      resize: none; outline: none;
+      min-height: 100px; width: 100%;
+    }
+    .stdin-input::placeholder { color: var(--text-muted); }
+
+    /* ── Output Panel ─────────────────────────────────────────── */
+    .output-panel { flex: 1; }
+
+    .output-content {
+      flex: 1;
+      padding: 14px;
+      background: var(--bg-editor);
+      font-family: var(--font-code);
+      font-size: 13px; line-height: 1.7;
+      overflow: auto; min-height: 200px;
+      color: var(--text-secondary);
+    }
+    .output-content.has-output { color: var(--text-primary); }
+    .output-content.has-error { color: var(--error); }
+    .output-content.has-success { color: var(--success); }
+
+    .output-placeholder {
+      color: var(--text-muted); font-style: italic;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .output-placeholder .icon { font-size: 16px; }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    .footer {
+      grid-column: 1 / -1;
+      text-align: center; padding: 6px;
+      font-size: 11px; color: var(--text-muted);
+    }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; padding: 10px; height: auto; min-height: calc(100vh - 72px); }
+      .header { padding: 12px 16px; }
+      .logo-text { font-size: 18px; }
+      #monaco-container { min-height: 350px; }
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ── Loading Spinner ──────────────────────────────────────── */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ───────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">Compilor</div>
+        <div class="logo-tag">Code Execution Engine</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        Server Online
+      </div>
+      <span style="font-size: 11px; color: var(--text-muted);">
+        <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> to Run
+      </span>
+    </div>
+  </header>
+
+  <!-- ── Main Content ─────────────────────────────────────────── -->
+  <main class="container">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="lang-selector">
+        <label for="language">Language</label>
+        <select id="language" class="lang-select">
+          <option value="python">🐍  Python</option>
+          <option value="c">⚙️  C</option>
+          <option value="cpp">🔧  C++</option>
+          <option value="java">☕  Java</option>
+          <option value="javascript">🟨  JavaScript</option>
+        </select>
+      </div>
+      <div class="toolbar-divider"></div>
+      <button id="runBtn" class="btn btn-run" onclick="runCode()">
+        <span id="runIcon">▶</span>
+        <span id="runText">Run Code</span>
+      </button>
+      <button class="btn btn-clear" onclick="clearAll()">✕ Clear</button>
+      <div class="exec-time" id="execTime">
+        <span>⏱</span>
+        <span id="execTimeValue">—</span>
+      </div>
+    </div>
+
+    <!-- Code Editor Panel (Monaco) -->
+    <div class="panel" id="editorPanel">
+      <div class="panel-header">
+        <span class="panel-title">
+          <span class="panel-title-icon">📝</span> Code Editor
+        </span>
+        <span class="line-count" id="lineCount">1 line</span>
+      </div>
+      <div id="monaco-container"></div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-col">
+      <!-- Input Panel -->
+      <div class="panel input-panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="panel-title-icon">📥</span> Input (stdin)
+          </span>
+        </div>
+        <textarea
+          id="stdinInput"
+          class="stdin-input"
+          placeholder="Enter input for your program here..."
+          spellcheck="false"
+        ></textarea>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="panel output-panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="panel-title-icon">📤</span> Output
+          </span>
+        </div>
+        <div class="output-content" id="outputContent">
+          <div class="output-placeholder">
+            <span class="icon">💡</span>
+            Click "Run Code" or press Ctrl+Enter to execute
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Compilor — Multi-language Code Execution Engine &nbsp;|&nbsp; C · C++ · Java · Python · JavaScript
+    </div>
+  </main>
+
+  <!-- ── Monaco Editor Loader ─────────────────────────────────── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+  <script>
+    // ── Elements ────────────────────────────────────────────────
+    const stdinInput = document.getElementById('stdinInput');
+    const outputContent = document.getElementById('outputContent');
+    const langSelect = document.getElementById('language');
+    const runBtn = document.getElementById('runBtn');
+    const runIcon = document.getElementById('runIcon');
+    const runText = document.getElementById('runText');
+    const lineCountEl = document.getElementById('lineCount');
+    const execTime = document.getElementById('execTime');
+    const execTimeValue = document.getElementById('execTimeValue');
+
+    // ── Boilerplate code per language ────────────────────────────
+    const boilerplates = {
+      python: 'print("Hello, World!")',
+      c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
+      cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
+      java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
+      javascript: 'console.log("Hello, World!");',
+    };
+
+    // ── Monaco language mapping ──────────────────────────────────
+    const monacoLanguages = {
+      python: 'python',
+      c: 'c',
+      cpp: 'cpp',
+      java: 'java',
+      javascript: 'javascript',
+    };
+
+    // ── Monaco Editor instance ───────────────────────────────────
+    let editor = null;
+
+    // ── Initialize Monaco Editor ─────────────────────────────────
+    require.config({
+      paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }
+    });
+
+    require(['vs/editor/editor.main'], function () {
+      // Define a custom dark theme matching our UI
+      monaco.editor.defineTheme('compilor-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '6A737D', fontStyle: 'italic' },
+          { token: 'keyword', foreground: 'C678DD' },
+          { token: 'string', foreground: '98C379' },
+          { token: 'number', foreground: 'D19A66' },
+          { token: 'type', foreground: 'E5C07B' },
+          { token: 'function', foreground: '61AFEF' },
+          { token: 'variable', foreground: 'E06C75' },
+          { token: 'operator', foreground: '56B6C2' },
+          { token: 'delimiter', foreground: 'ABB2BF' },
+        ],
+        colors: {
+          'editor.background': '#0d1117',
+          'editor.foreground': '#e2e8f0',
+          'editor.lineHighlightBackground': '#161b2e',
+          'editor.selectionBackground': '#3b3f5c',
+          'editor.inactiveSelectionBackground': '#2d3555',
+          'editorCursor.foreground': '#6366f1',
+          'editorLineNumber.foreground': '#4a5568',
+          'editorLineNumber.activeForeground': '#94a3b8',
+          'editorIndentGuide.background': '#2d3555',
+          'editorIndentGuide.activeBackground': '#4a5568',
+          'editor.selectionHighlightBackground': '#3b3f5c55',
+          'editorBracketMatch.background': '#3b3f5c',
+          'editorBracketMatch.border': '#6366f1',
+          'scrollbar.shadow': '#00000000',
+          'scrollbarSlider.background': '#2d355580',
+          'scrollbarSlider.hoverBackground': '#4a5568',
+          'scrollbarSlider.activeBackground': '#6366f1',
+          'editorWidget.background': '#1a1f35',
+          'editorWidget.border': '#2d3555',
+          'editorSuggestWidget.background': '#1a1f35',
+          'editorSuggestWidget.border': '#2d3555',
+          'editorSuggestWidget.selectedBackground': '#2d3555',
+          'editorHoverWidget.background': '#1a1f35',
+          'editorHoverWidget.border': '#2d3555',
+        },
+      });
+
+      // Create the editor
+      editor = monaco.editor.create(document.getElementById('monaco-container'), {
+        value: boilerplates[langSelect.value] || '',
+        language: monacoLanguages[langSelect.value] || 'plaintext',
+        theme: 'compilor-dark',
+        fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+        fontSize: 14,
+        lineHeight: 22,
+        fontLigatures: true,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        padding: { top: 12, bottom: 12 },
+        renderLineHighlight: 'all',
+        cursorBlinking: 'smooth',
+        cursorSmoothCaretAnimation: 'on',
+        smoothScrolling: true,
+        bracketPairColorization: { enabled: true },
+        autoClosingBrackets: 'always',
+        autoClosingQuotes: 'always',
+        autoIndent: 'full',
+        formatOnPaste: true,
+        tabSize: 4,
+        wordWrap: 'off',
+        suggest: {
+          showIcons: true,
+          showStatusBar: true,
+        },
+        overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false,
+        contextmenu: true,
+        mouseWheelZoom: true,
+        automaticLayout: true,
+      });
+
+      // Update line count on content change
+      editor.onDidChangeModelContent(() => {
+        updateLineCount();
+      });
+
+      // Ctrl+Enter to run code
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+        runCode();
+      });
+
+      updateLineCount();
+    });
+
+    // ── Update line count display ────────────────────────────────
+    function updateLineCount() {
+      if (!editor) return;
+      const count = editor.getModel().getLineCount();
+      lineCountEl.textContent = `${count} line${count !== 1 ? 's' : ''}`;
+    }
+
+    // ── Language change → update editor ──────────────────────────
+    langSelect.addEventListener('change', () => {
+      const lang = langSelect.value;
+      if (editor) {
+        // Change language model
+        const model = editor.getModel();
+        monaco.editor.setModelLanguage(model, monacoLanguages[lang] || 'plaintext');
+        // Set boilerplate code
+        editor.setValue(boilerplates[lang] || '');
+      }
+      // Reset output
+      outputContent.innerHTML =
+        '<div class="output-placeholder"><span class="icon">💡</span>Click "Run Code" or press Ctrl+Enter to execute</div>';
+      outputContent.className = 'output-content';
+      execTimeValue.textContent = '—';
+      execTime.classList.remove('visible');
+    });
+
+    // ── Run Code ─────────────────────────────────────────────────
+    async function runCode() {
+      const language = langSelect.value;
+      const code = editor ? editor.getValue() : '';
+      const input = stdinInput.value;
+
+      if (!code.trim()) {
+        showOutput('⚠️ Please write some code before running.', 'error');
+        return;
+      }
+
+      // Set loading state
+      runBtn.classList.add('loading');
+      runIcon.innerHTML = '<span class="spinner"></span>';
+      runText.textContent = 'Running...';
+      outputContent.innerHTML =
+        '<div class="output-placeholder"><span class="spinner"></span>&nbsp; Compiling and executing...</div>';
+      outputContent.className = 'output-content';
+
+      try {
+        const response = await fetch('/compile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ language, code, input }),
+        });
+
+        const data = await response.json();
+
+        // Show execution time
+        if (data.executionTime !== undefined) {
+          execTimeValue.textContent = `${data.executionTime} ms`;
+          execTime.classList.add('visible');
+        }
+
+        if (data.error && data.error.trim()) {
+          if (data.output && data.output.trim()) {
+            showOutput(
+              `${escapeHtml(data.output)}\n\n⚠️ STDERR:\n${escapeHtml(data.error)}`,
+              data.success ? 'success' : 'error'
+            );
+          } else {
+            showOutput(`❌ Error:\n${escapeHtml(data.error)}`, 'error');
+          }
+        } else if (data.output && data.output.trim()) {
+          showOutput(escapeHtml(data.output), 'success');
+        } else {
+          showOutput('✅ Program executed successfully (no output)', 'success');
+        }
+      } catch (err) {
+        showOutput(
+          `❌ Connection error: ${err.message}\n\nMake sure the server is running on http://localhost:3000`,
+          'error'
+        );
+      } finally {
+        runBtn.classList.remove('loading');
+        runIcon.innerHTML = '▶';
+        runText.textContent = 'Run Code';
+      }
+    }
+
+    // ── Show output ──────────────────────────────────────────────
+    function showOutput(text, type = '') {
+      outputContent.textContent = '';
+      const pre = document.createElement('pre');
+      pre.style.whiteSpace = 'pre';
+      pre.style.wordBreak = 'normal';
+      pre.style.overflowX = 'auto';
+      pre.style.margin = '0';
+      pre.style.fontFamily = "var(--font-code)";
+      pre.innerHTML = text;
+      outputContent.appendChild(pre);
+      outputContent.className = `output-content ${
+        type === 'error' ? 'has-error' : type === 'success' ? 'has-success' : 'has-output'
+      }`;
+    }
+
+    // ── Escape HTML ──────────────────────────────────────────────
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ── Clear all ────────────────────────────────────────────────
+    function clearAll() {
+      if (editor) editor.setValue('');
+      stdinInput.value = '';
+      outputContent.innerHTML =
+        '<div class="output-placeholder"><span class="icon">💡</span>Click "Run Code" or press Ctrl+Enter to execute</div>';
+      outputContent.className = 'output-content';
+      execTimeValue.textContent = '—';
+      execTime.classList.remove('visible');
+      if (editor) editor.focus();
+    }
+
+    // ── Check server health on load ──────────────────────────────
+    (async function checkHealth() {
+      try {
+        const res = await fetch('/health');
+        const data = await res.json();
+        if (data.status === 'ok') {
+          document.querySelector('.status-badge').innerHTML =
+            '<span class="status-dot"></span> Server Online';
+        }
+      } catch {
+        const badge = document.querySelector('.status-badge');
+        badge.innerHTML =
+          '<span class="status-dot" style="background:var(--error);"></span> Server Offline';
+        badge.style.background = 'var(--error-bg)';
+        badge.style.borderColor = 'rgba(239,68,68,0.2)';
+        badge.style.color = 'var(--error)';
+      }
+    })();
+  </script>
+</body>
+</html>

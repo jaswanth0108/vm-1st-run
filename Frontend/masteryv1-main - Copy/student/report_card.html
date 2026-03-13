@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Report Card - ExamiNation</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .report-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            padding: 3rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 40px -8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .org-details h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .org-details p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .report-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            background: #f8fafc;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .student-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-row {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.25rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            width: 120px;
+            color: #64748b;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+
+        th {
+            background: #f1f5f9;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .grade-badge {
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .grade-s {
+            color: #6d28d9;
+            background: #ede9fe;
+        }
+
+        .grade-a {
+            color: #15803d;
+            background: #dcfce7;
+        }
+
+        .grade-b {
+            color: #047857;
+            background: #d1fae5;
+        }
+
+        .grade-c {
+            color: #1d4ed8;
+            background: #dbeafe;
+        }
+
+        .grade-d {
+            color: #b45309;
+            background: #fef3c7;
+        }
+
+        .grade-e {
+            color: #c2410c;
+            background: #ffedd5;
+        }
+
+        .grade-f {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+
+        .footer {
+            margin-top: auto;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            margin-bottom: 2rem;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 0.5rem;
+            height: 40px;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 100;
+        }
+
+        @media print {
+
+            .print-btn,
+            .back-btn {
+                display: none;
+            }
+
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                max-width: none;
+                border: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button onclick="window.location.href='index.html'" class="btn btn-outline back-btn" style="color: #1e293b; border-color: #cbd5e1; background: white;">← Back to Dashboard</button>
+    <button onclick="window.print()" class="btn btn-primary print-btn">🖨 Print Report Card</button>
+
+    <div class="report-container" id="reportContent">
+        <!-- Header -->
+        <div class="report-header">
+            <div class="org-details">
+                <h1>VIGNAN MASTERY</h1>
+                <p>Vignan's Institute of Information Technology</p>
+                <p>Duvvada, Visakhaptnam,Andhra Pradesh - 530049</p>
+            </div>
+            <img src="../assets/img/Logo.png" style="height: 80px; width: auto;" alt="Logo">
+        </div>
+
+        <div class="report-title">Student Report Card</div>
+
+        <!-- Student Details -->
+        <div class="student-details">
+            <div>
+                <div class="detail-row">
+                    <span class="detail-label">Student Name:</span>
+                    <span class="detail-value" id="stuName">--</span>
+                </div>
+                <div class="detail-row" style="margin-top: 1rem;">
+                    <span class="detail-label">Student ID:</span>
+                    <span class="detail-value" id="stuId">--</span>
+                </div>
+            </div>
+            <div>
+                <div class="detail-row">
+                    <span class="detail-label">Branch/Batch:</span>
+                    <span class="detail-value" id="stuBranch">--</span>
+                </div>
+                <div class="detail-row" style="margin-top: 1rem;">
+                    <span class="detail-label">Generated On:</span>
+                    <span class="detail-value" id="genDate">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Subject</th>
+                    <th>Exam Name</th>
+                    <th style="text-align: center;">Score</th>
+                    <th style="text-align: center;">Grade</th>
+                </tr>
+            </thead>
+            <tbody id="resultsTable">
+                <!-- JS populated -->
+            </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div style="text-align: right; margin-bottom: 2rem;">
+            <p><strong>Cumulative Average Score:</strong> <span id="cumAvg">--</span>%</p>
+        </div>
+
+        <!-- Signatures -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Student Signature</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Controller of Examinations</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is a computer-generated report card. Any alteration invalidates this document.</p>
+            <p>&copy; 2026 Vignan Mastery. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        // Auth & Data
+        const session = Auth.checkSession();
+        if (!session || (session.role !== 'student' && session.role !== 'admin')) {
+            window.location.href = '../index.html';
+        }
+
+        // Populate Basics
+        document.getElementById('stuName').innerText = session.name;
+        document.getElementById('stuId').innerText = session.id;
+        document.getElementById('stuBranch').innerText = `${session.branch || 'N/A'} / ${session.batch || 'N/A'}`;
+        document.getElementById('genDate').innerText = new Date().toLocaleDateString();
+
+        // Fetch Results
+        (async () => {
+            const allResults = await ExamService.getStudentResults(session.id);
+            const exams = await ExamService.getExams();
+
+        const tableBody = document.getElementById('resultsTable');
+
+        if (allResults.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No exam records found.</td></tr>';
+        } else {
+            // Sort by latest
+            allResults.sort((a, b) => b.timestamp - a.timestamp);
+
+            let totalScore = 0;
+
+            allResults.forEach((result, index) => {
+                const exam = exams.find(e => e.id === result.examId) || { title: 'Unknown Exam', subject: 'General' };
+
+                // Grade Logic: S(>90%), A(80-90%), B(60-80%), C(40-60%), F(<40%)
+                let grade = 'F';
+                let gradeClass = 'grade-f';
+                if (result.score > 90) { grade = 'S'; gradeClass = 'grade-s'; }
+                else if (result.score >= 80) { grade = 'A'; gradeClass = 'grade-a'; }
+                else if (result.score >= 60) { grade = 'B'; gradeClass = 'grade-b'; }
+                else if (result.score >= 40) { grade = 'C'; gradeClass = 'grade-c'; }
+
+                totalScore += result.score;
+
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${exam.subject}</td>
+                        <td>
+                            <div style="font-weight:500;">${exam.title}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${new Date(result.timestamp).toLocaleDateString()}</div>
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">${result.score}%</td>
+                        <td style="text-align: center;"><span class="grade-badge ${gradeClass}">${grade}</span></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+
+            const avg = Math.round(totalScore / allResults.length);
+            document.getElementById('cumAvg').innerText = avg;
+        }
+        })();
+
+    </script>
+</body>
+
+</html>

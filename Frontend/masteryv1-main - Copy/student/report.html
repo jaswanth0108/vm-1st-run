@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Report - ExamiNation</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .report-container {
+            width: 21cm;
+            min-height: 29.7cm;
+            margin: 2rem auto;
+            background: white;
+            padding: 2.54cm;
+            /* A4 Margins */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            box-sizing: border-box;
+            position: relative;
+            border-radius: 0;
+        }
+
+        /* Responsive override for smaller screens */
+        @media (max-width: 850px) {
+            .report-container {
+                width: 95%;
+                min-height: auto;
+                padding: 1.5rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                border-radius: 0.75rem;
+            }
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .report-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .meta-group h3 {
+            font-size: 0.85rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-group p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .score-summary {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-summary .big-score {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+            color: #1e293b;
+        }
+
+        th {
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.9rem;
+            background: #f8fafc;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 100;
+        }
+
+        pre {
+            background: #f1f5f9;
+            padding: 0.5rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Answer Box Style (Screen & Print) */
+        .answer-content {
+            width: 5cm;
+            height: 5cm;
+            min-width: 5cm;
+            max-width: 5cm;
+            max-height: 5cm;
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            overflow: hidden;
+            background: #fff;
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            transform: translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+
+        .view-full-btn {
+            background: none;
+            border: none;
+            color: #2563eb;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 0.25rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .view-full-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Print Styles */
+        @page {
+            size: A4 portrait;
+            margin: 2.54cm;
+        }
+
+        @media print {
+
+            .print-btn,
+            .back-btn {
+                display: none;
+            }
+
+            .no-print,
+            .view-full-btn,
+            .modal-overlay {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-family: 'Times New Roman', Times, serif;
+                font-size: 11pt;
+            }
+
+            .report-container {
+                box-shadow: none;
+                max-width: 100%;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .meta-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+            }
+
+            .card,
+            .report-header,
+            table {
+                break-inside: avoid;
+            }
+
+            .answer-content {
+                border-color: #000;
+            }
+
+            .answer-content>div:last-child {
+                display: none !important;
+            }
+
+            table {
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            table th,
+            table td {
+                padding: 0.2cm;
+                border: 1px solid #ccc;
+            }
+
+            table th:nth-child(1),
+            table td:nth-child(1) {
+                width: 1cm;
+            }
+
+            table th:nth-child(2),
+            table td:nth-child(2) {
+                width: auto;
+            }
+
+            table th:nth-child(3),
+            table td:nth-child(3) {
+                width: 5.5cm;
+            }
+
+            table th:nth-child(4),
+            table td:nth-child(4) {
+                width: 4cm;
+            }
+
+            pre {
+                max-height: none;
+                overflow: visible;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button onclick="window.location.href='index.html'" class="btn btn-outline back-btn" style="color: #1e293b; border-color: #cbd5e1; background: white;">← Back to Dashboard</button>
+    <button onclick="window.print()" class="btn btn-primary print-btn">🖨 Print Report</button>
+
+    <div class="report-container" id="reportContent">
+        <!-- Content Injected Here -->
+        <p style="text-align: center;">Loading Report...</p>
+    </div>
+
+    <!-- Dynamic Answer Modal -->
+    <div id="answerModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle" style="font-size: 1.1rem; margin: 0;">Full Answer</h3>
+                <button onclick="closeModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <!-- Content injected via JS -->
+            </div>
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; text-align: right;">
+                <button class="btn btn-primary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        // Auth Check
+        const session = Auth.checkSession();
+        if (!session || (session.role !== 'student' && session.role !== 'admin')) {
+            window.location.href = '../index.html';
+        }
+
+        // Get Params
+        const params = new URLSearchParams(window.location.search);
+        const examId = params.get('id');
+        const studentId = params.get('studentId') || session.id; // Admin can view others
+
+        if (!examId) {
+            alert('Invalid Request');
+            window.location.href = 'index.html';
+        }
+
+        // Fetch Data
+        (async () => {
+            const exam = await ExamService.getExamById(examId);
+            const results = await ExamService.getStudentResults(studentId);
+            // Find specific result for this exam (assuming latest for now)
+            const result = results.filter(r => r.examId === examId).sort((a, b) => b.timestamp - a.timestamp)[0];
+
+            if (!exam || !result) {
+                document.getElementById('reportContent').innerHTML = `
+                    <div style="text-align:center; padding: 4rem;">
+                        <h2 style="color:#64748b;">Report Not Found</h2>
+                        <p>Could not find result data for this exam.</p>
+                    </div>
+                `;
+            } else {
+                renderReport(exam, result);
+            }
+        })();
+
+        function renderReport(exam, result) {
+            const date = new Date(result.timestamp).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Calculate Totals
+            let totalMarks = 0;
+            let obtainedMarks = 0;
+            const qRows = exam.questions.map((q, index) => {
+                const maxScore = 10; // Assuming 10 per Q
+                const score = result.questionScores ? result.questionScores[q.id] : (
+                    // Fallback for old results
+                    (q.type === 'mcq' && result.answers[q.id] === q.correct) ? 10 : 0
+                );
+
+                const displayScore = (result.questionScores || q.type === 'mcq') ? score : 'N/A';
+
+                totalMarks += maxScore;
+                if (typeof displayScore === 'number') obtainedMarks += displayScore;
+
+                // Status Badge
+                let status = '';
+                if (displayScore === maxScore) status = '<span class="badge badge-success">Full Marks</span>';
+                else if (displayScore > 0) status = '<span class="badge badge-warning">Partial</span>';
+                else status = '<span class="badge badge-danger">0</span>';
+
+                // Format Answer
+                let studentAnswer = '-';
+                const rawAnswer = result.answers[q.id];
+
+                if (q.type === 'mcq') {
+                    if (rawAnswer !== undefined && rawAnswer !== null) {
+                        const optIndex = parseInt(rawAnswer);
+                        studentAnswer = q.options[optIndex] || '(Invalid Option)';
+                        // Mark correct/incorrect visually
+                        if (rawAnswer === q.correct) {
+                            studentAnswer = `<span style="color:#15803d; font-weight:600;">✔ ${studentAnswer}</span>`;
+                        } else {
+                            studentAnswer = `<span style="color:#b91c1c;">✖ ${studentAnswer}</span>`;
+                        }
+                    } else {
+                        studentAnswer = '<span style="color:#64748b; font-style:italic;">Not Answered</span>';
+                    }
+                } else if (q.type === 'coding') {
+                    if (rawAnswer) {
+                        studentAnswer = `<pre>${rawAnswer.replace(/</g, '&lt;')}</pre>`;
+                    } else {
+                        studentAnswer = '<span style="color:#64748b; font-style:italic;">No Code Submitted</span>';
+                    }
+                } else {
+                    // Text
+                    if (rawAnswer) {
+                        studentAnswer = `<div style="white-space: pre-wrap; font-size: 0.9rem;">${rawAnswer.replace(/</g, '&lt;')}</div>`;
+                    } else {
+                        studentAnswer = '<span style="color:#64748b; font-style:italic;">Not Answered</span>';
+                    }
+                }
+
+                // Time Tracking
+                let timeStr = '--';
+                if (result.questionTimeData && result.questionTimeData[q.id] !== undefined) {
+                    const sec = result.questionTimeData[q.id];
+                    const m = Math.floor(sec / 60);
+                    const s = sec % 60;
+                    timeStr = `${m}m ${s}s`;
+                }
+
+                // Solution Logic
+                // Solution Logic
+                let solutionContent = '<span style="color:#64748b; font-style:italic;">No detailed solution available.</span>';
+
+                if (q.solution) {
+                    solutionContent = q.solution.replace(/\n/g, '<br>');
+                } else if (q.type === 'mcq' && q.correct !== undefined && q.correct !== '') {
+                    const idx = parseInt(q.correct);
+                    if (!isNaN(idx) && q.options && q.options[idx]) {
+                        solutionContent = `<strong style="color:#15803d;">Correct Option:</strong> ${q.options[idx]}`;
+                    }
+                } else if (q.type === 'coding') {
+                    if (q.testOut) {
+                        solutionContent = `<strong>Expected Output:</strong><br><pre style="margin:0; background:none; font-family:inherit;">${q.testOut}</pre>`;
+                    }
+                }
+
+                return `
+                    <tr>
+                        <td style="width: 50px; text-align: center;">${index + 1}</td>
+                        <td style="width: 30%;">
+                            <div style="font-weight: 500;">${q.text.substring(0, 150)}${q.text.length > 150 ? '...' : ''}</div>
+                            <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">Type: ${q.type.toUpperCase()}</div>
+                        </td>
+                        <td style="width: 20%;">
+                            <div class="answer-content">
+                                <div style="font-size: 0.9rem;">${studentAnswer}</div>
+                                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 40px; background: linear-gradient(transparent, #fff); pointer-events: none;"></div>
+                            </div>
+                            <button class="view-full-btn" onclick='openModal("Your Answer", ${JSON.stringify(studentAnswer)})'>
+                                <span>⤢</span> View Full Answer
+                            </button>
+                        </td>
+                        <td style="width: 25%;">
+                            <div style="max-height: 80px; overflow-y: hidden; position: relative; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                <div style="font-size: 0.85rem; line-height: 1.4;">${solutionContent}</div>
+                                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 30px; background: linear-gradient(transparent, #f8fafc); pointer-events: none;"></div>
+                            </div>
+                            <button class="view-full-btn" onclick='openModal("Solution", ${JSON.stringify(solutionContent)})'>
+                                <span>⤢</span> View Full Solution
+                            </button>
+                        </td>
+                        <td style="text-align: center; white-space: nowrap; color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+                            ${timeStr}
+                        </td>
+                        <td style="width: 100px; text-align: right;">
+                            <span style="font-weight: 700;">${displayScore}</span> / ${maxScore}
+                            <br>
+                            ${status}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+
+
+            // Calculate Total Time
+            let totalSeconds = 0;
+            if (result.questionTimeData) {
+                totalSeconds = Object.values(result.questionTimeData).reduce((a, b) => a + b, 0);
+            }
+            const totalM = Math.floor(totalSeconds / 60);
+            const totalS = totalSeconds % 60;
+            const totalTimeStr = `${totalM}m ${totalS}s`;
+
+            const html = `
+                <div class="report-header">
+                    <div>
+                        <div class="report-title">Exam Report</div>
+                        <div style="color: #64748b;">Generated on ${date}</div>
+                    </div>
+                    <img src="../assets/img/Logo.png" style="height: 60px; width: auto;" alt="Logo">
+                </div>
+
+                <div class="meta-grid">
+                    <div style="padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
+                        <div class="meta-group">
+                            <h3>Student</h3>
+                            <p>${result.studentName}</p>
+                            <div style="font-size: 0.9rem; color: #64748b;">${session.branch || 'Unknown Branch'} - ${session.year || '?'} Year</div>
+                            <div style="font-size: 0.9rem; color: #64748b;">ID: ${result.studentId}</div>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
+                        <div class="meta-group">
+                            <h3>Exam Details</h3>
+                            <p>${exam.title}</p>
+                            <div style="font-size: 0.9rem; color: #64748b;">${exam.subject}</div>
+                            <div style="display:flex; gap:1rem; margin-top:0.5rem;">
+                                <div class="badge" style="background:#f1f5f9; border:1px solid #e2e8f0;">⏱ ${exam.duration} mins</div>
+                                <div class="badge" style="background:#f1f5f9; border:1px solid #e2e8f0;">📝 ${exam.questions.length} Questions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="score-summary">
+                    <h3 style="color: #64748b; margin-bottom: 0.5rem;">TOTAL SCORE</h3>
+                    <div class="big-score">${result.score}%</div>
+                    <div style="margin-top: 1rem; font-size: 1.1rem; font-weight: 500; color: #1e293b;">
+                        Total Time Taken: <span style="font-family:'JetBrains Mono';">${totalTimeStr}</span>
+                    </div>
+                    <p style="color: #64748b; margin-top: 0.5rem;">
+                        Raw Marks: <strong>${obtainedMarks}</strong> / ${totalMarks}
+                    </p>
+                </div>
+
+                <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0;">Detailed Breakdown</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">#</th>
+                            <th>Question</th>
+                            <th>Your Answer</th>
+                            <th style="width: 25%;">Solution</th>
+                            <th style="text-align: center;">Time Taken</th>
+                            <th style="text-align: right;">Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${qRows}
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 2rem; display: flex; justify-content: space-between; color: #64748b; font-size: 0.8rem;">
+                    <div>ExamiNation Portal</div>
+                    <div>Page 1 of 1</div>
+                </div>
+            `;
+
+            document.getElementById('reportContent').innerHTML = html;
+        }
+        // Modal Functions
+        window.openModal = function (title, content) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('answerModal').classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+        };
+
+        window.closeModal = function (e) {
+            if (e) e.stopPropagation();
+            document.getElementById('answerModal').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // Close on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') window.closeModal();
+        });
+    </script>
+</body>
+
+</html>
