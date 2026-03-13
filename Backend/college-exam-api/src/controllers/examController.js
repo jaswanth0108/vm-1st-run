@@ -29,6 +29,19 @@ const getExams = async (req, res, next) => {
     }
 };
 
+const getExamById = async (req, res, next) => {
+    try {
+        const examId = req.params.id;
+        const exam = await examService.getExamById(examId);
+        res.status(200).json({
+            success: true,
+            data: exam
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const addQuestions = async (req, res, next) => {
     try {
         const examId = req.params.id;
@@ -40,6 +53,26 @@ const addQuestions = async (req, res, next) => {
             success: true,
             data: result
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const updateExam = async (req, res, next) => {
+    try {
+        const examId = req.params.id;
+        const result = await examService.updateExam(examId, req.body);
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const deleteExam = async (req, res, next) => {
+    try {
+        const examId = req.params.id;
+        const result = await examService.deleteExam(examId);
+        res.status(200).json({ success: true, data: result });
     } catch (error) {
         next(error);
     }
@@ -71,6 +104,9 @@ const submitExam = async (req, res, next) => {
 module.exports = {
     createExam,
     getExams,
+    getExamById,
+    updateExam,
+    deleteExam,
     addQuestions,
     attemptExam,
     submitExam

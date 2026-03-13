@@ -24,6 +24,22 @@ class ExamService {
         }
     }
 
+    static async getExam(id) {
+        try {
+            const token = localStorage.getItem('college_exam_portal_token');
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch exam details');
+            const data = await response.json();
+            return data.data || data;
+        } catch (error) {
+            console.error('Error fetching exam:', error);
+            const exams = await this.getExams();
+            return exams.find(e => String(e.id) === String(id));
+        }
+    }
+
     static async saveExam(exam) {
         // Convert local format to backend expected format if necessary
         const payload = {
@@ -33,8 +49,14 @@ class ExamService {
         };
 
         const token = localStorage.getItem('college_exam_portal_token');
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
-            method: 'POST',
+        
+        // If ID is numeric (integer from DB), use PUT, else if it's "exam_..." (local) use POST
+        const isUpdate = !isNaN(exam.id) && String(exam.id).indexOf('exam_') === -1;
+        const method = isUpdate ? 'PUT' : 'POST';
+        const url = isUpdate ? `${window.CONFIG.API_BASE_URL}/api/exams/${exam.id}` : `${window.CONFIG.API_BASE_URL}/api/exams`;
+
+        const response = await fetch(url, {
+            method: method,
             headers: { 
                 'Content-Type': 'application/json', 
                 'Authorization': `Bearer ${token}` 
@@ -50,12 +72,37 @@ class ExamService {
         // Backup to localStorage for offline fallback
         const localData = localStorage.getItem(DB_EXAMS);
         const exams = localData ? JSON.parse(localData) : [];
-        const index = exams.findIndex(e => e.id === exam.id);
+        const index = exams.findIndex(e => String(e.id) === String(exam.id));
         if (index > -1) exams[index] = exam;
         else exams.push(exam);
         localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
         
         return data.data || data;
+    }
+
+    static async deleteExam(id) {
+        try {
+            const token = localStorage.getItem('college_exam_portal_token');
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete exam from server');
+
+            const localData = localStorage.getItem(DB_EXAMS);
+            const exams = localData ? JSON.parse(localData) : [];
+            const filtered = exams.filter(e => String(e.id) !== String(id));
+            localStorage.setItem(DB_EXAMS, JSON.stringify(filtered));
+            return true;
+        } catch (error) {
+            console.error('Error deleting exam:', error);
+            const localData = localStorage.getItem(DB_EXAMS);
+            const exams = localData ? JSON.parse(localData) : [];
+            const filtered = exams.filter(e => String(e.id) !== String(id));
+            localStorage.setItem(DB_EXAMS, JSON.stringify(filtered));
+            return false;
+        }
     }
 
     static async getExamById(id) {

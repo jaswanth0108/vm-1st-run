@@ -1820,8 +1820,13 @@
 
         async function triggerAction(action) {
             if (!selectedExamId) return;
-            const exams = await ExamService.getExams();
-            const exam = exams.find(e => e.id === selectedExamId);
+            
+            // Show loading or disable buttons?
+            const exam = await ExamService.getExam(selectedExamId);
+            if (!exam) {
+                alert('Could not load exam details.');
+                return;
+            }
 
             if (action === 'delete') {
                 if (confirm('Are you sure you want to delete this exam?')) {

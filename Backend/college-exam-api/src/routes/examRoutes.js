@@ -10,12 +10,26 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', examController.getExams);
+router.get('/:id', examController.getExamById);
 
 router.post(
     '/',
     restrictTo('Teacher', 'admin'),
     authValidator.validate(createExamSchema),
     examController.createExam
+);
+
+router.put(
+    '/:id',
+    restrictTo('Teacher', 'admin'),
+    authValidator.validate(createExamSchema),
+    examController.updateExam
+);
+
+router.delete(
+    '/:id',
+    restrictTo('Teacher', 'admin'),
+    examController.deleteExam
 );
 
 router.post(

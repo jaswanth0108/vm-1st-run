@@ -4,7 +4,7 @@ const reportService = require('./reportService');
 
 const createExam = async (teacherId, examData) => {
     // Admin dashboard sends: title, subject, branch, batch, duration, questions
-    const { title, subject, duration, questions, branch, batch, status } = examData;
+    const { title, subject, duration, questions, branch, batch, status, attemptLimit } = examData;
     
     // Admin dashboard sends 'admin_01' (string) - Postgres needs NULL for teacher_id
     const resolvedTeacherId = teacherId === 'admin_01' ? null : (Number.isInteger(Number(teacherId)) ? Number(teacherId) : null);
@@ -12,6 +12,7 @@ const createExam = async (teacherId, examData) => {
     // Map missing backend fields or provide defaults
     const description = subject || 'General Assessment';
     const duration_minutes = parseInt(duration) || 60;
+    const attempt_limit = parseInt(attemptLimit) || 1;
     const examStatus = status || 'published';
 
     // Use JSONB format for arrays
@@ -25,7 +26,6 @@ const createExam = async (teacherId, examData) => {
     if (new Date(start_time) >= new Date(end_time)) {
         throw new CustomError('Start time must be before end time', 400);
     }
-
     const connection = await pool.connect();
     
     try {
@@ -33,10 +33,10 @@ const createExam = async (teacherId, examData) => {
 
         const result = await connection.query(
             `INSERT INTO exams 
-            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes, status)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes, attempt_limit, status)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
             RETURNING id`,
-            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes, examStatus]
+            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes, attempt_limit, examStatus]
         );
 
         const examId = result.rows[0].id;
@@ -99,12 +99,138 @@ const getExams = async () => {
         branch: row.branch,
         batch: row.batch,
         duration: row.duration_minutes,
+        attemptLimit: row.attempt_limit,
         status: row.status,
         startTime: row.start_time,
         endTime: row.end_time,
         createdAt: row.created_at,
         questions: { length: parseInt(row.question_count) || 0 } // Mock object with length property
     }));
+};
+
+const getExamById = async (id) => {
+    const { rows: exams } = await pool.query(
+        'SELECT * FROM exams WHERE id = $1',
+        [id]
+    );
+
+    if (exams.length === 0) {
+        throw new CustomError('Exam not found', 404);
+    }
+
+    const exam = exams[0];
+
+    const { rows: questions } = await pool.query(
+        'SELECT * FROM questions WHERE exam_id = $1',
+        [id]
+    );
+
+    // Normalize questions to match frontend expectations
+    const normalizedQuestions = questions.map(q => ({
+        id: q.id,
+        type: q.type.toLowerCase(),
+        text: q.problem_statement,
+        options: q.mcq_options,
+        correct: q.correct_answer,
+        marks: q.marks,
+        hiddenCases: q.test_cases || []
+    }));
+
+    return {
+        id: exam.id,
+        title: exam.title,
+        subject: exam.description,
+        branch: exam.branch,
+        batch: exam.batch,
+        duration: exam.duration_minutes,
+        attemptLimit: exam.attempt_limit,
+        status: exam.status,
+        startTime: exam.start_time,
+        endTime: exam.end_time,
+        createdAt: exam.created_at,
+        questions: normalizedQuestions
+    };
+};
+
+const updateExam = async (examId, examData) => {
+    const { title, subject, duration, questions, branch, batch, status, attemptLimit } = examData;
+    const description = subject || 'General Assessment';
+    const duration_minutes = parseInt(duration) || 60;
+    const attempt_limit = parseInt(attemptLimit) || 1;
+    const examStatus = status || 'published';
+
+    const branchJson = Array.isArray(branch) ? JSON.stringify(branch) : JSON.stringify([branch || 'All']);
+    const batchJson = Array.isArray(batch) ? JSON.stringify(batch) : JSON.stringify([batch || 'All']);
+
+    const connection = await pool.connect();
+    try {
+        await connection.query('BEGIN');
+
+        await connection.query(
+            `UPDATE exams 
+             SET title = $1, description = $2, branch = $3, batch = $4, duration_minutes = $5, attempt_limit = $6, status = $7
+             WHERE id = $8`,
+            [title, description, branchJson, batchJson, duration_minutes, attempt_limit, examStatus, examId]
+        );
+
+        // Simple approach: Delete old questions and re-insert new ones
+        await connection.query('DELETE FROM questions WHERE exam_id = $1', [examId]);
+
+        if (questions && questions.length > 0) {
+            const values = [];
+            const placeholders = questions.map((q, i) => {
+                const base = i * 7;
+                const rawType = (q.type || 'MCQ').toLowerCase();
+                let normalizedType = 'MCQ';
+                if (rawType.includes('coding')) normalizedType = 'Coding';
+                else if (rawType.includes('mcq')) normalizedType = 'MCQ';
+                else normalizedType = 'Descriptive';
+
+                values.push(
+                    examId,
+                    normalizedType,
+                    q.text || q.problem_statement || 'No title',
+                    q.options ? JSON.stringify(q.options) : (q.mcq_options ? JSON.stringify(q.mcq_options) : null),
+                    q.correct || q.correct_answer || null,
+                    q.marks || 1,
+                    q.hiddenCases ? JSON.stringify(q.hiddenCases) : (q.test_cases ? JSON.stringify(q.test_cases) : null)
+                );
+                return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7})`;
+            }).join(', ');
+
+            await connection.query(
+                `INSERT INTO questions (exam_id, type, problem_statement, mcq_options, correct_answer, marks, test_cases)
+                 VALUES ${placeholders}`,
+                values
+            );
+        }
+
+        await connection.query('COMMIT');
+        return { message: 'Exam updated successfully' };
+    } catch (err) {
+        await connection.query('ROLLBACK');
+        throw err;
+    } finally {
+        connection.release();
+    }
+};
+
+const deleteExam = async (examId) => {
+    // Cascadng delete handled by database FK if possible, but let's be safe
+    const connection = await pool.connect();
+    try {
+        await connection.query('BEGIN');
+        await connection.query('DELETE FROM results WHERE exam_id = $1', [examId]);
+        await connection.query('DELETE FROM questions WHERE exam_id = $1', [examId]);
+        await connection.query('DELETE FROM exams WHERE id = $1', [examId]);
+        await connection.query('COMMIT');
+        return { message: 'Exam deleted successfully' };
+    } catch (err) {
+        await connection.query('ROLLBACK');
+        throw err;
+    } finally {
+        connection.release();
+    }
 };
 
 const addQuestions = async (examId, questions) => {
@@ -286,6 +412,9 @@ const submitExam = async (studentId, examId, answers) => {
 module.exports = {
     createExam,
     getExams,
+    getExamById,
+    updateExam,
+    deleteExam,
     addQuestions,
     attemptExam,
     submitExam
