@@ -92,3 +92,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS branch VARCHAR(50);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS year VARCHAR(10);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS section VARCHAR(10);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS batch VARCHAR(20);
+
+-- Fix question types constraint
+ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_type_check;
+ALTER TABLE questions ADD CONSTRAINT questions_type_check CHECK (type IN ('MCQ', 'Descriptive', 'Coding', 'mcq', 'coding', 'text'));

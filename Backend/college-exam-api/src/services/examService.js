@@ -45,9 +45,15 @@ const createExam = async (teacherId, examData) => {
             const values = [];
             const placeholders = questions.map((q, i) => {
                 const base = i * 7;
+                const rawType = (q.type || 'MCQ').toLowerCase();
+                let normalizedType = 'MCQ';
+                if (rawType.includes('coding')) normalizedType = 'Coding';
+                else if (rawType.includes('mcq')) normalizedType = 'MCQ';
+                else normalizedType = 'Descriptive'; // handles 'text' or 'descriptive'
+
                 values.push(
                     examId,
-                    q.type || 'MCQ',
+                    normalizedType,
                     q.text || q.problem_statement || 'No title',
                     q.options ? JSON.stringify(q.options) : (q.mcq_options ? JSON.stringify(q.mcq_options) : null),
                     q.correct || q.correct_answer || null,
