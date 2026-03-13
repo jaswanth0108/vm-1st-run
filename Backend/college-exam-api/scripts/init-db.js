@@ -6,16 +6,28 @@ require('dotenv').config();
 // Use the External Database URL from Render
 const connectionString = process.argv[2] || process.env.DATABASE_URL;
 
-if (!connectionString) {
-  console.error('Error: Please provide your External Database URL.');
-  console.log('Usage: node scripts/init-db.js "your_external_url_here"');
+if (!connectionString && !process.env.DB_HOST) {
+  console.error('Error: No database configuration found.');
+  console.log('Provide an External Database URL or set DB_HOST in your .env file.');
   process.exit(1);
 }
 
-const pool = new Pool({
+if (connectionString) console.log('Using provided Connection String.');
+else console.log(`Using Database Host: ${process.env.DB_HOST}`);
+
+const poolConfig = connectionString ? {
   connectionString: connectionString,
   ssl: { rejectUnauthorized: false }
-});
+} : {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: parseInt(process.env.DB_PORT) || 5432,
+  ssl: process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false
+};
+
+const pool = new Pool(poolConfig);
 
 async function initialize() {
   const sqlPath = path.join(__dirname, '../src/config/init.sql');

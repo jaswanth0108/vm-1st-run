@@ -35,8 +35,9 @@ class ExamService {
             return data.data || data;
         } catch (error) {
             console.error('Error fetching exam details:', error);
+            // Fallback: search in the list
             const exams = await this.getExams();
-            return exams.find(e => e.id === id);
+            return exams.find(e => String(e.id) === String(id));
         }
     }
 
