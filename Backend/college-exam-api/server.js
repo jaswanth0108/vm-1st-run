@@ -35,9 +35,11 @@ app.get('/api/ping', (req, res) => {
 const authRoutes = require('./src/routes/authRoutes');
 const examRoutes = require('./src/routes/examRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/users', userRoutes);
 
 // 404 Route Catcher
 app.use((req, res, next) => {

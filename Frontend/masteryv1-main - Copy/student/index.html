@@ -641,21 +641,20 @@
                         const studentBranch = String(session.branch || '').toUpperCase().trim();
 
                         // === Batch Matching ===
-                        // If student has no batch in session, show all exams (backend login doesn't store batch)
-                        let batchMatch = !studentBatch; // true if batch unknown - show everything
-                        if (studentBatch) {
+                        let batchMatch = !studentBatch || studentBatch === 'undefined'; 
+                        if (studentBatch && studentBatch !== 'undefined') {
                             if (Array.isArray(e.batch)) {
-                                batchMatch = e.batch.length === 0 || e.batch.some(b => String(b).trim() === studentBatch);
+                                const upperBatches = e.batch.map(b => String(b).toUpperCase().trim());
+                                batchMatch = upperBatches.length === 0 || upperBatches.includes('ALL') || upperBatches.some(b => b === studentBatch.toUpperCase());
                             } else {
-                                const examBatches = String(e.batch || '').split(',').map(b => b.trim()).filter(Boolean);
-                                batchMatch = examBatches.length === 0 || examBatches.includes(studentBatch);
+                                const examBatches = String(e.batch || '').toUpperCase().split(',').map(b => b.trim()).filter(Boolean);
+                                batchMatch = examBatches.length === 0 || examBatches.includes('ALL') || examBatches.includes(studentBatch.toUpperCase());
                             }
                         }
 
                         // === Branch Matching ===
-                        // If student has no branch in session, show all exams
-                        let branchMatch = !studentBranch; // true if branch unknown - show everything
-                        if (studentBranch) {
+                        let branchMatch = !studentBranch || studentBranch === 'undefined';
+                        if (studentBranch && studentBranch !== 'undefined') {
                             if (Array.isArray(e.branch)) {
                                 const upperBranches = e.branch.map(b => String(b).toUpperCase().trim());
                                 branchMatch = upperBranches.length === 0 || upperBranches.includes('ALL') || upperBranches.includes(studentBranch);

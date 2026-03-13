@@ -109,8 +109,14 @@ const loginUser = async (username, password, role) => {
     };
 };
 
+const getAllUsers = async () => {
+    const [rows] = await pool.execute('SELECT id, name, username, role, branch, year, section, batch FROM users ORDER BY name ASC');
+    return rows;
+};
+
 module.exports = {
     registerUser,
     bulkRegisterUsers,
-    loginUser
+    loginUser,
+    getAllUsers
 };

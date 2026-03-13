@@ -1225,36 +1225,51 @@
 
         // Render Recent Exams
         async function renderExamsList() {
-            const exams = await ExamService.getExams();
-            document.getElementById('stat-total-exams').innerText = exams.length;
+            try {
+                const exams = await ExamService.getExams();
+                document.getElementById('stat-total-exams').innerText = Array.isArray(exams) ? exams.length : 0;
 
-            // Update Total Students Count
-            const usersDB = await UserService.getUsers();
-            document.getElementById('stat-total-students').innerText = Object.keys(usersDB).length;
+                // Update Total Students Count (Optional, fallback to localStorage if API fails)
+                const usersDB = await UserService.getUsers();
+                document.getElementById('stat-total-students').innerText = Object.keys(usersDB || {}).length;
 
-            const list = document.getElementById('recentExamsList');
-            if (exams.length === 0) {
-                list.innerHTML = `
-                    <div style="text-align:center; padding: 2rem; border: 1px dashed var(--border); border-radius: 0.5rem; color: var(--text-muted);">
-                        <p style="margin-bottom:1rem;">No exams created yet.</p>
-                        <button class="btn btn-primary" onclick="switchTab('create_exam')">Create New Exam</button>
-                    </div>
-                `;
-                return;
+                const list = document.getElementById('recentExamsList');
+                if (!Array.isArray(exams) || exams.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align:center; padding: 2rem; border: 1px dashed var(--border); border-radius: 0.5rem; color: var(--text-muted);">
+                            <p style="margin-bottom:1rem;">No exams created yet.</p>
+                            <button class="btn btn-primary" onclick="switchTab('create_exam')">Create New Exam</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Descending createdAt (Safe sorting)
+                const sortedExams = [...exams].sort((a, b) => {
+                    const dateB = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    const dateA = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    return dateB - dateA;
+                });
+
+                list.innerHTML = sortedExams.map(exam => {
+                    if (!exam) return '';
+                    const qCount = exam.questions ? (exam.questions.length || 0) : 0;
+                    const status = exam.status || 'published';
+                    
+                    return `
+                        <div onclick="openActionModal('${exam.id}')" class="glass-panel" style="padding:1rem; border-left: 4px solid var(${status === 'published' ? '--success' : '--text-muted'}); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s;">
+                            <div>
+                                <h4 style="margin-bottom: 0.25rem;">${exam.title || 'Untitled Exam'}</h4>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">${exam.subject || 'No Subject'} • ${qCount} Questions</div>
+                            </div>
+                            <div class="badge ${status === 'published' ? 'badge-published' : 'badge-draft'}">${status}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error rendering exams:', error);
+                document.getElementById('recentExamsList').innerHTML = `<p style="color:var(--danger); text-align:center; padding:1rem;">Error loading exams. Please refresh.</p>`;
             }
-
-            // Descending createdAt (handle ISO strings or timestamps)
-            exams.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-            list.innerHTML = exams.map(exam => `
-                <div onclick="openActionModal('${exam.id}')" class="glass-panel" style="padding:1rem; border-left: 4px solid var(${exam.status === 'published' ? '--success' : '--text-muted'}); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s;">
-                    <div>
-                        <h4 style="margin-bottom: 0.25rem;">${exam.title}</h4>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">${exam.subject} • ${exam.questions.length} Questions</div>
-                    </div>
-                    <div class="badge ${exam.status === 'published' ? 'badge-published' : 'badge-draft'}">${exam.status}</div>
-                </div>
-            `).join('');
         }
 
         // Initialize Dashboard
