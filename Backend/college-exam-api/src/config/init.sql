@@ -83,5 +83,12 @@ CREATE TABLE IF NOT EXISTS reports (
     FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_exam ON reports(exam_id);
-CREATE INDEX IF NOT EXISTS idx_student ON reports(student_id);
+-- Migrations for existing tables (Ensures updates apply if tables already exist)
+ALTER TABLE exams ALTER COLUMN teacher_id DROP NOT NULL;
+ALTER TABLE exams ADD COLUMN IF NOT EXISTS branch JSONB DEFAULT '["All"]';
+ALTER TABLE exams ADD COLUMN IF NOT EXISTS batch JSONB DEFAULT '["All"]';
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS branch VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS year VARCHAR(10);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS section VARCHAR(10);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS batch VARCHAR(20);
