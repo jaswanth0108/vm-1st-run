@@ -14,7 +14,10 @@ const protect = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // { userId, role }
+        req.user = {
+            ...decoded,
+            role: decoded.role ? decoded.role.toLowerCase() : null
+        };
         next();
     } catch (error) {
         return next(new CustomError('Invalid token or token has expired. Please log in again.', 401));

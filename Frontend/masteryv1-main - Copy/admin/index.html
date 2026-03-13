@@ -1243,8 +1243,8 @@
                 return;
             }
 
-            // Descending createdAt
-            exams.sort((a, b) => b.createdAt - a.createdAt);
+            // Descending createdAt (handle ISO strings or timestamps)
+            exams.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
             list.innerHTML = exams.map(exam => `
                 <div onclick="openActionModal('${exam.id}')" class="glass-panel" style="padding:1rem; border-left: 4px solid var(${exam.status === 'published' ? '--success' : '--text-muted'}); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s;">

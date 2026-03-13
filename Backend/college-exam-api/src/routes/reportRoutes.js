@@ -7,8 +7,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/student/:examId', restrictTo('Student'), reportController.getStudentReport);
-router.get('/class/:examId', restrictTo('Teacher'), reportController.getClassResults);
-router.post('/generate/:submissionId', restrictTo('Teacher'), reportController.generateReport);
+router.get('/student/:examId', restrictTo('student'), reportController.getStudentReport);
+router.get('/class/:examId', restrictTo('teacher', 'admin'), reportController.getClassResults);
+router.post('/generate/:submissionId', restrictTo('teacher', 'admin'), reportController.generateReport);
 
 module.exports = router;
