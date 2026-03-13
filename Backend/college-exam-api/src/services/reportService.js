@@ -145,8 +145,28 @@ const getClassResults = async (examId) => {
     };
 };
 
+const getAllReports = async () => {
+    // Return format needs to match the frontend expectations e.g. [{ studentId, examId, score, ... }]
+    const result = await pool.query(`
+        SELECT * FROM reports
+    `);
+    
+    // Map db columns to JS properties
+    return result.rows.map(row => ({
+        id: row.id,
+        examId: row.exam_id,
+        studentId: row.student_id,
+        score: row.percentage,
+        totalMarks: row.total_marks,
+        percentage: row.percentage,
+        submissionId: row.submission_id,
+        timestamp: row.created_at ? new Date(row.created_at).getTime() : 0
+    }));
+};
+
 module.exports = {
     generateReport,
     getStudentReport,
-    getClassResults
+    getClassResults,
+    getAllReports
 };

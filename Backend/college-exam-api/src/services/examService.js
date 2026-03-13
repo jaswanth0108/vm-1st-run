@@ -73,7 +73,7 @@ const createExam = async (teacherId, examData) => {
         }
 
         await connection.query('COMMIT');
-        return { id: examId, ...examData };
+        return { ...examData, id: examId };
     } catch (err) {
         await connection.query('ROLLBACK');
         throw err;
@@ -206,11 +206,11 @@ const addQuestions = async (examId, questions) => {
         values.push(
             examId,
             q.type,
-            q.problem_statement,
-            q.mcq_options ? JSON.stringify(q.mcq_options) : null,
-            q.correct_answer || null,
+            q.text || q.problem_statement || 'No title',
+            q.options ? JSON.stringify(q.options) : (q.mcq_options ? JSON.stringify(q.mcq_options) : null),
+            q.correct || q.correct_answer || null,
             q.marks || 1,
-            q.test_cases ? JSON.stringify(q.test_cases) : null
+            q.hiddenCases ? JSON.stringify(q.hiddenCases) : (q.test_cases ? JSON.stringify(q.test_cases) : null)
         );
 
         return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7})`;

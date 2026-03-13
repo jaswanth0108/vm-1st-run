@@ -31,8 +31,18 @@ const getClassResults = async (req, res, next) => {
     }
 };
 
+const getAllReports = async (req, res, next) => {
+    try {
+        const data = await reportService.getAllReports();
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     generateReport,
     getStudentReport,
-    getClassResults
+    getClassResults,
+    getAllReports
 };

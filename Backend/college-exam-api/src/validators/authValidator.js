@@ -6,7 +6,11 @@ const registerSchema = z.object({
     password: z.string().min(6, "Password must be at least 6 characters long"),
     role: z.enum(['Student', 'Teacher'], {
         errorMap: () => ({ message: "Role must be either 'Student' or 'Teacher'" })
-    })
+    }),
+    branch: z.string().optional(),
+    year: z.string().optional(),
+    section: z.string().optional(),
+    batch: z.string().optional()
 });
 
 const bulkRegisterSchema = z.object({

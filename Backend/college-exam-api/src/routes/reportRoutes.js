@@ -10,5 +10,6 @@ router.use(protect);
 router.get('/student/:examId', restrictTo('student'), reportController.getStudentReport);
 router.get('/class/:examId', restrictTo('teacher', 'admin'), reportController.getClassResults);
 router.post('/generate/:submissionId', restrictTo('teacher', 'admin'), reportController.generateReport);
+router.get('/', restrictTo('teacher', 'admin'), reportController.getAllReports);
 
 module.exports = router;
