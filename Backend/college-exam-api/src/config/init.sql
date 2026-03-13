@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS exams (
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     duration_minutes INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'published',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -96,3 +97,6 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS batch VARCHAR(20);
 -- Fix question types constraint
 ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_type_check;
 ALTER TABLE questions ADD CONSTRAINT questions_type_check CHECK (type IN ('MCQ', 'Descriptive', 'Coding', 'mcq', 'coding', 'text'));
+
+-- Add status column to exams
+ALTER TABLE exams ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';

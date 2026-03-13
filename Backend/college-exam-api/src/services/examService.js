@@ -4,7 +4,7 @@ const reportService = require('./reportService');
 
 const createExam = async (teacherId, examData) => {
     // Admin dashboard sends: title, subject, branch, batch, duration, questions
-    const { title, subject, duration, questions, branch, batch } = examData;
+    const { title, subject, duration, questions, branch, batch, status } = examData;
     
     // Admin dashboard sends 'admin_01' (string) - Postgres needs NULL for teacher_id
     const resolvedTeacherId = teacherId === 'admin_01' ? null : (Number.isInteger(Number(teacherId)) ? Number(teacherId) : null);
@@ -12,6 +12,7 @@ const createExam = async (teacherId, examData) => {
     // Map missing backend fields or provide defaults
     const description = subject || 'General Assessment';
     const duration_minutes = parseInt(duration) || 60;
+    const examStatus = status || 'published';
 
     // Use JSONB format for arrays
     const branchJson = Array.isArray(branch) ? JSON.stringify(branch) : JSON.stringify([branch || 'All']);
@@ -32,10 +33,10 @@ const createExam = async (teacherId, examData) => {
 
         const result = await connection.query(
             `INSERT INTO exams 
-            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes, status)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
             RETURNING id`,
-            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes]
+            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes, examStatus]
         );
 
         const examId = result.rows[0].id;
@@ -83,11 +84,27 @@ const createExam = async (teacherId, examData) => {
 
 const getExams = async () => {
 
-    const { rows } = await pool.query(
-        'SELECT * FROM exams ORDER BY start_time DESC'
-    );
+    const { rows } = await pool.query(`
+        SELECT e.*, 
+        (SELECT COUNT(*) FROM questions q WHERE q.exam_id = e.id) as question_count
+        FROM exams e 
+        ORDER BY e.created_at DESC
+    `);
 
-    return rows;
+    // Normalize for frontend expectations (camelCase and mapping)
+    return rows.map(row => ({
+        id: row.id,
+        title: row.title,
+        subject: row.description,
+        branch: row.branch,
+        batch: row.batch,
+        duration: row.duration_minutes,
+        status: row.status,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        createdAt: row.created_at,
+        questions: { length: parseInt(row.question_count) || 0 } // Mock object with length property
+    }));
 };
 
 const addQuestions = async (examId, questions) => {
