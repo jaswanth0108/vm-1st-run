@@ -27,7 +27,7 @@ class ExamService {
         try {
             const token = localStorage.getItem('college_exam_portal_token');
             if (token) {
-                fetch('http://localhost:5000/api/exams', {
+                fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(exam)
@@ -52,7 +52,7 @@ class ExamService {
         try {
             const token = localStorage.getItem('college_exam_portal_token');
             if (token) {
-                fetch(`http://localhost:5000/api/exams/${id}`, {
+                fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).catch(() => {});
@@ -72,7 +72,7 @@ class ExamService {
         try {
             const token = localStorage.getItem('college_exam_portal_token');
             if (token) {
-                fetch('http://localhost:5000/api/exams/' + result.examId + '/submit', {
+                fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${result.examId}/submit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(result)
@@ -111,7 +111,7 @@ class UserService {
 
         try {
             const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch('http://localhost:5000/api/users', {
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Failed to fetch users');
@@ -145,7 +145,7 @@ class UserService {
                 role: 'Student'
             };
             // Mock backend saved users here, new backend registers
-            const response = await fetch('http://localhost:5000/api/auth/register', {
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ class UserService {
                 role: 'Student'
             }));
 
-            const response = await fetch('http://localhost:5000/api/auth/bulk-register', {
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/bulk-register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ class UserService {
     static async deleteUser(id) {
         try {
             const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
