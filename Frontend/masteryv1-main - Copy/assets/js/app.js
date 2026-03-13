@@ -9,31 +9,53 @@ const DB_RESULTS = 'ems_results';
 class ExamService {
     // --- Exams ---
     static async getExams() {
-        // localStorage is the primary store for exams (backend is secondary sync target)
-        const localData = localStorage.getItem(DB_EXAMS);
-        return localData ? JSON.parse(localData) : [];
+        try {
+            const token = localStorage.getItem('college_exam_portal_token');
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch exams');
+            const data = await response.json();
+            return data.data || data;
+        } catch (error) {
+            console.error('Error fetching exams:', error);
+            const localData = localStorage.getItem(DB_EXAMS);
+            return localData ? JSON.parse(localData) : [];
+        }
     }
 
     static async saveExam(exam) {
-        // Always save to localStorage immediately - this is the source of truth
+        // Convert local format to backend expected format if necessary
+        const payload = {
+            ...exam,
+            start_time: exam.startTime || new Date().toISOString(),
+            end_time: exam.endTime || new Date(Date.now() + (exam.duration || 60) * 60000).toISOString()
+        };
+
+        const token = localStorage.getItem('college_exam_portal_token');
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error?.message || 'Failed to sync exam to server');
+        }
+
+        // Backup to localStorage for offline fallback
         const localData = localStorage.getItem(DB_EXAMS);
         const exams = localData ? JSON.parse(localData) : [];
         const index = exams.findIndex(e => e.id === exam.id);
         if (index > -1) exams[index] = exam;
         else exams.push(exam);
         localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
-
-        // Optionally sync to backend (non-blocking, silent fail)
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            if (token) {
-                fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify(exam)
-                }).catch(() => {}); // Silent fail - localStorage already saved
-            }
-        } catch (e) { /* silent */ }
+        
+        return data.data || data;
     }
 
     static async getExamById(id) {
@@ -62,29 +84,46 @@ class ExamService {
 
     // --- Results ---
     static async submitResult(result) {
-        // ALWAYS save to localStorage FIRST — this is the only reliable store
-        const data = localStorage.getItem(DB_RESULTS);
-        const results = data ? JSON.parse(data) : [];
+        const token = localStorage.getItem('college_exam_portal_token');
+        const examId = result.examId || result.id;
+        
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${examId}/submit`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(result)
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error?.message || 'Failed to submit exam');
+        }
+
+        // Save to local backup
+        const localData = localStorage.getItem(DB_RESULTS);
+        const results = localData ? JSON.parse(localData) : [];
         results.push(result);
         localStorage.setItem(DB_RESULTS, JSON.stringify(results));
-
-        // Optionally attempt backend sync (fire-and-forget, result is already safe)
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            if (token) {
-                fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${result.examId}/submit`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify(result)
-                }).catch(() => {});
-            }
-        } catch (e) { /* silent */ }
+        
+        return data;
     }
 
     static async getResults() {
-        // localStorage is the primary store for results
-        const data = localStorage.getItem(DB_RESULTS);
-        return data ? JSON.parse(data) : [];
+        try {
+            const token = localStorage.getItem('college_exam_portal_token');
+            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/reports`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch results');
+            const data = await response.json();
+            return data.data || data;
+        } catch (error) {
+            console.error('Error fetching results:', error);
+            const data = localStorage.getItem(DB_RESULTS);
+            return data ? JSON.parse(data) : [];
+        }
     }
 
     static async getStudentResults(studentId) {

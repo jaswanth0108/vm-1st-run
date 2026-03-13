@@ -15,14 +15,16 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS exams (
     id SERIAL PRIMARY KEY,
-    teacher_id INT NOT NULL,
+    teacher_id INT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
+    branch JSONB DEFAULT '["All"]',
+    batch JSONB DEFAULT '["All"]',
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     duration_minutes INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS questions (

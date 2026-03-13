@@ -1768,14 +1768,16 @@
                 createdAt: Date.now()
             };
 
-            await ExamService.saveExam(exam);
-
-            alert(`Exam ${status === 'published' ? 'Published' : 'Saved as Draft'} Successfully!`);
-
-            // Reset & Switch
-            resetCreateForm();
-            switchTab('dashboard');
-            renderExamsList();
+            try {
+                await ExamService.saveExam(exam);
+                alert(`Exam ${status === 'published' ? 'Published' : 'Saved as Draft'} Successfully!`);
+                // Reset & Switch
+                resetCreateForm();
+                switchTab('dashboard');
+                renderExamsList();
+            } catch (error) {
+                alert('Error publishing exam: ' + error.message);
+            }
         }
 
         function resetCreateForm() {

@@ -4,14 +4,18 @@ const reportService = require('./reportService');
 
 const createExam = async (teacherId, examData) => {
     // Admin dashboard sends: title, subject, branch, batch, duration, questions
-    const { title, subject, duration, questions } = examData;
+    const { title, subject, duration, questions, branch, batch } = examData;
     
-    // Admin bypass uses 'admin_01' (string) — Postgres needs an integer or NULL
-    const resolvedTeacherId = Number.isInteger(Number(teacherId)) && !isNaN(Number(teacherId)) ? Number(teacherId) : null;
+    // Admin dashboard sends 'admin_01' (string) - Postgres needs NULL for teacher_id
+    const resolvedTeacherId = teacherId === 'admin_01' ? null : (Number.isInteger(Number(teacherId)) ? Number(teacherId) : null);
     
     // Map missing backend fields or provide defaults
     const description = subject || 'General Assessment';
     const duration_minutes = parseInt(duration) || 60;
+
+    // Use JSONB format for arrays
+    const branchJson = Array.isArray(branch) ? JSON.stringify(branch) : JSON.stringify([branch || 'All']);
+    const batchJson = Array.isArray(batch) ? JSON.stringify(batch) : JSON.stringify([batch || 'All']);
     
     // For start/end time, if frontend doesn't provide them, default to now + duration
     const start_time = examData.start_time || new Date();
@@ -28,10 +32,10 @@ const createExam = async (teacherId, examData) => {
 
         const result = await connection.query(
             `INSERT INTO exams 
-            (teacher_id, title, description, start_time, end_time, duration_minutes)
-            VALUES ($1,$2,$3,$4,$5,$6)
+            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
             RETURNING id`,
-            [resolvedTeacherId, title, description, start_time, end_time, duration_minutes]
+            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes]
         );
 
         const examId = result.rows[0].id;
