@@ -103,7 +103,9 @@ async function handleLogin(event) {
       window.location.href = "student/index.html";
     }
   } else {
-    alert(result.message);
+    // Improved error alert: handle objects or strings
+    const errMsg = result.message;
+    alert(typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg);
     // Clear inputs on failure
     document.getElementById("username").value = "";
     document.getElementById("password").value = "";

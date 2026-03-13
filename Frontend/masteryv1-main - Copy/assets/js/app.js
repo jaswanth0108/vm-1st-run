@@ -142,7 +142,11 @@ class UserService {
                 name: user.name || 'Student',
                 username: user.id || user.username,
                 password: user.password,
-                role: 'Student'
+                role: 'Student',
+                branch: user.branch,
+                year: user.year,
+                section: user.section,
+                batch: user.batch
             };
             // Mock backend saved users here, new backend registers
             const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/register`, {
@@ -153,7 +157,9 @@ class UserService {
                 },
                 body: JSON.stringify(payload)
             });
-            if (!response.ok) throw new Error('Failed to save user');
+            
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || data.error?.message || 'Failed to save user');
 
             // Update local fallback
             const users = await this.getUsers();
@@ -174,11 +180,15 @@ class UserService {
         try {
             const token = localStorage.getItem('college_exam_portal_token');
 
-            const bulkPayload = Object.values(newUsers).map(u => ({
-                name: u.name || 'Student',
-                username: u.id || u.username,
+            const usersArray = Object.values(newUsers).map(u => ({
+                name: u.name,
+                username: u.id,
                 password: u.password,
-                role: 'Student'
+                role: 'Student',
+                branch: u.branch,
+                year: u.year,
+                section: u.section,
+                batch: u.batch
             }));
 
             const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/bulk-register`, {
@@ -187,9 +197,11 @@ class UserService {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ users: bulkPayload })
+                body: JSON.stringify({ users: usersArray })
             });
-            if (!response.ok) throw new Error('Failed to save bulk users');
+            
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || data.error?.message || 'Failed to bulk save users');
 
             // Update local fallback
             const users = await this.getUsers();

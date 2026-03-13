@@ -6,6 +6,10 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) CHECK (role IN ('Student', 'Teacher', 'admin')) NOT NULL,
+    branch VARCHAR(50),
+    year VARCHAR(10),
+    section VARCHAR(10),
+    batch VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

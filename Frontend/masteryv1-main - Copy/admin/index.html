@@ -2245,9 +2245,13 @@
             if (successCount === 0) {
                 alert(`No students were added. \n\nPlease check your column headers.\nFound Headers: ${headersFound.join(", ")}\n\nExpected columns like: StudentID, Password, Name, Branch, Section.`);
             } else {
-                await UserService.saveUsersBulk(newUsersToSave);
-                alert(`Successfully imported/updated ${successCount} students!`);
-                renderStudents();
+                try {
+                    await UserService.saveUsersBulk(newUsersToSave);
+                    alert(`Successfully imported/updated ${successCount} students!`);
+                    renderStudents();
+                } catch (error) {
+                    alert('Error saving students: ' + error.message);
+                }
             }
         }
 
@@ -2385,11 +2389,14 @@
                 addedAt: addedAt
             };
 
-            await UserService.saveUser(newUser);
-
-            alert(isEditingStudent ? 'Student updated successfully!' : 'Student added successfully!');
-            closeAddStudentModal();
-            renderStudents();
+            try {
+                await UserService.saveUser(newUser);
+                alert(isEditingStudent ? 'Student updated successfully!' : 'Student added successfully!');
+                closeAddStudentModal();
+                renderStudents();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
         }
 
         // Init Data

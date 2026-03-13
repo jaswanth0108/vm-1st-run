@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const CustomError = require('../utils/customError');
 
-const registerUser = async (name, username, password, role) => {
-    const [rows] = await pool.execute('SELECT id FROM users WHERE username = $1', [username]);
+const registerUser = async (name, username, password, role, profile = {}) => {
+    const { rows } = await pool.execute('SELECT id FROM users WHERE username = $1', [username]);
     if (rows.length > 0) {
         throw new CustomError('Username already registered', 400);
     }
@@ -12,12 +12,14 @@ const registerUser = async (name, username, password, role) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    const { branch, year, section, batch } = profile;
+
     const [result] = await pool.execute(
-        'INSERT INTO users (name, username, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id',
-        [name, username, passwordHash, role]
+        'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+        [name, username, passwordHash, role, branch, year, section, batch]
     );
 
-    return { id: result.insertId, name, username, role };
+    return { id: result.id, name, username, role, ...profile };
 };
 
 const bulkRegisterUsers = async (users) => {
@@ -29,7 +31,7 @@ const bulkRegisterUsers = async (users) => {
         let skippedCount = 0;
 
         for (const user of users) {
-            const { name, username, password, role } = user;
+            const { name, username, password, role, branch, year, section, batch } = user;
 
             // Check if user exists
             const { rows } = await connection.query('SELECT id FROM users WHERE username = $1', [username]);
@@ -43,8 +45,8 @@ const bulkRegisterUsers = async (users) => {
             const passwordHash = await bcrypt.hash(password, salt);
 
             await connection.query(
-                'INSERT INTO users (name, username, password_hash, role) VALUES ($1, $2, $3, $4)',
-                [name, username, passwordHash, role]
+                'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                [name, username, passwordHash, role, branch, year, section, batch]
             );
 
             successCount++;
