@@ -1769,14 +1769,16 @@
             };
 
             try {
-                await ExamService.saveExam(exam);
+                const result = await ExamService.saveExam(exam);
                 alert(`Exam ${status === 'published' ? 'Published' : 'Saved as Draft'} Successfully!`);
+                
                 // Reset & Switch
                 resetCreateForm();
                 switchTab('dashboard');
                 renderExamsList();
             } catch (error) {
-                alert('Error publishing exam: ' + error.message);
+                console.error('Publish error:', error);
+                alert('CRITICAL ERROR: Could not save exam to the server.\n\nReason: ' + error.message + '\n\nNote: Make sure you have run the database update script (init-db.js) on your computer.');
             }
         }
 

@@ -95,7 +95,16 @@ const loginUser = async (username, password, role) => {
     );
 
     return {
-        user: { id: user.id, name: user.name, username: user.username, role: user.role },
+        user: { 
+            id: user.id, 
+            name: user.name, 
+            username: user.username, 
+            role: user.role,
+            branch: user.branch,
+            year: user.year,
+            section: user.section,
+            batch: user.batch
+        },
         token
     };
 };
