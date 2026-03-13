@@ -1820,9 +1820,7 @@
 
         async function triggerAction(action) {
             if (!selectedExamId) return;
-            
-            // Show loading or disable buttons?
-            const exam = await ExamService.getExam(selectedExamId);
+            const exam = await ExamService.getExamById(selectedExamId);
             if (!exam) {
                 alert('Could not load exam details.');
                 return;

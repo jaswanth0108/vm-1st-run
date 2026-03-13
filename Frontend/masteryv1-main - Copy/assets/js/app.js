@@ -24,7 +24,7 @@ class ExamService {
         }
     }
 
-    static async getExam(id) {
+    static async getExamById(id) {
         try {
             const token = localStorage.getItem('college_exam_portal_token');
             const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
@@ -34,9 +34,9 @@ class ExamService {
             const data = await response.json();
             return data.data || data;
         } catch (error) {
-            console.error('Error fetching exam:', error);
+            console.error('Error fetching exam details:', error);
             const exams = await this.getExams();
-            return exams.find(e => String(e.id) === String(id));
+            return exams.find(e => e.id === id);
         }
     }
 
@@ -49,11 +49,9 @@ class ExamService {
         };
 
         const token = localStorage.getItem('college_exam_portal_token');
-        
-        // If ID is numeric (integer from DB), use PUT, else if it's "exam_..." (local) use POST
-        const isUpdate = !isNaN(exam.id) && String(exam.id).indexOf('exam_') === -1;
-        const method = isUpdate ? 'PUT' : 'POST';
+        const isUpdate = !!exam.id && !String(exam.id).startsWith('exam_');
         const url = isUpdate ? `${window.CONFIG.API_BASE_URL}/api/exams/${exam.id}` : `${window.CONFIG.API_BASE_URL}/api/exams`;
+        const method = isUpdate ? 'PUT' : 'POST';
 
         const response = await fetch(url, {
             method: method,
@@ -72,7 +70,7 @@ class ExamService {
         // Backup to localStorage for offline fallback
         const localData = localStorage.getItem(DB_EXAMS);
         const exams = localData ? JSON.parse(localData) : [];
-        const index = exams.findIndex(e => String(e.id) === String(exam.id));
+        const index = exams.findIndex(e => e.id === exam.id);
         if (index > -1) exams[index] = exam;
         else exams.push(exam);
         localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
@@ -87,48 +85,19 @@ class ExamService {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (!response.ok) throw new Error('Failed to delete exam');
             
-            if (!response.ok) throw new Error('Failed to delete exam from server');
-
+            // Sync local backup
             const localData = localStorage.getItem(DB_EXAMS);
-            const exams = localData ? JSON.parse(localData) : [];
-            const filtered = exams.filter(e => String(e.id) !== String(id));
-            localStorage.setItem(DB_EXAMS, JSON.stringify(filtered));
+            if (localData) {
+                const exams = JSON.parse(localData).filter(e => e.id !== id);
+                localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
+            }
             return true;
         } catch (error) {
             console.error('Error deleting exam:', error);
-            const localData = localStorage.getItem(DB_EXAMS);
-            const exams = localData ? JSON.parse(localData) : [];
-            const filtered = exams.filter(e => String(e.id) !== String(id));
-            localStorage.setItem(DB_EXAMS, JSON.stringify(filtered));
             return false;
         }
-    }
-
-    static async getExamById(id) {
-        const exams = await this.getExams();
-        return exams.find(e => e.id === id);
-    }
-
-    static async deleteExam(id) {
-        // Always delete from localStorage immediately
-        const data = localStorage.getItem(DB_EXAMS);
-        const exams = data ? JSON.parse(data) : [];
-        const newExams = exams.filter(e => e.id !== id);
-        localStorage.setItem(DB_EXAMS, JSON.stringify(newExams));
-
-        // Optionally sync delete to backend silently
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            if (token) {
-                fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }).catch(() => {});
-            }
-        } catch (e) { /* silent */ }
-    }
-
     // --- Results ---
     static async submitResult(result) {
         const token = localStorage.getItem('college_exam_portal_token');

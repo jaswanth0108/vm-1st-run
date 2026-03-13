@@ -14,32 +14,31 @@ router.get('/:id', examController.getExamById);
 
 router.post(
     '/',
-    restrictTo('Teacher', 'admin'),
+    restrictTo('teacher', 'admin'),
     authValidator.validate(createExamSchema),
     examController.createExam
 );
 
 router.put(
     '/:id',
-    restrictTo('Teacher', 'admin'),
-    authValidator.validate(createExamSchema),
+    restrictTo('teacher', 'admin'),
     examController.updateExam
 );
 
 router.delete(
     '/:id',
-    restrictTo('Teacher', 'admin'),
+    restrictTo('teacher', 'admin'),
     examController.deleteExam
 );
 
 router.post(
     '/:id/questions',
-    restrictTo('Teacher', 'admin'),
+    restrictTo('teacher', 'admin'),
     authValidator.validate(addQuestionsSchema),
     examController.addQuestions
 );
 
-router.post('/:id/attempt', restrictTo('Student'), examController.attemptExam);
-router.post('/:id/submit', restrictTo('Student'), authValidator.validate(submitExamSchema), examController.submitExam);
+router.post('/:id/attempt', restrictTo('student'), examController.attemptExam);
+router.post('/:id/submit', restrictTo('student'), authValidator.validate(submitExamSchema), examController.submitExam);
 
 module.exports = router;

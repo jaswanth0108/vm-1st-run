@@ -23,14 +23,10 @@ CREATE TABLE IF NOT EXISTS exams (
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     duration_minutes INT NOT NULL,
-    attempt_limit INT DEFAULT 1,
     status VARCHAR(20) DEFAULT 'published',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL
 );
-...
--- Migration: Add attempt_limit to exams
-ALTER TABLE exams ADD COLUMN IF NOT EXISTS attempt_limit INT DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS questions (
     id SERIAL PRIMARY KEY,
