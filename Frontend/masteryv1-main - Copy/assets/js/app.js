@@ -98,6 +98,8 @@ class ExamService {
             console.error('Error deleting exam:', error);
             return false;
         }
+    }
+
     // --- Results ---
     static async submitResult(result) {
         const token = localStorage.getItem('college_exam_portal_token');
