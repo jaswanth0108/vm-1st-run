@@ -41,14 +41,6 @@ app.use('/api/exams', examRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 
-// 404 Route Catcher
-app.use((req, res, next) => {
-    next(new CustomError(`Can't find ${req.originalUrl} on this server!`, 404));
-});
-
-// Global Error Handler
-app.use(errorHandler);
-
 // Temporary DB Init Route
 app.get('/api/init-db', async (req, res) => {
     try {
@@ -63,6 +55,14 @@ app.get('/api/init-db', async (req, res) => {
         res.status(500).send('Error initializing database: ' + e.message);
     }
 });
+
+// 404 Route Catcher
+app.use((req, res, next) => {
+    next(new CustomError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+// Global Error Handler
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT} in ${process.env.NODE_ENV} mode`);
