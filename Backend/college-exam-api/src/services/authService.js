@@ -4,8 +4,8 @@ const pool = require('../config/db');
 const CustomError = require('../utils/customError');
 
 const registerUser = async (name, username, password, role, profile = {}) => {
-    const { rows } = await pool.execute('SELECT id FROM users WHERE username = $1', [username]);
-    if (rows.length > 0) {
+    const { rows: existing } = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+    if (existing.length > 0) {
         throw new CustomError('Username already registered', 400);
     }
 
@@ -14,12 +14,12 @@ const registerUser = async (name, username, password, role, profile = {}) => {
 
     const { branch, year, section, batch } = profile;
 
-    const [result] = await pool.execute(
+    const { rows } = await pool.query(
         'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
         [name, username, passwordHash, role, branch, year, section, batch]
     );
 
-    return { id: result.id, name, username, role, ...profile };
+    return { id: rows[0].id, name, username, role, ...profile };
 };
 
 const bulkRegisterUsers = async (users) => {
@@ -76,7 +76,7 @@ const loginUser = async (username, password, role) => {
         };
     }
 
-    const [rows] = await pool.execute('SELECT * FROM users WHERE username = $1', [username]);
+    const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     if (rows.length === 0) {
         throw new CustomError('Invalid username or password', 401);
     }
@@ -110,7 +110,7 @@ const loginUser = async (username, password, role) => {
 };
 
 const getAllUsers = async () => {
-    const [rows] = await pool.execute('SELECT id, name, username, role, branch, year, section, batch FROM users ORDER BY name ASC');
+    const { rows } = await pool.query('SELECT id, name, username, role, branch, year, section, batch FROM users ORDER BY name ASC');
     return rows;
 };
 
