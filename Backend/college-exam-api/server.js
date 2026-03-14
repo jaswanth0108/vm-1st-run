@@ -49,6 +49,21 @@ app.use((req, res, next) => {
 // Global Error Handler
 app.use(errorHandler);
 
+// Temporary DB Init Route
+app.get('/api/init-db', async (req, res) => {
+    try {
+        const pool = require('./src/config/db');
+        const fs = require('fs');
+        const path = require('path');
+        const sql = fs.readFileSync(path.join(__dirname, 'src/config/init.sql'), 'utf8');
+        await pool.query(sql);
+        res.status(200).send('Database initialized successfully from init.sql');
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error initializing database: ' + e.message);
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
