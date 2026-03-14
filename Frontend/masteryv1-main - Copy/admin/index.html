@@ -1902,15 +1902,15 @@
 
             // Fetch Exam & Results
             const exams = await ExamService.getExams();
-            const exam = exams.find(e => e.id === examId);
+            const exam = exams.find(e => String(e.id) === String(examId));
             currentReportExam = exam;
 
             document.getElementById('reportExamTitle').innerText = exam.title;
 
             // Get Results
-            // Get Results (All attempts)
             const allResultsFetcher = await ExamService.getResults();
-            const allResults = allResultsFetcher.filter(r => r.examId === examId);
+            const allResults = allResultsFetcher.filter(r => String(r.examId) === String(examId));
+
 
             // Filter: Keep only LATEST attempt per student
             const latestResultsMap = {};
@@ -2052,21 +2052,20 @@
 
             // Map Results to these groups
             currentReportResults.forEach(r => {
-                const student = usersDB[r.studentId];
-                if (student) {
-                    const sBranch = String(student.branch || 'Unknown').trim().toUpperCase();
-                    const sBatch = String(student.batch || 'Unknown').trim();
-                    const key = `${sBranch}|${sBatch}`;
+                const student = usersDB[String(r.username || '').toUpperCase()] || { branch: 'Unknown', batch: 'Unknown' };
+                const sBranch = String(student.branch || 'Unknown').trim().toUpperCase();
+                const sBatch = String(student.batch || 'Unknown').trim();
+                const key = `${sBranch}|${sBatch}`;
 
-                    if (!branchBatchData[key]) {
-                        // Fallback if student wasn't in original 'selected' list (e.g. metadata changed)
-                        branchBatchData[key] = { branch: sBranch, batch: sBatch, total: 0, attempted: 0, passed: 0 };
-                    }
 
-                    branchBatchData[key].attempted++;
-                    if (r.score >= 40) {
-                        branchBatchData[key].passed++;
-                    }
+                if (!branchBatchData[key]) {
+                    // Fallback if student wasn't in original 'selected' list (e.g. metadata changed)
+                    branchBatchData[key] = { branch: sBranch, batch: sBatch, total: 0, attempted: 0, passed: 0 };
+                }
+
+                branchBatchData[key].attempted++;
+                if (r.score >= 40) {
+                    branchBatchData[key].passed++;
                 }
             });
 

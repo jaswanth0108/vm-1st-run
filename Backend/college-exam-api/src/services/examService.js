@@ -33,10 +33,10 @@ const createExam = async (teacherId, examData) => {
 
         const result = await connection.query(
             `INSERT INTO exams 
-            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes, status)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            (teacher_id, title, description, branch, batch, start_time, end_time, duration_minutes, status, attempt_limit)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
             RETURNING id`,
-            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes, examStatus]
+            [resolvedTeacherId, title, description, branchJson, batchJson, start_time, end_time, duration_minutes, examStatus, examData.attemptLimit || examData.attempt_limit || 1]
         );
 
         const examId = result.rows[0].id;
@@ -93,19 +93,21 @@ const getExams = async () => {
 
     // Normalize for frontend expectations (camelCase and mapping)
     return rows.map(row => ({
-        id: row.id,
+        id: row.id,           // Keep as integer — frontend must use String() or == for comparison
         title: row.title,
         subject: row.description,
         branch: row.branch,
         batch: row.batch,
         duration: row.duration_minutes,
         status: row.status,
+        attemptLimit: row.attempt_limit || 1,
         startTime: row.start_time,
         endTime: row.end_time,
         createdAt: row.created_at,
         questions: { length: parseInt(row.question_count) || 0 }
     }));
 };
+
 
 const getExamById = async (examId) => {
     const { rows: exams } = await pool.query(
@@ -170,6 +172,7 @@ const updateExam = async (examId, examData) => {
     const { title, subject, duration, branch, batch, status } = examData;
     const description = subject || 'General Assessment';
     const duration_minutes = parseInt(duration) || 60;
+    const attempt_limit = examData.attemptLimit || examData.attempt_limit || 1;
     
     // Safely serialize branch and batch to JSON strings
     const branchJson = Array.isArray(branch) ? JSON.stringify(branch) : JSON.stringify([branch || 'All']);
@@ -177,8 +180,8 @@ const updateExam = async (examId, examData) => {
     
     // Update basic details
     await pool.query(
-        `UPDATE exams SET title = $1, description = $2, duration_minutes = $3, branch = $4, batch = $5, status = $6 WHERE id = $7`,
-        [title, description, duration_minutes, branchJson, batchJson, status, examId]
+        `UPDATE exams SET title = $1, description = $2, duration_minutes = $3, branch = $4, batch = $5, status = $6, attempt_limit = $7 WHERE id = $8`,
+        [title, description, duration_minutes, branchJson, batchJson, status, attempt_limit, examId]
     );
 
     // If questions are provided, replace them

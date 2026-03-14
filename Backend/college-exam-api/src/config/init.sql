@@ -100,3 +100,7 @@ ALTER TABLE questions ADD CONSTRAINT questions_type_check CHECK (type IN ('MCQ',
 
 -- Add status column to exams
 ALTER TABLE exams ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';
+
+-- Add attempt limit column to exams
+ALTER TABLE exams ADD COLUMN IF NOT EXISTS attempt_limit INT DEFAULT 1;
+

@@ -146,16 +146,19 @@ const getClassResults = async (examId) => {
 };
 
 const getAllReports = async () => {
-    // Return format needs to match the frontend expectations e.g. [{ studentId, examId, score, ... }]
+    // JOIN with users to get username and name directly
     const result = await pool.query(`
-        SELECT * FROM reports
+        SELECT r.*, u.username, u.name as student_name
+        FROM reports r
+        JOIN users u ON r.student_id = u.id
     `);
     
-    // Map db columns to JS properties
     return result.rows.map(row => ({
         id: row.id,
         examId: row.exam_id,
         studentId: row.student_id,
+        username: row.username,
+        studentName: row.student_name,
         score: row.percentage,
         totalMarks: row.total_marks,
         percentage: row.percentage,

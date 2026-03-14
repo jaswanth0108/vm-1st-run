@@ -772,8 +772,9 @@
 
             // Check attempt limit immediately to prevent "restarts" (e.g., from dev-server reloads)
             const studentResults = await ExamService.getStudentResults(session.id);
-            const previousAttempts = studentResults.filter(r => r.examId === examId);
+            const previousAttempts = studentResults.filter(r => String(r.examId) === String(examId));
             const limit = currentExam.attemptLimit || 1;
+
 
             if (limit !== -1 && previousAttempts.length >= limit) {
                 alert('You have reached the maximum number of attempts for this exam.');

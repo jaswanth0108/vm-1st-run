@@ -610,7 +610,7 @@
                 });
 
                 averages.sort((a, b) => b.avg - a.avg);
-                const myRankIndex = averages.findIndex(a => a.sid === session.id);
+                const myRankIndex = averages.findIndex(a => String(a.sid) === String(session.id));
                 if (myRankIndex > -1) {
                     rank = `#${myRankIndex + 1}`;
                     const p = ((averages.length - myRankIndex) / averages.length) * 100;
@@ -675,9 +675,9 @@
                     </div>`;
                 } else {
                     container.innerHTML = filteredExams.map(exam => {
-                        const isTaken = results.some(r => r.examId === exam.id);
+                        const isTaken = results.some(r => String(r.examId) === String(exam.id));
                         const isDraft = exam.status !== 'published';
-                        const attempts = results.filter(r => r.examId === exam.id);
+                        const attempts = results.filter(r => String(r.examId) === String(exam.id));
                         const attemptCount = attempts.length;
                         const limit = exam.attemptLimit || 1;
                         const canAttempt = limit === -1 || attemptCount < limit;
