@@ -13,15 +13,9 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// Wrapper to mimic mysql2's pool.execute so we don't have to change 
-// the word "execute" everywhere in our service files.
-pool.execute = async (text, params) => {
-  const { rows, command } = await pool.query(text, params);
-  // Mimic MySQL insertId structure
-  if (command === 'INSERT' && rows.length > 0) {
-    return [{ insertId: rows[0].id }, null];
-  }
-  return [rows, null];
-};
+// Wrapper to mimic mysql2's pool.execute — now a safe passthrough to pool.query
+// so any legacy callers still work with standard pg { rows } destructuring
+pool.execute = (text, params) => pool.query(text, params);
+
 
 module.exports = pool;
