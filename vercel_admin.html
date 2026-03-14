@@ -1339,7 +1339,6 @@
                     <strong>${type.toUpperCase()} Question</strong>
                     <button style="color:var(--danger); background:none; border:none;" onclick="this.parentElement.parentElement.remove()">Remove</button>
                 </div>
-                <input type="hidden" class="q-type" value="${type}">
                 <textarea class="input-field q-text" placeholder="Enter question text..." rows="3" style="margin-bottom:1rem;">${q.text}</textarea>
                 ${type === 'mcq' ? `
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;">

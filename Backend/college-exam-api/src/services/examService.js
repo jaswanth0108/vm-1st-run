@@ -171,10 +171,14 @@ const updateExam = async (examId, examData) => {
     const description = subject || 'General Assessment';
     const duration_minutes = parseInt(duration) || 60;
     
+    // Safely serialize branch and batch to JSON strings
+    const branchJson = Array.isArray(branch) ? JSON.stringify(branch) : JSON.stringify([branch || 'All']);
+    const batchJson = Array.isArray(batch) ? JSON.stringify(batch) : JSON.stringify([batch || 'All']);
+    
     // Update basic details
     await pool.query(
         `UPDATE exams SET title = $1, description = $2, duration_minutes = $3, branch = $4, batch = $5, status = $6 WHERE id = $7`,
-        [title, description, duration_minutes, JSON.stringify(branch), JSON.stringify(batch), status, examId]
+        [title, description, duration_minutes, branchJson, batchJson, status, examId]
     );
 
     // If questions are provided, replace them
@@ -202,10 +206,17 @@ const addQuestions = async (examId, questions) => {
     const placeholders = questions.map((q, i) => {
 
         const base = i * 7;
+        
+        // Normalize type to match DB CHECK constraint: 'MCQ', 'Descriptive', 'Coding'
+        const rawType = (q.type || 'MCQ').toLowerCase();
+        let normalizedType = 'MCQ';
+        if (rawType.includes('coding')) normalizedType = 'Coding';
+        else if (rawType.includes('mcq')) normalizedType = 'MCQ';
+        else normalizedType = 'Descriptive'; // handles 'text', 'descriptive', etc.
 
         values.push(
             examId,
-            q.type,
+            normalizedType,
             q.text || q.problem_statement || 'No title',
             q.options ? JSON.stringify(q.options) : (q.mcq_options ? JSON.stringify(q.mcq_options) : null),
             q.correct || q.correct_answer || null,
