@@ -471,10 +471,82 @@
                 border: 1px solid #ddd !important;
             }
         }
+
+        /* ── RESPONSIVE STYLES ── */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            }
+            .main-content {
+                margin-left: 0 !important;
+                padding: 1.5rem 1rem !important;
+                width: 100%;
+                overflow-x: hidden;
+            }
+            .mobile-toggle {
+                display: flex !important;
+            }
+            .form-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .section-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .section-title h2 {
+                font-size: 1.4rem;
+            }
+        }
+
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: white;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.5);
+            z-index: 1000;
+            cursor: pointer;
+            border: none;
+            font-size: 1.5rem;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .mobile-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 2rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
 
 <body>
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+        ☰
+    </button>
+
     <!-- Header Image Fixed at Top -->
     <img src="../assets/img/vignan_header.png" alt="Header"
         style="position: fixed; top: 0; left: 0; width: 100%; height: 120px; object-fit: contain; background: white; z-index: 100; border-bottom: 1px solid var(--border);">

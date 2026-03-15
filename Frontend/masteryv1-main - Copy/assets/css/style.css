@@ -445,6 +445,109 @@ select.input-field option {
 }
 
 /* =============================================
+   RESPONSIVE MEDIA QUERIES (MOBILE & TABLET)
+   ============================================= */
+@media (max-width: 768px) {
+    /* Main Layout */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Hero Section */
+    .hero-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .hero-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 1rem;
+    }
+
+    .hero-title + p {
+        font-size: 1.05rem !important;
+        padding: 0 1rem;
+    }
+
+    /* Stat Cards (Landing Page) */
+    .stat-card-premium {
+        width: 100%;
+        max-width: 280px;
+        padding: 1.5rem;
+    }
+    
+    .stat-card-premium h3 {
+        font-size: 2rem !important;
+    }
+
+    /* Hero Stats Container (inline style fix via flex-wrap in HTML or CSS) */
+    div[style*="justify-content: center"][style*="gap: 2rem"] {
+        flex-wrap: wrap;
+        gap: 1rem !important;
+    }
+
+    /* Navigation */
+    .nav-glass {
+        width: 95%;
+        padding: 0.5rem 1rem;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem;
+    }
+    
+    .nav-glass > div:first-child {
+        display: none; /* Hide empty spacer on mobile */
+    }
+
+    .nav-glass .logo {
+        font-size: 1.1rem !important;
+    }
+    
+    .nav-glass .logo img {
+        height: 28px !important;
+    }
+
+    .nav-glass .auth-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        justify-self: center;
+        width: 100%;
+        grid-column: 1 / -1;
+        margin-top: 0.5rem;
+    }
+    
+    .nav-glass .auth-buttons .btn {
+        width: 100%;
+        margin-right: 0 !important;
+    }
+
+    /* Modals */
+    .modal-glass-content {
+        padding: 1.5rem;
+        width: 95%;
+        max-width: none;
+    }
+    
+    .modal-glass-content h2 {
+        font-size: 1.5rem;
+    }
+
+    #studentDetailsGroup {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Responsive Tables */
+    table {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+}
+
+
+/* =============================================
    PRINT STYLES (preserve existing)
    ============================================= */
 @media print {

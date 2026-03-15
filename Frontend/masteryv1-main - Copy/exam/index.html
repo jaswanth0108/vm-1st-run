@@ -481,6 +481,40 @@
                 transform: translateY(110vh);
             }
         }
+
+        /* ── RESPONSIVE STYLES ── */
+        @media (max-width: 900px) {
+            body {
+                height: auto;
+                overflow: auto;
+            }
+            header {
+                height: auto;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 1rem;
+                justify-content: center;
+            }
+            .main-layout {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+            }
+            .exam-area {
+                order: 1;
+                border-bottom: 1px solid var(--border);
+            }
+            .code-editor-panel {
+                order: 2;
+                border-left: none;
+                min-height: 60vh;
+            }
+            .question-nav {
+                order: 3;
+                border-right: none;
+                border-top: 1px solid rgba(255,255,255,0.06);
+            }
+        }
     </style>
 </head>
 
