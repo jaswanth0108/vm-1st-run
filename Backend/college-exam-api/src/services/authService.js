@@ -126,12 +126,12 @@ const updateUser = async (username, userData) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
         await pool.query(
-            'UPDATE users SET name = $1, branch = $2, year = $3, section = $4, batch = $5, password_hash = $6 WHERE username = $7',
+            'UPDATE users SET name = $1, branch = $2, year = $3, section = $4, batch = $5, password_hash = $6 WHERE UPPER(username) = UPPER($7)',
             [name, branch, year, section, batch, passwordHash, username]
         );
     } else {
         await pool.query(
-            'UPDATE users SET name = $1, branch = $2, year = $3, section = $4, batch = $5 WHERE username = $6',
+            'UPDATE users SET name = $1, branch = $2, year = $3, section = $4, batch = $5 WHERE UPPER(username) = UPPER($6)',
             [name, branch, year, section, batch, username]
         );
     }
@@ -140,7 +140,7 @@ const updateUser = async (username, userData) => {
 };
 
 const deleteUser = async (username) => {
-    const result = await pool.query('DELETE FROM users WHERE username = $1', [username]);
+    const result = await pool.query('DELETE FROM users WHERE UPPER(username) = UPPER($1)', [username]);
     if (result.rowCount === 0) {
         throw new CustomError('User not found', 404);
     }

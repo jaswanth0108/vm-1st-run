@@ -2416,6 +2416,7 @@
         }
 
         async function deleteStudent(id) {
+            id = String(id).toUpperCase();
             if (!confirm('Are you sure you want to delete student ' + id + '?')) return;
 
             const success = await UserService.deleteUser(id);
@@ -2439,9 +2440,13 @@
         }
 
         async function openEditStudentModal(id) {
+            id = String(id).toUpperCase();
             const usersDB = await UserService.getUsers();
             const student = usersDB[id];
-            if (!student) return;
+            if (!student) {
+                alert('Student not found.');
+                return;
+            }
 
             isEditingStudent = true;
             document.getElementById('newStudentId').value = student.id;
