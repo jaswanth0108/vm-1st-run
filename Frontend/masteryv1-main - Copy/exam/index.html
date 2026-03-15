@@ -1049,13 +1049,21 @@
                 timestamp: Date.now()
             };
 
-            await ExamService.submitResult(result);
-            console.warn(`[AutoSubmit] Exam submitted at ${result.autoSubmittedAt} with score ${percentage}%`);
+            try {
+                await ExamService.submitResult(result);
+                console.warn(`[AutoSubmit] Exam submitted at ${result.autoSubmittedAt} with score ${percentage}%`);
 
-            // For violation auto-submissions, redirect quickly
-            setTimeout(() => {
-                window.location.replace('../student/index.html');
-            }, 1000);
+                // For violation auto-submissions, redirect quickly
+                setTimeout(() => {
+                    window.location.replace('../student/index.html');
+                }, 1000);
+            } catch (err) {
+                console.error('AutoSubmit failed:', err);
+                alert('An error occurred during auto-submission: ' + err.message + '. Your details have been saved locally. Please contact your administrator.');
+                setTimeout(() => {
+                    window.location.replace('../student/index.html');
+                }, 3000);
+            }
         }
 
         function resumeExam() {
@@ -1138,10 +1146,19 @@
                 timestamp: Date.now()
             };
 
-            await ExamService.submitResult(result);
-
-            // Show animated result overlay
-            showResultAnimation(percentage);
+            try {
+                await ExamService.submitResult(result);
+                // Show animated result overlay
+                showResultAnimation(percentage);
+            } catch (err) {
+                isSubmitting = false;
+                console.error('Submit Failed:', err);
+                // Hide submitting overlay
+                const overlay = document.getElementById('resultOverlay');
+                if (overlay) overlay.style.display = 'none';
+                
+                alert('CRITICAL ERROR: Could not save exam to the server.\\n\\nReason: ' + err.message + '\\n\\nPlease check your internet connection and try again.');
+            }
         }
 
         // ═══ Post-Exam Result Animation System ═══

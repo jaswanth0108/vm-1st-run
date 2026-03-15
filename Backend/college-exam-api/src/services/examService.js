@@ -256,8 +256,8 @@ const attemptExam = async (studentId, examId) => {
     try {
 
         const result = await pool.query(
-            `INSERT INTO submissions (exam_id, student_id)
-             VALUES ($1,$2)
+            `INSERT INTO submissions (exam_id, student_id, status)
+             VALUES ($1,$2, 'InProgress')
              RETURNING id`,
             [examId, studentId]
         );
@@ -314,18 +314,18 @@ const submitExam = async (studentId, examId, answers) => {
 
         const submissionId = submissions[0].id;
 
-        if (answers && answers.length > 0) {
+        if (answers && typeof answers === 'object' && Object.keys(answers).length > 0) {
 
             const values = [];
 
-            const placeholders = answers.map((a, i) => {
+            const placeholders = Object.keys(answers).map((qId, i) => {
 
                 const base = i * 3;
 
                 values.push(
                     submissionId,
-                    a.question_id,
-                    a.student_answer
+                    parseInt(qId, 10),
+                    answers[qId]
                 );
 
                 return `($${base+1},$${base+2},$${base+3})`;
