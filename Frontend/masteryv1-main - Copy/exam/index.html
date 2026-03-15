@@ -1618,7 +1618,8 @@
                     const error = data.error;
 
                     if (error) {
-                        outputDiv.innerHTML += `<span style="color:#ef4444">Error:</span><br>${error.replace(/\n/g, '<br>')}`;
+                        const errorMsg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
+                        outputDiv.innerHTML += `<span style="color:#ef4444">Error:</span><br>${errorMsg.replace(/\n/g, '<br>')}`;
                         codingResults[q.id] = 'FAIL';
                     } else {
                         outputDiv.innerHTML += `<span style="color:#22c55e">Output:</span><br>${output.replace(/\n/g, '<br>')}`;
