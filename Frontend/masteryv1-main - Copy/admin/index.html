@@ -2277,42 +2277,53 @@
             }
         }
 
-        function renderStudents() {
-            const usersDB = JSON.parse(localStorage.getItem('ems_users_db') || '{}');
+        async function renderStudents() {
             const tbody = document.getElementById('studentListBody');
             const searchVal = document.getElementById('studentSearchInput').value.trim().toLowerCase();
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">Loading students...</td></tr>';
 
-            // Convert DB object to array
-            let students = Object.values(usersDB).sort((a, b) => b.addedAt - a.addedAt);
+            let students = [];
+            try {
+                const token = localStorage.getItem('college_exam_portal_token');
+                const resp = await fetch(`${window.CONFIG.API_BASE_URL}/api/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (resp.ok) {
+                    const result = await resp.json();
+                    const arr = Array.isArray(result) ? result : (result.data || []);
+                    students = arr.filter(u => u.role === 'Student' || u.role === 'student');
+                }
+            } catch(e) {
+                console.error('Failed to fetch students:', e);
+            }
 
-            // Filter if search exists
             if (searchVal) {
                 students = students.filter(s =>
-                    s.name.toLowerCase().includes(searchVal) ||
-                    s.id.toLowerCase().includes(searchVal)
+                    (s.name || '').toLowerCase().includes(searchVal) ||
+                    (s.username || s.id || '').toLowerCase().includes(searchVal)
                 );
             }
 
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text-muted);">No students uploaded yet. Admin must upload Excel file.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No students found.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = students.map(s => `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 0.75rem;">${s.id}</td>
+                    <td style="padding: 0.75rem;">${s.username || s.id}</td>
                     <td style="padding: 0.75rem;">${s.name}</td>
-                    <td style="padding: 0.75rem;">${s.branch}</td>
+                    <td style="padding: 0.75rem;">${s.branch || '--'}</td>
                     <td style="padding: 0.75rem;">${s.section || 'A'}</td>
                     <td style="padding: 0.75rem;">${s.batch || '--'}</td>
                     <td style="padding: 0.75rem;">
                         <button class="btn btn-outline" 
                             style="padding: 0.25rem 0.5rem; margin-right: 0.5rem; font-size: 0.8rem;" 
-                            data-id="${s.id.replace(/"/g, '&quot;')}"
+                            data-id="${(s.id || s.username || '').toString().replace(/"/g, '&quot;')}"
                             onclick="openEditStudentModal(this.getAttribute('data-id'))">Edit</button>
                         <button class="btn btn-outline" 
                             style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: var(--danger); font-size: 0.8rem;" 
-                            data-id="${s.id.replace(/"/g, '&quot;')}"
+                            data-id="${(s.id || s.username || '').toString().replace(/"/g, '&quot;')}"
                             onclick="deleteStudent(this.getAttribute('data-id'))">Delete</button>
                     </td>
                 </tr>

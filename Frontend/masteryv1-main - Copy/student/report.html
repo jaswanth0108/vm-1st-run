@@ -434,27 +434,6 @@
                 }
             }
 
-            // Step 3: Fallback to localStorage-only (for offline or pre-server-sync view)
-            if (!result) {
-                const localDataRaw = localStorage.getItem('ems_results_db');
-                const localResults = localDataRaw ? JSON.parse(localDataRaw) : [];
-                result = localResults.filter(r => String(r.examId) === String(examId) && String(r.studentId) === String(studentId)).sort((a, b) => b.timestamp - a.timestamp)[0];
-            }
-
-            // Step 4: Merge local detailed answers into server aggregate result
-            if (result && (!result.answers || Object.keys(result.answers).length === 0)) {
-                const localDataRaw = localStorage.getItem('ems_results_db');
-                const localResults = localDataRaw ? JSON.parse(localDataRaw) : [];
-                const lr = localResults.find(l => String(l.examId) === String(examId) && String(l.studentId || l.studentId) === String(studentId));
-                if (lr) {
-                    result.answers = lr.answers || {};
-                    result.questionScores = lr.questionScores || {};
-                    result.questionTimeData = lr.questionTimeData || {};
-                    result.codingTestCaseData = lr.codingTestCaseData || {};
-                    result.studentName = result.studentName || lr.studentName;
-                    result.score = result.score || lr.score;
-                }
-            }
             if (!exam || !result) {
                 document.getElementById('reportContent').innerHTML = `
                     <div style="text-align:center; padding: 4rem;">

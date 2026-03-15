@@ -1,64 +1,53 @@
 /**
- * Main App Script
- * Shared utilities and Data Service.
+ * Main App Script - API-Only Version
+ * All data is fetched from the backend. No localStorage data caching.
+ * Note: Auth token (college_exam_portal_token) and session (ems_session) are still stored
+ * in localStorage by auth.js — this is necessary for the JWT auth flow to work.
  */
 
-const DB_EXAMS = 'ems_exams';
-const DB_RESULTS = 'ems_results';
+// Helper to get the Bearer token for all API calls
+function getAuthToken() {
+    return localStorage.getItem('college_exam_portal_token') || '';
+}
 
 class ExamService {
     // --- Exams ---
     static async getExams() {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch exams');
-            const data = await response.json();
-            return data.data || data;
-        } catch (error) {
-            console.error('Error fetching exams:', error);
-            const localData = localStorage.getItem(DB_EXAMS);
-            return localData ? JSON.parse(localData) : [];
-        }
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch exams');
+        const data = await response.json();
+        return data.data || data;
     }
 
     static async getExamById(id) {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch exam details');
-            const data = await response.json();
-            return data.data || data;
-        } catch (error) {
-            console.error('Error fetching exam details:', error);
-            // Fallback: search in the list
-            const exams = await this.getExams();
-            return exams.find(e => String(e.id) === String(id));
-        }
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch exam details');
+        const data = await response.json();
+        return data.data || data;
     }
 
     static async saveExam(exam) {
-        // Convert local format to backend expected format if necessary
         const payload = {
             ...exam,
             start_time: exam.startTime || new Date().toISOString(),
             end_time: exam.endTime || new Date(Date.now() + (exam.duration || 60) * 60000).toISOString()
         };
 
-        const token = localStorage.getItem('college_exam_portal_token');
         const isUpdate = !!exam.id && !String(exam.id).startsWith('exam_');
-        const url = isUpdate ? `${window.CONFIG.API_BASE_URL}/api/exams/${exam.id}` : `${window.CONFIG.API_BASE_URL}/api/exams`;
+        const url = isUpdate
+            ? `${window.CONFIG.API_BASE_URL}/api/exams/${exam.id}`
+            : `${window.CONFIG.API_BASE_URL}/api/exams`;
         const method = isUpdate ? 'PUT' : 'POST';
 
         const response = await fetch(url, {
-            method: method,
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${token}` 
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
             },
             body: JSON.stringify(payload)
         });
@@ -68,51 +57,27 @@ class ExamService {
             throw new Error(data.message || data.error?.message || 'Failed to sync exam to server');
         }
 
-        const serverExam = data.data || data;
-
-        // Backup to localStorage for offline fallback using the server's real object
-        const localData = localStorage.getItem(DB_EXAMS);
-        const exams = localData ? JSON.parse(localData) : [];
-        const index = exams.findIndex(e => String(e.id) === String(exam.id) || String(e.id) === String(serverExam.id));
-        if (index > -1) exams[index] = serverExam;
-        else exams.push(serverExam);
-        localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
-        
-        return serverExam;
+        return data.data || data;
     }
 
     static async deleteExam(id) {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to delete exam');
-            
-            // Sync local backup
-            const localData = localStorage.getItem(DB_EXAMS);
-            if (localData) {
-                const exams = JSON.parse(localData).filter(e => e.id !== id);
-                localStorage.setItem(DB_EXAMS, JSON.stringify(exams));
-            }
-            return true;
-        } catch (error) {
-            console.error('Error deleting exam:', error);
-            return false;
-        }
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to delete exam');
+        return true;
     }
 
     // --- Results ---
     static async submitResult(result) {
-        const token = localStorage.getItem('college_exam_portal_token');
         const examId = result.examId || result.id;
-        
+
         const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${examId}/submit`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${token}` 
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
             },
             body: JSON.stringify(result)
         });
@@ -122,49 +87,16 @@ class ExamService {
             throw new Error(data.message || data.error?.message || 'Failed to submit exam');
         }
 
-        // Save to local backup
-        const localData = localStorage.getItem(DB_RESULTS);
-        const results = localData ? JSON.parse(localData) : [];
-        results.push(result);
-        localStorage.setItem(DB_RESULTS, JSON.stringify(results));
-        
         return data;
     }
 
     static async getResults() {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/reports`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch results');
-            const data = await response.json();
-            const serverResults = data.data || data;
-
-            // Merge with local backup to inject detailed answers (which the server omits for performance)
-            const localDataRaw = localStorage.getItem(DB_RESULTS);
-            const localResults = localDataRaw ? JSON.parse(localDataRaw) : [];
-
-            return serverResults.map(sr => {
-                // Find matching detailed record
-                const lr = localResults.find(l => String(l.examId) === String(sr.examId) && String(l.studentId) === String(sr.studentId));
-                if (lr) {
-                    sr.answers = lr.answers;
-                    sr.questionScores = lr.questionScores;
-                    sr.questionTimeData = lr.questionTimeData;
-                    sr.codingTestCaseData = lr.codingTestCaseData;
-                } else {
-                    // Fallback to empty if taking exam from different device
-                    sr.answers = sr.answers || {};
-                    sr.questionScores = sr.questionScores || {};
-                }
-                return sr;
-            });
-        } catch (error) {
-            console.error('Error fetching results:', error);
-            const data = localStorage.getItem(DB_RESULTS);
-            return data ? JSON.parse(data) : [];
-        }
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/reports`, {
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch results');
+        const data = await response.json();
+        return data.data || data;
     }
 
     static async getStudentResults(studentId) {
@@ -181,148 +113,92 @@ class ExamService {
 window.ExamService = ExamService;
 
 // --- User Service ---
-const DB_USERS = 'ems_users_db'; // Maintain existing key for fallback
-
 class UserService {
     static async getUsers() {
-        // Always load from localStorage first (source of truth for the admin UI)
-        const localData = localStorage.getItem(DB_USERS);
-        const localUsers = localData ? JSON.parse(localData) : {};
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users`, {
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch users');
+        const result = await response.json();
 
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch users');
-            const result = await response.json();
+        // Backend returns: { success: true, data: [...] } or an array directly
+        const dbArray = Array.isArray(result) ? result : (result.data || []);
 
-            // Backend returns: { success: true, data: [...] } or an array directly
-            const dbArray = Array.isArray(result) ? result : (result.data || []);
-
-            // Convert array to keyed object and merge with localStorage object
-            const dbUsers = {};
-            dbArray.forEach(u => {
-                const key = (u.username || u.id || '').toUpperCase();
-                if (key) dbUsers[key] = { ...u, id: key };
-            });
-
-            // Merge: localStorage is primary, backend fills in any gaps
-            return { ...dbUsers, ...localUsers };
-        } catch (error) {
-            console.error('Error fetching users:', error);
-            return localUsers;
-        }
+        // Convert array to keyed object for compatibility with admin UI
+        const dbUsers = {};
+        dbArray.forEach(u => {
+            const key = (u.username || u.id || '').toUpperCase();
+            if (key) dbUsers[key] = { ...u, id: key };
+        });
+        return dbUsers;
     }
 
     static async saveUser(user) {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const payload = {
-                name: user.name || 'Student',
-                username: user.id || user.username,
-                password: user.password,
-                role: 'Student',
-                branch: user.branch,
-                year: user.year,
-                section: user.section,
-                batch: user.batch
-            };
-            // Mock backend saved users here, new backend registers
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-            
-            const data = await response.json();
-            if (!response.ok || !data.success) throw new Error(data.message || data.error?.message || 'Failed to save user');
+        const payload = {
+            name: user.name || 'Student',
+            username: user.id || user.username,
+            password: user.password,
+            role: 'Student',
+            branch: user.branch,
+            year: user.year,
+            section: user.section,
+            batch: user.batch
+        };
 
-            // Update local fallback
-            const users = await this.getUsers();
-            users[user.id] = user;
-            localStorage.setItem(DB_USERS, JSON.stringify(users));
-            return true;
-        } catch (error) {
-            console.error('Error saving user:', error);
-            const data = localStorage.getItem(DB_USERS);
-            const users = data ? JSON.parse(data) : {};
-            users[user.id] = user;
-            localStorage.setItem(DB_USERS, JSON.stringify(users));
-            return false;
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error?.message || 'Failed to save user');
         }
+        return true;
     }
 
     static async saveUsersBulk(newUsers) {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
+        const usersArray = Object.values(newUsers).map(u => ({
+            name: u.name,
+            username: u.id,
+            password: u.password,
+            role: 'Student',
+            branch: u.branch,
+            year: u.year,
+            section: u.section,
+            batch: u.batch
+        }));
 
-            const usersArray = Object.values(newUsers).map(u => ({
-                name: u.name,
-                username: u.id,
-                password: u.password,
-                role: 'Student',
-                branch: u.branch,
-                year: u.year,
-                section: u.section,
-                batch: u.batch
-            }));
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/bulk-register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({ users: usersArray })
+        });
 
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/bulk-register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ users: usersArray })
-            });
-            
-            const data = await response.json();
-            if (!response.ok || !data.success) throw new Error(data.message || data.error?.message || 'Failed to bulk save users');
-
-            // Update local fallback
-            const users = await this.getUsers();
-            const merged = { ...users, ...newUsers };
-            localStorage.setItem(DB_USERS, JSON.stringify(merged));
-            return true;
-        } catch (error) {
-            console.error('Error saving bulk users:', error);
-            const data = localStorage.getItem(DB_USERS);
-            const users = data ? JSON.parse(data) : {};
-            const merged = { ...users, ...newUsers };
-            localStorage.setItem(DB_USERS, JSON.stringify(merged));
-            return false;
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error?.message || 'Failed to bulk save users');
         }
+        return true;
     }
 
     static async deleteUser(id) {
-        try {
-            const token = localStorage.getItem('college_exam_portal_token');
-            const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to delete user');
-
-            // Update local fallback
-            const users = await this.getUsers();
-            if (users[id]) delete users[id];
-            localStorage.setItem(DB_USERS, JSON.stringify(users));
-            return true;
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            const data = localStorage.getItem(DB_USERS);
-            const users = data ? JSON.parse(data) : {};
-            if (users[id]) delete users[id];
-            localStorage.setItem(DB_USERS, JSON.stringify(users));
-            return false;
-        }
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to delete user');
+        return true;
     }
 }
 
 window.UserService = UserService;
 
-console.log('ExamiNation App Initialized');
+console.log('ExamiNation App Initialized — API-Only Mode');
