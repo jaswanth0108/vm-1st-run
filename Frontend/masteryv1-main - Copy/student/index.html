@@ -590,7 +590,7 @@
             const results = await ExamService.getStudentResults(String(session.id));
             const totalExams = results.length;
             const avgScore = totalExams > 0
-                ? Math.round(results.reduce((acc, r) => acc + r.score, 0) / totalExams)
+                ? Math.round(results.reduce((acc, r) => acc + Number(r.percentage || r.score || 0), 0) / totalExams)
                 : 0;
 
             // Rank calculation
@@ -602,7 +602,7 @@
                 const studentScores = {};
                 allResults.forEach(r => {
                     if (!studentScores[r.studentId]) studentScores[r.studentId] = [];
-                    studentScores[r.studentId].push(r.score);
+                    studentScores[r.studentId].push(Number(r.percentage || r.score || 0));
                 });
 
                 const averages = Object.keys(studentScores).map(sid => {
