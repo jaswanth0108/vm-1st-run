@@ -397,52 +397,65 @@
 
         // Fetch Data
         (async () => {
-            const exam = await ExamService.getExamById(examId);
-            const token = localStorage.getItem('college_exam_portal_token');
-
-            // Step 1: Try the dedicated per-exam API endpoint first (most reliable)
-            let result = null;
             try {
-                const apiUrl = `${window.CONFIG.API_BASE_URL}/api/reports/student/${examId}`;
-                const resp = await fetch(apiUrl, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (resp.ok) {
-                    const data = await resp.json();
-                    // The server gives aggregate data - merge with local detail
+                const token = localStorage.getItem('college_exam_portal_token');
+
+                // Load exam and report in parallel
+                const [exam, reportResp] = await Promise.allSettled([
+                    ExamService.getExamById(examId),
+                    fetch(`${window.CONFIG.API_BASE_URL}/api/reports/student/${examId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                const examData = exam.status === 'fulfilled' ? exam.value : null;
+                let result = null;
+
+                // Try dedicated per-exam endpoint
+                if (reportResp.status === 'fulfilled' && reportResp.value.ok) {
+                    const data = await reportResp.value.json();
                     result = data.data || data;
-                    // Patch with camelCase keys from snake_case server response
+                    // Normalize snake_case to camelCase
                     if (result && result.exam_id) {
                         result.examId = result.exam_id;
                         result.studentId = result.student_id;
                         result.score = result.percentage;
                         result.studentName = result.student_name || studentId;
                         result.timestamp = result.generated_at ? new Date(result.generated_at).getTime() : Date.now();
+                        result.answers = result.answers || {};
+                        result.questionScores = result.questionScores || {};
+                        result.questionTimeData = result.questionTimeData || {};
                     }
                 }
-            } catch(e) {
-                console.warn('Per-exam API failed, trying full list...', e);
-            }
 
-            // Step 2: If per-exam API didn't work, try the full results list
-            if (!result) {
-                try {
-                    const results = await ExamService.getStudentResults(studentId);
-                    result = results.filter(r => String(r.examId) === String(examId)).sort((a, b) => b.timestamp - a.timestamp)[0];
-                } catch(e) {
-                    console.warn('Full list failed, trying localStorage...', e);
+                // Fallback: search in full results list
+                if (!result) {
+                    const results = await ExamService.getStudentResults(String(studentId));
+                    result = results
+                        .filter(r => String(r.examId) === String(examId))
+                        .sort((a, b) => b.timestamp - a.timestamp)[0] || null;
                 }
-            }
 
-            if (!exam || !result) {
+                if (!examData || !result) {
+                    document.getElementById('reportContent').innerHTML = `
+                        <div style="text-align:center; padding: 4rem;">
+                            <h2 style="color:#64748b;">Report Not Found</h2>
+                            <p>Could not find result data for this exam.</p>
+                            <p style="color:#94a3b8; font-size:0.85rem; margin-top:1rem;">This may happen if the exam report is still being generated. Please wait a moment and refresh.</p>
+                        </div>
+                    `;
+                } else {
+                    renderReport(examData, result);
+                }
+            } catch(err) {
+                console.error('Report load error:', err);
                 document.getElementById('reportContent').innerHTML = `
                     <div style="text-align:center; padding: 4rem;">
                         <h2 style="color:#64748b;">Report Not Found</h2>
                         <p>Could not find result data for this exam.</p>
+                        <p style="color:#94a3b8; font-size:0.85rem; margin-top:1rem;">Error: ${err.message}</p>
                     </div>
                 `;
-            } else {
-                renderReport(exam, result);
             }
         })();
 

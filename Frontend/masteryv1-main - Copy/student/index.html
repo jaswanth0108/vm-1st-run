@@ -585,8 +585,9 @@
 
         // Wrap everything dependent on API in an IIFE
         (async () => {
+            try {
             // Stats
-            const results = await ExamService.getStudentResults(session.id);
+            const results = await ExamService.getStudentResults(String(session.id));
             const totalExams = results.length;
             const avgScore = totalExams > 0
                 ? Math.round(results.reduce((acc, r) => acc + r.score, 0) / totalExams)
@@ -739,6 +740,10 @@
                         </div>`;
                     }).join('');
                 }
+            }
+            } catch(err) {
+                console.error('Dashboard load error:', err);
+                document.getElementById('examList').innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">Failed to load dashboard. Please refresh the page.<br><small>${err.message}</small></div>`;
             }
         })();
     </script>
