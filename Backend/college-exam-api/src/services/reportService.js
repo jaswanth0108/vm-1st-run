@@ -156,13 +156,21 @@ const getClassResults = async (examId) => {
     };
 };
 
-const getAllReports = async () => {
+const getAllReports = async (studentId = null) => {
     // JOIN with users to get username and name directly
-    const result = await pool.query(`
+    let query = `
         SELECT r.*, u.username, u.name as student_name
         FROM reports r
         JOIN users u ON r.student_id = u.id
-    `);
+    `;
+    let params = [];
+    
+    if (studentId) {
+        query += ` WHERE r.student_id = $1`;
+        params.push(studentId);
+    }
+    
+    const result = await pool.query(query, params);
     
     return result.rows.map(row => ({
         id: row.id,
@@ -174,7 +182,7 @@ const getAllReports = async () => {
         totalMarks: row.total_marks,
         percentage: row.percentage,
         submissionId: row.submission_id,
-        timestamp: row.created_at ? new Date(row.created_at).getTime() : 0
+        timestamp: row.generated_at ? new Date(row.generated_at).getTime() : 0
     }));
 };
 

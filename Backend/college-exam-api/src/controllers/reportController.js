@@ -33,7 +33,10 @@ const getClassResults = async (req, res, next) => {
 
 const getAllReports = async (req, res, next) => {
     try {
-        const data = await reportService.getAllReports();
+        const isStudent = ['student', 'Student'].includes(req.user.role);
+        const filterId = isStudent ? req.user.userId : null;
+        
+        const data = await reportService.getAllReports(filterId);
         res.status(200).json({ success: true, data });
     } catch (error) {
         next(error);
