@@ -84,6 +84,17 @@ const generateReport = async (submissionId) => {
         `INSERT INTO reports
         (submission_id, student_id, exam_id, total_questions, attempted, correct, wrong, unattempted, total_marks, obtained_marks, percentage, status)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        ON CONFLICT (submission_id) DO UPDATE SET
+            total_questions = EXCLUDED.total_questions,
+            attempted = EXCLUDED.attempted,
+            correct = EXCLUDED.correct,
+            wrong = EXCLUDED.wrong,
+            unattempted = EXCLUDED.unattempted,
+            total_marks = EXCLUDED.total_marks,
+            obtained_marks = EXCLUDED.obtained_marks,
+            percentage = EXCLUDED.percentage,
+            status = EXCLUDED.status,
+            generated_at = CURRENT_TIMESTAMP
         RETURNING id`,
         [
             submissionId,
