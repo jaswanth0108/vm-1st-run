@@ -342,15 +342,17 @@
                 allResults.forEach((result, index) => {
                     const exam = exams.find(e => String(e.id) === String(result.examId)) || { title: 'Unknown Exam', subject: 'General' };
 
+                    const parsedScore = Number(result.percentage || result.score || 0);
+
                     // Grade Logic: S(>90%), A(80-90%), B(60-80%), C(40-60%), F(<40%)
                     let grade = 'F';
                     let gradeClass = 'grade-f';
-                    if (result.score > 90) { grade = 'S'; gradeClass = 'grade-s'; }
-                    else if (result.score >= 80) { grade = 'A'; gradeClass = 'grade-a'; }
-                    else if (result.score >= 60) { grade = 'B'; gradeClass = 'grade-b'; }
-                    else if (result.score >= 40) { grade = 'C'; gradeClass = 'grade-c'; }
+                    if (parsedScore > 90) { grade = 'S'; gradeClass = 'grade-s'; }
+                    else if (parsedScore >= 80) { grade = 'A'; gradeClass = 'grade-a'; }
+                    else if (parsedScore >= 60) { grade = 'B'; gradeClass = 'grade-b'; }
+                    else if (parsedScore >= 40) { grade = 'C'; gradeClass = 'grade-c'; }
 
-                    totalScore += (result.score || 0);
+                    totalScore += parsedScore;
 
                     const row = `
                         <tr>
@@ -360,7 +362,7 @@
                                 <div style="font-weight:500;">${exam.title}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted);">${result.timestamp ? new Date(result.timestamp).toLocaleDateString() : '--'}</div>
                             </td>
-                            <td style="text-align: center; font-weight: 600;">${result.score || 0}%</td>
+                            <td style="text-align: center; font-weight: 600;">${parsedScore}%</td>
                             <td style="text-align: center;"><span class="grade-badge ${gradeClass}">${grade}</span></td>
                         </tr>
                     `;
