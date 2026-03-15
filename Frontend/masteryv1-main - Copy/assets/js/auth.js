@@ -21,8 +21,9 @@ class Auth {
         const userObj = data.data ? data.data.user : data.user;
         const tokenStr = data.data ? data.data.token : data.token;
 
-        // Merge any frontend-specific metadata with session data if necessary
-        const session = { ...userObj, ...metadata };
+        // Merge: backend user data takes priority over form metadata
+        // Only keep metadata fields that the backend didn't provide
+        const session = { ...metadata, ...userObj };
         localStorage.setItem(AUTH_KEY, JSON.stringify(session));
         if (tokenStr) {
           localStorage.setItem('college_exam_portal_token', tokenStr);

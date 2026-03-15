@@ -638,34 +638,39 @@
                 const filteredExams = (session.role === 'admin')
                     ? exams
                     : exams.filter(e => {
+                        // Only show published exams to students
+                        if (e.status && e.status !== 'published') return false;
+
                         const studentBatch = String(session.batch || '').trim();
                         const studentBranch = String(session.branch || '').toUpperCase().trim();
 
-                        // === Batch Matching ===
-                        let batchMatch = !studentBatch || studentBatch === 'undefined'; 
-                        if (studentBatch && studentBatch !== 'undefined') {
-                            if (Array.isArray(e.batch)) {
-                                const upperBatches = e.batch.map(b => String(b).toUpperCase().trim());
-                                batchMatch = upperBatches.length === 0 || upperBatches.includes('ALL') || upperBatches.some(b => b === studentBatch.toUpperCase());
-                            } else {
-                                const examBatches = String(e.batch || '').toUpperCase().split(',').map(b => b.trim()).filter(Boolean);
-                                batchMatch = examBatches.length === 0 || examBatches.includes('ALL') || examBatches.includes(studentBatch.toUpperCase());
+                        // Helper: parse branch/batch from exam (handles JSONB arrays or comma-string)
+                        const parseExamField = (field) => {
+                            if (!field) return [];
+                            if (Array.isArray(field)) return field.map(b => String(b).toUpperCase().trim());
+                            // Could be a JSON string from Postgres JSONB
+                            if (typeof field === 'string' && field.startsWith('[')) {
+                                try { return JSON.parse(field).map(b => String(b).toUpperCase().trim()); } catch(e) {}
                             }
-                        }
+                            return field.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
+                        };
+
+                        const examBranches = parseExamField(e.branch);
+                        const examBatches  = parseExamField(e.batch);
+
+                        // If exam targets 'All' or has no restrictions → always show
+                        const branchOpen = examBranches.length === 0 || examBranches.includes('ALL');
+                        const batchOpen  = examBatches.length === 0 || examBatches.includes('ALL');
 
                         // === Branch Matching ===
-                        let branchMatch = !studentBranch || studentBranch === 'undefined';
-                        if (studentBranch && studentBranch !== 'undefined') {
-                            if (Array.isArray(e.branch)) {
-                                const upperBranches = e.branch.map(b => String(b).toUpperCase().trim());
-                                branchMatch = upperBranches.length === 0 || upperBranches.includes('ALL') || upperBranches.includes(studentBranch);
-                            } else {
-                                const examBranch = String(e.branch || '').toUpperCase().trim();
-                                branchMatch = !examBranch || examBranch === 'ALL' || examBranch === studentBranch;
-                            }
-                        }
+                        const branchMatch = branchOpen || !studentBranch || studentBranch === 'UNDEFINED'
+                            || examBranches.includes(studentBranch);
 
-                        return batchMatch && branchMatch;
+                        // === Batch Matching ===
+                        const batchMatch = batchOpen || !studentBatch || studentBatch === 'undefined'
+                            || examBatches.includes(studentBatch.toUpperCase());
+
+                        return branchMatch && batchMatch;
                     });
 
                 if (filteredExams.length === 0) {
