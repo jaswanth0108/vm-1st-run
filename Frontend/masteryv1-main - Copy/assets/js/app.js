@@ -139,7 +139,27 @@ class ExamService {
             });
             if (!response.ok) throw new Error('Failed to fetch results');
             const data = await response.json();
-            return data.data || data;
+            const serverResults = data.data || data;
+
+            // Merge with local backup to inject detailed answers (which the server omits for performance)
+            const localDataRaw = localStorage.getItem(DB_RESULTS);
+            const localResults = localDataRaw ? JSON.parse(localDataRaw) : [];
+
+            return serverResults.map(sr => {
+                // Find matching detailed record
+                const lr = localResults.find(l => String(l.examId) === String(sr.examId) && String(l.studentId) === String(sr.studentId));
+                if (lr) {
+                    sr.answers = lr.answers;
+                    sr.questionScores = lr.questionScores;
+                    sr.questionTimeData = lr.questionTimeData;
+                    sr.codingTestCaseData = lr.codingTestCaseData;
+                } else {
+                    // Fallback to empty if taking exam from different device
+                    sr.answers = sr.answers || {};
+                    sr.questionScores = sr.questionScores || {};
+                }
+                return sr;
+            });
         } catch (error) {
             console.error('Error fetching results:', error);
             const data = localStorage.getItem(DB_RESULTS);
@@ -149,7 +169,7 @@ class ExamService {
 
     static async getStudentResults(studentId) {
         const results = await this.getResults();
-        return results.filter(r => r.studentId === studentId);
+        return results.filter(r => String(r.studentId) === String(studentId));
     }
 
     // --- Helpers ---
