@@ -398,10 +398,63 @@
         // Fetch Data
         (async () => {
             const exam = await ExamService.getExamById(examId);
-            const results = await ExamService.getStudentResults(studentId);
-            // Find specific result for this exam (assuming latest for now)
-            const result = results.filter(r => String(r.examId) === String(examId)).sort((a, b) => b.timestamp - a.timestamp)[0];
+            const token = localStorage.getItem('college_exam_portal_token');
 
+            // Step 1: Try the dedicated per-exam API endpoint first (most reliable)
+            let result = null;
+            try {
+                const apiUrl = `${window.CONFIG.API_BASE_URL}/api/reports/student/${examId}`;
+                const resp = await fetch(apiUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    // The server gives aggregate data - merge with local detail
+                    result = data.data || data;
+                    // Patch with camelCase keys from snake_case server response
+                    if (result && result.exam_id) {
+                        result.examId = result.exam_id;
+                        result.studentId = result.student_id;
+                        result.score = result.percentage;
+                        result.studentName = result.student_name || studentId;
+                        result.timestamp = result.generated_at ? new Date(result.generated_at).getTime() : Date.now();
+                    }
+                }
+            } catch(e) {
+                console.warn('Per-exam API failed, trying full list...', e);
+            }
+
+            // Step 2: If per-exam API didn't work, try the full results list
+            if (!result) {
+                try {
+                    const results = await ExamService.getStudentResults(studentId);
+                    result = results.filter(r => String(r.examId) === String(examId)).sort((a, b) => b.timestamp - a.timestamp)[0];
+                } catch(e) {
+                    console.warn('Full list failed, trying localStorage...', e);
+                }
+            }
+
+            // Step 3: Fallback to localStorage-only (for offline or pre-server-sync view)
+            if (!result) {
+                const localDataRaw = localStorage.getItem('ems_results_db');
+                const localResults = localDataRaw ? JSON.parse(localDataRaw) : [];
+                result = localResults.filter(r => String(r.examId) === String(examId) && String(r.studentId) === String(studentId)).sort((a, b) => b.timestamp - a.timestamp)[0];
+            }
+
+            // Step 4: Merge local detailed answers into server aggregate result
+            if (result && (!result.answers || Object.keys(result.answers).length === 0)) {
+                const localDataRaw = localStorage.getItem('ems_results_db');
+                const localResults = localDataRaw ? JSON.parse(localDataRaw) : [];
+                const lr = localResults.find(l => String(l.examId) === String(examId) && String(l.studentId || l.studentId) === String(studentId));
+                if (lr) {
+                    result.answers = lr.answers || {};
+                    result.questionScores = lr.questionScores || {};
+                    result.questionTimeData = lr.questionTimeData || {};
+                    result.codingTestCaseData = lr.codingTestCaseData || {};
+                    result.studentName = result.studentName || lr.studentName;
+                    result.score = result.score || lr.score;
+                }
+            }
             if (!exam || !result) {
                 document.getElementById('reportContent').innerHTML = `
                     <div style="text-align:center; padding: 4rem;">
