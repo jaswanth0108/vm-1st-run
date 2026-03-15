@@ -37,11 +37,11 @@ const addQuestionsSchema = z.object({
 });
 
 const submitExamSchema = z.object({
-    answers: z.array(z.object({
-        question_id: z.number().int(),
-        student_answer: z.string()
-    }))
-});
+    answers: z.record(z.string(), z.any()).optional().nullable(),
+    questionScores: z.record(z.string(), z.number()).optional().nullable(),
+    score: z.number().optional().nullable(),
+    autoSubmitted: z.boolean().optional().nullable()
+}).passthrough();
 
 module.exports = {
     createExamSchema,

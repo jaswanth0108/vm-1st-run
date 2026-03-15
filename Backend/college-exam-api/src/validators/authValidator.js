@@ -29,11 +29,18 @@ const validate = (schema) => (req, res, next) => {
         req.body = parsed;
         next();
     } catch (err) {
+        let message = 'Validation Failed';
+        if (err.errors && Array.isArray(err.errors)) {
+            message = err.errors.map(e => e.message).join(', ');
+        } else if (err.message) {
+            message = err.message;
+        }
+        
         return res.status(400).json({
             success: false,
             error: {
                 code: 'VALIDATION_ERROR',
-                message: err.errors.map(e => e.message).join(', ')
+                message: message
             }
         });
     }
