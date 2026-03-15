@@ -8,7 +8,7 @@ const pool = new Pool({
   password: process.env.DATABASE_URL ? undefined : process.env.DB_PASSWORD,
   database: process.env.DATABASE_URL ? undefined : process.env.DB_NAME,
   port: process.env.DATABASE_URL ? undefined : (process.env.DB_PORT || 5432),
-  max: 10,
+  max: 30, // Increased from 10 to support more concurrent students
   idleTimeoutMillis: 30000,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
