@@ -48,8 +48,7 @@ CREATE TABLE IF NOT EXISTS submissions (
     submitted_at TIMESTAMP NULL,
     status VARCHAR(20) CHECK (status IN ('InProgress', 'Submitted')) DEFAULT 'InProgress',
     FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(exam_id, student_id)
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS answers (

@@ -300,7 +300,8 @@ const submitExam = async (studentId, examId, answers) => {
             `SELECT id
              FROM submissions
              WHERE exam_id = $1
-             AND student_id = $2`,
+             AND student_id = $2
+             AND status = 'InProgress'`,
             [examId, studentId]
         );
 
