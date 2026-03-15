@@ -300,19 +300,26 @@ const submitExam = async (studentId, examId, answers) => {
             `SELECT id
              FROM submissions
              WHERE exam_id = $1
-             AND student_id = $2
-             AND status = 'InProgress'`,
+             AND student_id = $2`,
             [examId, studentId]
         );
 
-        if (submissions.length === 0) {
-            throw new CustomError(
-                'No active submission found for this exam',
-                400
-            );
-        }
+        let submissionId;
 
-        const submissionId = submissions[0].id;
+        if (submissions.length === 0) {
+            // Because frontend skips the /attempt initialization, we auto-create the session here
+            const { rows: newSubmissions } = await connection.query(
+                `INSERT INTO submissions (exam_id, student_id, status)
+                 VALUES ($1, $2, 'InProgress')
+                 RETURNING id`,
+                [examId, studentId]
+            );
+            submissionId = newSubmissions[0].id;
+        } else {
+            // An attempt exists, clear previous answers to overwrite with new attempt
+            submissionId = submissions[0].id;
+            await connection.query('DELETE FROM answers WHERE submission_id = $1', [submissionId]);
+        }
 
         if (answers && typeof answers === 'object' && Object.keys(answers).length > 0) {
 
