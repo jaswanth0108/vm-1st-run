@@ -14,10 +14,13 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(cors());
 
+// Trust proxy to ensure correct IP is used if behind a reverse proxy (like Render's load balancers)
+app.set('trust proxy', 1);
+
 // Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 5000, // Limit each IP to 5000 requests per windowMs
     message: { success: false, error: 'Too many requests from this IP, please try again later.' }
 });
 app.use(limiter);
