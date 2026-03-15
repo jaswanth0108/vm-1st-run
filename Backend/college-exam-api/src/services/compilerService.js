@@ -1,104 +1,119 @@
-const { exec, execFile } = require('child_process');
+const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const https = require('https');
 const CustomError = require('../utils/customError');
 const os = require('os');
 
-const TIMEOUT_MS = 10000; // 10 seconds max execution
+const TIMEOUT_MS = 10000; // 10 seconds max local execution
 const TEMP_DIR = path.join(os.tmpdir(), 'vm_compiler');
 
-// Supported language configs
-const LANGUAGE_CONFIG = {
-    javascript: { ext: 'js',  compile: null,                         run: (f) => `node "${f}"` },
-    python:     { ext: 'py',  compile: null,                         run: (f) => `python3 "${f}"` },
-    c:          { ext: 'c',   compile: (f, o) => `gcc "${f}" -o "${o}" -lm`, run: (o) => `"${o}"` },
-    cpp:        { ext: 'cpp', compile: (f, o) => `g++ "${f}" -o "${o}" -lm`,  run: (o) => `"${o}"` },
-    java:       { ext: 'java', compile: (f, dir) => `javac -d "${dir}" "${f}"`, run: (dir, cls) => `java -cp "${dir}" ${cls}` }
+// Piston API (free public compiler service for sandboxed execution)
+const PISTON_API = 'https://emkc.org/api/v2/piston/execute';
+
+// Languages that always go through Piston (because system compilers may not be installed)
+const PISTON_LANGUAGES = {
+    c:    { language: 'c',          version: '*' },
+    cpp:  { language: 'c++',        version: '*' },
+    java: { language: 'java',       version: '*' }
+};
+
+// Languages that run locally (Node.js and Python are always available on Render)
+const LOCAL_LANGUAGE_CONFIG = {
+    javascript: { ext: 'js', run: (f) => `node "${f}"` },
+    python:     { ext: 'py', run: (f) => `python3 "${f}"` }
 };
 
 /**
- * Check if a command/binary is available on the system.
+ * Run code through the Piston public API (for C, C++, Java)
  */
-const isCommandAvailable = (cmd) => new Promise((resolve) => {
-    exec(`which ${cmd} || where ${cmd}`, (err) => resolve(!err));
-});
+const runViaPiston = async (language, code, input) => {
+    const langConfig = PISTON_LANGUAGES[language];
+    if (!langConfig) throw new CustomError('Language not configured for Piston', 400);
+
+    const payload = JSON.stringify({
+        language: langConfig.language,
+        version: langConfig.version,
+        files: [{ content: code }],
+        stdin: input || ''
+    });
+
+    return new Promise((resolve, reject) => {
+        const url = new URL(PISTON_API);
+        const options = {
+            hostname: url.hostname,
+            path: url.pathname,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    const run = parsed.run || {};
+                    const compile = parsed.compile || {};
+
+                    // Compilation error
+                    if (compile.code !== undefined && compile.code !== 0) {
+                        return resolve({ success: true, output: '', error: `Compilation Error:\n${compile.stderr || compile.output || 'Unknown compile error'}` });
+                    }
+
+                    // Runtime result
+                    const output = (run.stdout || '').trim();
+                    const stderr = (run.stderr || '').trim();
+                    const exitCode = run.code || 0;
+
+                    if (exitCode !== 0 && stderr) {
+                        return resolve({ success: true, output: output || '', error: stderr });
+                    }
+
+                    resolve({ success: true, output, error: stderr || null });
+                } catch (e) {
+                    reject(new CustomError('Failed to parse Piston response: ' + e.message, 500));
+                }
+            });
+        });
+
+        req.on('error', (e) => {
+            reject(new CustomError(`Piston API unreachable: ${e.message}. Check your internet connection.`, 503));
+        });
+        req.setTimeout(15000, () => {
+            req.abort();
+            reject(new CustomError('Piston API timed out. Try again in a moment.', 504));
+        });
+
+        req.write(payload);
+        req.end();
+    });
+};
 
 /**
- * Runs code in a given language with optional stdin.
- * @param {string} language - one of: javascript, python, c, cpp, java
- * @param {string} code
- * @param {string} input - stdin string
+ * Run code locally using child_process (for JavaScript and Python)
  */
-const runCode = async (language, code, input = '') => {
-    const lang = language.toLowerCase();
-    const config = LANGUAGE_CONFIG[lang];
-
-    if (!config) {
-        throw new CustomError(`Unsupported language: ${language}. Supported: ${Object.keys(LANGUAGE_CONFIG).join(', ')}`, 400);
-    }
-
-    // Pre-check: verify the required binary is available
-    const binaryMap = { c: 'gcc', cpp: 'g++', java: 'javac', python: 'python3', javascript: 'node' };
-    const binary = binaryMap[lang];
-    if (binary) {
-        const available = await isCommandAvailable(binary);
-        if (!available) {
-            return {
-                success: true,
-                output: '',
-                error: `Language "${language}" is not available on this server. Only JavaScript and Python are supported in the current deployment.`
-            };
-        }
-    }
+const runLocally = async (language, code, input) => {
+    const config = LOCAL_LANGUAGE_CONFIG[language];
+    if (!config) throw new CustomError(`Language "${language}" is not supported locally.`, 400);
 
     const uniqueId = crypto.randomUUID();
     await fs.mkdir(TEMP_DIR, { recursive: true });
 
-    const codeFileName = lang === 'java' ? 'Main' : uniqueId;
-    const codeFile = path.join(TEMP_DIR, `${codeFileName}.${config.ext}`);
+    const codeFile = path.join(TEMP_DIR, `${uniqueId}.${config.ext}`);
     const inputFile = path.join(TEMP_DIR, `${uniqueId}.in`);
-    const outputBin = path.join(TEMP_DIR, uniqueId); // for compiled languages
 
     try {
-        // Write code and input to temp files
         await Promise.all([
             fs.writeFile(codeFile, code),
-            fs.writeFile(inputFile, input)
+            fs.writeFile(inputFile, input || '')
         ]);
 
-        // --- Compilation Step (for C, C++, Java) ---
-        if (config.compile) {
-            let compileCmd;
-            if (lang === 'java') {
-                compileCmd = config.compile(codeFile, TEMP_DIR);
-            } else {
-                compileCmd = config.compile(codeFile, outputBin);
-            }
-
-            const compileError = await new Promise((resolve) => {
-                exec(compileCmd, { timeout: 15000 }, (err, stdout, stderr) => {
-                    resolve(err ? (stderr || err.message) : null);
-                });
-            });
-
-            if (compileError) {
-                return { success: true, output: '', error: `Compilation Error:\n${compileError}` };
-            }
-        }
-
-        // --- Execution Step ---
-        let runCmd;
-        if (lang === 'java') {
-            // Java: run class Main from the temp dir
-            runCmd = config.run(TEMP_DIR, 'Main');
-        } else if (config.compile) {
-            runCmd = config.run(outputBin);
-        } else {
-            runCmd = config.run(codeFile);
-        }
-
-        // Use input file as stdin
+        const runCmd = config.run(codeFile);
         const fullCmd = `${runCmd} < "${inputFile}"`;
 
         const { output, error } = await new Promise((resolve) => {
@@ -106,19 +121,40 @@ const runCode = async (language, code, input = '') => {
                 if (err && err.killed) {
                     return resolve({ output: '', error: 'Time Limit Exceeded (10s). Possible infinite loop.' });
                 }
-                if (err && !stdout) {
-                    return resolve({ output: '', error: stderr || err.message });
-                }
-                resolve({ output: stdout.trim(), error: stderr ? stderr.trim() : null });
+                resolve({
+                    output: (stdout || '').trim(),
+                    error: stderr ? stderr.trim() : (err && !stdout ? err.message : null)
+                });
             });
         });
 
         return { success: true, output, error: error || null };
-
     } finally {
-        // Cleanup temp files
-        const filesToDelete = [codeFile, inputFile, outputBin, outputBin + '.exe'];
-        await Promise.all(filesToDelete.map(f => fs.unlink(f).catch(() => {})));
+        await Promise.all([
+            fs.unlink(codeFile).catch(() => {}),
+            fs.unlink(inputFile).catch(() => {})
+        ]);
+    }
+};
+
+/**
+ * Main entry point: routes to Piston or local execution based on language.
+ * @param {string} language - javascript, python, c, cpp, java
+ * @param {string} code
+ * @param {string} input - stdin
+ */
+const runCode = async (language, code, input = '') => {
+    const lang = language.toLowerCase();
+
+    const supportedAll = [...Object.keys(PISTON_LANGUAGES), ...Object.keys(LOCAL_LANGUAGE_CONFIG)];
+    if (!supportedAll.includes(lang)) {
+        throw new CustomError(`Unsupported language: "${language}". Supported: ${supportedAll.join(', ')}`, 400);
+    }
+
+    if (PISTON_LANGUAGES[lang]) {
+        return await runViaPiston(lang, code, input);
+    } else {
+        return await runLocally(lang, code, input);
     }
 };
 
