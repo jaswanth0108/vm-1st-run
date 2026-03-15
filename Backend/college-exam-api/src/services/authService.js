@@ -28,17 +28,22 @@ const bulkRegisterUsers = async (users) => {
         await connection.query('BEGIN');
 
         let successCount = 0;
-        let skippedCount = 0;
+        let updateCount = 0;
 
         for (const user of users) {
             const { name, username, password, role, branch, year, section, batch } = user;
 
             // Check if user exists
-            const { rows } = await connection.query('SELECT id FROM users WHERE username = $1', [username]);
+            const { rows } = await connection.query('SELECT password_hash FROM users WHERE username = $1', [username]);
 
             if (rows.length > 0) {
-                skippedCount++;
-                continue; // Skip duplicates silently during bulk import so others proceed
+                // Update existing user details
+                await connection.query(
+                    'UPDATE users SET name = $1, branch = $2, year = $3, section = $4, batch = $5 WHERE username = $6',
+                    [name, branch, year, section, batch, username]
+                );
+                updateCount++;
+                continue;
             }
 
             const salt = await bcrypt.genSalt(10);
@@ -53,7 +58,7 @@ const bulkRegisterUsers = async (users) => {
         }
 
         await connection.query('COMMIT');
-        return { successCount, skippedCount, total: users.length };
+        return { successCount, updateCount, total: users.length };
     } catch (err) {
         await connection.query('ROLLBACK');
         throw err;

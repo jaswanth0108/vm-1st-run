@@ -2234,33 +2234,43 @@
             }
 
             data.forEach(row => {
-                // Normalize keys to handle case sensitivity
+                // Normalize keys to handle case sensitivity and spaces
                 const rowNormalized = {};
                 Object.keys(row).forEach(k => {
                     rowNormalized[cleanKey(k)] = row[k];
                 });
 
+                // Find key by partial match helper
+                const findVal = (prefixes) => {
+                    const match = Object.keys(rowNormalized).find(k => 
+                        prefixes.some(p => k.includes(p))
+                    );
+                    return match ? rowNormalized[match] : null;
+                };
+
                 // Check required fields (support various column name formats)
-                // "Student ID", "Roll No", "ID", "Username"
-                const id = rowNormalized['studentid'] || rowNormalized['id'] || rowNormalized['username'] || rowNormalized['rollno'];
-                // "Password", "Pwd", "Pass"
-                const pass = rowNormalized['password'] || rowNormalized['pass'] || rowNormalized['pwd'];
+                const id = findVal(['studentid', 'rollno', 'username', 'id', 'htno']);
+                const pass = findVal(['password', 'pass', 'pwd']);
+                const name = findVal(['name', 'studentname', 'fullname']) || 'Student';
+                const branch = findVal(['branch', 'dept', 'specialization']) || 'General';
+                const year = findVal(['year', 'studyingyear', 'currentyear']) || '1';
+                const section = findVal(['section', 'sec', 'class']) || 'A';
+                const batch = findVal(['batch', 'jdate', 'yearofjoining']) || '';
 
                 if (id && pass) {
                     // Extract digit from year (e.g. "1st Year" -> "1", "Year 2" -> "2")
-                    let cleanYear = String(rowNormalized['year'] || '1').replace(/\D/g, '').charAt(0) || '1';
+                    let cleanYear = String(year).replace(/\D/g, '').charAt(0) || '1';
 
                     // Store strict credentials with robust normalization
                     const uID = String(id).trim().toUpperCase();
                     usersDB[uID] = {
                         id: uID,
                         password: String(pass).trim().toUpperCase(),
-                        name: String(rowNormalized['name'] || 'Student').trim(),
-                        branch: String(rowNormalized['branch'] || 'General').trim().toUpperCase(),
+                        name: String(name).trim(),
+                        branch: String(branch).trim().toUpperCase(),
                         year: cleanYear,
-                        // Map Batch column to Section if Section is missing
-                        section: String(rowNormalized['section'] || 'A').trim().toUpperCase(),
-                        batch: String(rowNormalized['batch'] || '').trim(),
+                        section: String(section).trim().toUpperCase(),
+                        batch: String(batch).trim(),
                         addedAt: Date.now()
                     };
                     newUsersToSave[uID] = usersDB[uID];
