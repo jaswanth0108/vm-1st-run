@@ -17,6 +17,7 @@ RUN apt-get update && \
     g++ \
     python3 \
     python3-pip \
+    default-jdk \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
