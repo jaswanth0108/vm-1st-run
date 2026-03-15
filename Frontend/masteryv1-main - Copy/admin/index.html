@@ -2376,9 +2376,7 @@
             document.getElementById('newStudentId').disabled = true; // Cannot change ID
             document.getElementById('newStudentName').value = student.name;
             document.getElementById('newStudentPass').value = student.password || ''; // Password might be missing in old data
-            document.getElementById('newStudentBranch').value = student.branch;
-            document.getElementById('newStudentBranch').value = student.branch;
-            // document.getElementById('newStudentYear').value = student.year; // Year Removed
+            document.getElementById('newStudentBranch').value = student.branch || 'CSE';
             document.getElementById('newStudentSection').value = student.section || 'A';
             document.getElementById('newStudentBatch').value = student.batch || '2022-2026'; // Default if missing
 
@@ -2436,7 +2434,7 @@
             };
 
             try {
-                await UserService.saveUser(newUser);
+                await UserService.saveUser(newUser, isEditingStudent);
                 alert(isEditingStudent ? 'Student updated successfully!' : 'Student added successfully!');
                 closeAddStudentModal();
                 renderStudents();

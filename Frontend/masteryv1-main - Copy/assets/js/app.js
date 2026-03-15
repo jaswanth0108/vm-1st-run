@@ -149,7 +149,7 @@ class UserService {
         return dbUsers;
     }
 
-    static async saveUser(user) {
+    static async saveUser(user, isUpdate = false) {
         const payload = {
             name: user.name || 'Student',
             username: user.id || user.username,
@@ -161,8 +161,14 @@ class UserService {
             batch: user.batch
         };
 
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/register`, {
-            method: 'POST',
+        const url = isUpdate 
+            ? `${window.CONFIG.API_BASE_URL}/api/users/${payload.username}`
+            : `${window.CONFIG.API_BASE_URL}/api/auth/register`;
+        
+        const method = isUpdate ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getAuthToken()}`

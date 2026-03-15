@@ -7,5 +7,7 @@ const router = express.Router();
 
 router.use(protect);
 router.get('/', restrictTo('admin', 'teacher'), authController.getUsers);
+router.put('/:username', restrictTo('admin'), authController.updateUser);
+router.delete('/:username', restrictTo('admin'), authController.deleteUser);
 
 module.exports = router;

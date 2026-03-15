@@ -54,9 +54,35 @@ const getUsers = async (req, res, next) => {
     }
 };
 
+const updateUser = async (req, res, next) => {
+    try {
+        const user = await authService.updateUser(req.params.username, req.body);
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const deleteUser = async (req, res, next) => {
+    try {
+        const result = await authService.deleteUser(req.params.username);
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     register,
     bulkRegister,
     login,
-    getUsers
+    getUsers,
+    updateUser,
+    deleteUser
 };
