@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: vm-1st-run-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    # Install system packages needed for the multi-language compiler
+    # This installs: gcc/g++ (C/C++), python3, java (OpenJDK)
+    buildFilter:
+      paths:
+        - "**"

@@ -36,10 +36,12 @@ const authRoutes = require('./src/routes/authRoutes');
 const examRoutes = require('./src/routes/examRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const userRoutes = require('./src/routes/userRoutes');
+const compilerRoutes = require('./src/routes/compilerRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/compile', compilerRoutes);
 
 // Temporary DB Init Route
 app.get('/api/init-db', async (req, res) => {
