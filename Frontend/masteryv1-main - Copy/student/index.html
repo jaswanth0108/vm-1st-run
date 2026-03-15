@@ -585,38 +585,44 @@
 
         // Wrap everything dependent on API in an IIFE
         (async () => {
+            // ── STATS (non-blocking) ──────────────────────────────────
+            let results = [];
             try {
-            // Stats
-            const results = await ExamService.getStudentResults(String(session.id));
+                results = await ExamService.getStudentResults(String(session.id));
+            } catch(e) {
+                console.warn('Could not load student results (non-fatal):', e.message);
+            }
             const totalExams = results.length;
             const avgScore = totalExams > 0
                 ? Math.round(results.reduce((acc, r) => acc + Number(r.percentage || r.score || 0), 0) / totalExams)
                 : 0;
 
             // Rank calculation
-            const allResults = await ExamService.getResults();
-            let rank = '--';
-            let percentile = '--';
+            let rank = '--', percentile = '--';
+            try {
+                const allResults = await ExamService.getResults();
+                if (totalExams > 0 && allResults.length > 0) {
+                    const studentScores = {};
+                    allResults.forEach(r => {
+                        if (!studentScores[r.studentId]) studentScores[r.studentId] = [];
+                        studentScores[r.studentId].push(Number(r.percentage || r.score || 0));
+                    });
 
-            if (totalExams > 0 && allResults.length > 0) {
-                const studentScores = {};
-                allResults.forEach(r => {
-                    if (!studentScores[r.studentId]) studentScores[r.studentId] = [];
-                    studentScores[r.studentId].push(Number(r.percentage || r.score || 0));
-                });
+                    const averages = Object.keys(studentScores).map(sid => {
+                        const scores = studentScores[sid];
+                        return { sid, avg: scores.reduce((a, b) => a + b, 0) / scores.length };
+                    });
 
-                const averages = Object.keys(studentScores).map(sid => {
-                    const scores = studentScores[sid];
-                    return { sid, avg: scores.reduce((a, b) => a + b, 0) / scores.length };
-                });
-
-                averages.sort((a, b) => b.avg - a.avg);
-                const myRankIndex = averages.findIndex(a => String(a.sid) === String(session.id));
-                if (myRankIndex > -1) {
-                    rank = `#${myRankIndex + 1}`;
-                    const p = ((averages.length - myRankIndex) / averages.length) * 100;
-                    percentile = `Top ${Math.round(100 - p + 1)}%`;
+                    averages.sort((a, b) => b.avg - a.avg);
+                    const myRankIndex = averages.findIndex(a => String(a.sid) === String(session.id));
+                    if (myRankIndex > -1) {
+                        rank = `#${myRankIndex + 1}`;
+                        const p = ((averages.length - myRankIndex) / averages.length) * 100;
+                        percentile = `Top ${Math.round(100 - p + 1)}%`;
+                    }
                 }
+            } catch(e) {
+                console.warn('Could not compute rank (non-fatal):', e.message);
             }
 
             document.getElementById('stat-rank').innerHTML = rank;
@@ -624,9 +630,13 @@
             document.getElementById('stat-exams-taken').innerText = totalExams;
             document.getElementById('stat-avg-score').innerText = totalExams > 0 ? avgScore + '%' : '--';
 
+            // ── EXAMS (primary, always runs) ──────────────────────────
+            const container = document.getElementById('examList');
+            try {
             // Fetch Exams
             const exams = await ExamService.getExams();
-            const container = document.getElementById('examList');
+            console.log('[Student] Session:', session);
+            console.log('[Student] Exams fetched:', exams.length, exams);
 
             if (exams.length === 0) {
                 container.innerHTML = `
@@ -747,14 +757,12 @@
                 }
             }
             } catch(err) {
-                console.error('Dashboard load error:', err);
-                const isAuthError = err.message.includes('401') || err.message.includes('token');
-                const feedback = isAuthError 
+                console.error('Exam load error:', err);
+                const isAuthError = err.message && (err.message.includes('401') || err.message.includes('token'));
+                const feedback = isAuthError
                     ? 'Session expired. Please <a href="../index.html" style="color:var(--primary); text-decoration:underline;">login again</a>.'
-                    : `Failed to load dashboard. Please refresh. <br><small>${err.message}</small>`;
-                
-                document.getElementById('recentExamsList')?.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">${feedback}</div>`;
-                document.getElementById('examList').innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">${feedback}</div>`;
+                    : `Failed to load exams. <br><small>${err.message}</small>`;
+                container.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">${feedback}</div>`;
             }
         })();
     </script>
