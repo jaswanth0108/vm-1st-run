@@ -2115,7 +2115,7 @@
             // Apply Context Filter (Branch Drill-down)
             if (window.activeBranchFilter) {
                 filteredResults = filteredResults.filter(r => {
-                    const student = usersDB[r.studentId];
+                    const student = usersDB[String(r.username || '').toUpperCase()] || r;
                     if (!student) return false;
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2163,7 +2163,7 @@
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No students found for this category.</td></tr>';
             } else {
                 tbody.innerHTML = filteredResults.map(r => {
-                    const student = usersDB[r.studentId] || { name: 'Unknown', branch: '--', section: '--' };
+                    const student = usersDB[String(r.username || '').toUpperCase()] || r;
                     // Determine Score Color
                     let scoreColor = 'var(--text-main)';
                     if (r.score >= 80) scoreColor = 'var(--success)';
@@ -2552,7 +2552,7 @@
 
             // Iterate ALL results to find those belonging to this branch/batch
             currentReportResults.forEach(r => {
-                const student = usersDB[r.studentId];
+                const student = usersDB[String(r.username || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2608,7 +2608,7 @@
 
             // 3. Map Results
             currentReportResults.forEach(r => {
-                const student = usersDB[r.studentId];
+                const student = usersDB[String(r.username || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2714,7 +2714,7 @@
             // Iterate ALL results to find those belonging to this branch/batch/section
             // (Efficiently we could map filtered students to results, but let's stick to result iteration for score accuracy)
             currentReportResults.forEach(r => {
-                const student = usersDB[r.studentId];
+                const student = usersDB[String(r.username || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2777,7 +2777,10 @@
             } else {
                 tbody.innerHTML = targetStudents.map(s => {
                     // Find Result
-                    const result = currentReportResults.find(r => r.studentId === s.id);
+                    const result = currentReportResults.find(r => 
+                        String(r.username || '').toUpperCase() === String(s.username || s.id).toUpperCase() ||
+                        r.studentId === s.id
+                    );
 
                     let attemptStr = '<span style="color:var(--text-muted)">Not Attempted</span>';
                     let scoreStr = '--';
