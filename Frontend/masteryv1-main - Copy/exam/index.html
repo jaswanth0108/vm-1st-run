@@ -1586,7 +1586,8 @@
             }
 
             const outputDiv = document.getElementById('consoleOutput');
-            const lang = document.getElementById('langSelect').value;
+            const rawLang = document.getElementById('langSelect').value;
+            const lang = (rawLang || 'javascript').toLowerCase().replace('c++', 'cpp');
 
             const activeBtn = document.querySelector('.q-btn.active');
             if (!activeBtn) return;

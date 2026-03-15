@@ -536,7 +536,7 @@
                 <div class="stat-card">
                     <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎓</div>
                     <h3>Total Students</h3>
-                    <div class="value" id="stat-total-students" style="color:#22d3ee;">6000</div>
+                    <div class="value" id="stat-total-students" style="color:#22d3ee;">0</div>
                     <div class="sub-value">Registered students</div>
                 </div>
 
@@ -1268,7 +1268,11 @@
                 }).join('');
             } catch (error) {
                 console.error('Error rendering exams:', error);
-                document.getElementById('recentExamsList').innerHTML = `<p style="color:var(--danger); text-align:center; padding:1rem;">Error loading exams. Please refresh.</p>`;
+                const feedback = error.message.includes('401') || error.message.includes('Unauthorized')
+                    ? 'Session expired. Please <a href="../index.html" style="color:var(--primary); text-decoration:underline;">login again</a>.'
+                    : 'Error loading exams. Please refresh or check connection.';
+                
+                document.getElementById('recentExamsList').innerHTML = `<p style="color:var(--danger); text-align:center; padding:1rem;">${feedback}</p>`;
             }
         }
 

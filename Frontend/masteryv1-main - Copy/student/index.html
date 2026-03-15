@@ -743,7 +743,13 @@
             }
             } catch(err) {
                 console.error('Dashboard load error:', err);
-                document.getElementById('examList').innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">Failed to load dashboard. Please refresh the page.<br><small>${err.message}</small></div>`;
+                const isAuthError = err.message.includes('401') || err.message.includes('token');
+                const feedback = isAuthError 
+                    ? 'Session expired. Please <a href="../index.html" style="color:var(--primary); text-decoration:underline;">login again</a>.'
+                    : `Failed to load dashboard. Please refresh. <br><small>${err.message}</small>`;
+                
+                document.getElementById('recentExamsList')?.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">${feedback}</div>`;
+                document.getElementById('examList').innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">${feedback}</div>`;
             }
         })();
     </script>
