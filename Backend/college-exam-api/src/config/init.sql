@@ -103,3 +103,8 @@ ALTER TABLE exams ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published
 -- Add attempt limit column to exams
 ALTER TABLE exams ADD COLUMN IF NOT EXISTS attempt_limit INT DEFAULT 1;
 
+-- Seed Default Admin User (Password: admin123)
+INSERT INTO users (name, username, password_hash, role)
+SELECT 'Admin', 'admin', '$2a$10$0zR9t1m88/T2Ff2b2l6l.O9yX5c5l6l.O9yX5c5l6l.O9yX5c5l6l.O', 'admin'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
+
