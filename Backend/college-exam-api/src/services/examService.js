@@ -193,6 +193,17 @@ const updateExam = async (examId, examData) => {
     return getExamById(examId);
 };
 
+const updateExamStatusOnly = async (examId, status) => {
+    const result = await pool.query(
+        `UPDATE exams SET status = $1 WHERE id = $2 RETURNING id, status`,
+        [status, examId]
+    );
+    if (result.rowCount === 0) {
+        throw new CustomError('Exam not found', 404);
+    }
+    return { id: result.rows[0].id, status: result.rows[0].status };
+};
+
 const addQuestions = async (examId, questions) => {
 
     const { rows: exams } = await pool.query(
@@ -389,6 +400,7 @@ module.exports = {
     getExams,
     getExamById,
     updateExam,
+    updateExamStatusOnly,
     deleteExam,
     addQuestions,
     attemptExam,

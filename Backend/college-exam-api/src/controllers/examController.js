@@ -53,6 +53,19 @@ const updateExam = async (req, res, next) => {
     }
 };
 
+const updateExamStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        if (!status) {
+            return res.status(400).json({ success: false, error: { message: 'Status is required' } });
+        }
+        const result = await examService.updateExamStatusOnly(req.params.id, status);
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const deleteExam = async (req, res, next) => {
     try {
         const result = await examService.deleteExam(req.params.id);
@@ -109,6 +122,7 @@ module.exports = {
     getExams,
     getExamById,
     updateExam,
+    updateExamStatus,
     deleteExam,
     addQuestions,
     attemptExam,

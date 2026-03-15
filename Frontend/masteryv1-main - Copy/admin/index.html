@@ -1838,8 +1838,7 @@
                     closeActionModal();
                 }
             } else if (action === 'live') {
-                exam.status = 'published';
-                await ExamService.saveExam(exam);
+                await ExamService.updateExamStatus(selectedExamId, 'published');
                 renderExamsList();
                 closeActionModal();
                 alert('Exam is now Live!');

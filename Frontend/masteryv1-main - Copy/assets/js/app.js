@@ -69,6 +69,22 @@ class ExamService {
         return true;
     }
 
+    static async updateExamStatus(id, status) {
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({ status })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error?.message || 'Failed to update exam status');
+        }
+        return data.data || data;
+    }
+
     // --- Results ---
     static async submitResult(result) {
         const examId = result.examId || result.id;

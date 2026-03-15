@@ -38,6 +38,12 @@ router.post(
     examController.addQuestions
 );
 
+router.patch(
+    '/:id/status',
+    restrictTo('teacher', 'admin'),
+    examController.updateExamStatus
+);
+
 router.post('/:id/attempt', restrictTo('student'), examController.attemptExam);
 router.post('/:id/submit', restrictTo('student'), authValidator.validate(submitExamSchema), examController.submitExam);
 
