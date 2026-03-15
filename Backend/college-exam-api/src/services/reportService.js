@@ -121,7 +121,10 @@ const generateReport = async (submissionId) => {
 const getStudentReport = async (studentId, examId) => {
 
     const { rows: reports } = await pool.query(
-        'SELECT * FROM reports WHERE student_id = $1 AND exam_id = $2',
+        `SELECT r.*, u.name as student_name, u.username, u.branch, u.year, u.batch 
+         FROM reports r
+         JOIN users u ON r.student_id = u.id
+         WHERE r.student_id = $1 AND r.exam_id = $2`,
         [studentId, examId]
     );
 
@@ -159,7 +162,7 @@ const getClassResults = async (examId) => {
 const getAllReports = async (studentId = null) => {
     // JOIN with users to get username and name directly
     let query = `
-        SELECT r.*, u.username, u.name as student_name
+        SELECT r.*, u.username, u.name as student_name, u.branch, u.year, u.batch
         FROM reports r
         JOIN users u ON r.student_id = u.id
     `;
@@ -178,6 +181,9 @@ const getAllReports = async (studentId = null) => {
         studentId: row.student_id,
         username: row.username,
         studentName: row.student_name,
+        branch: row.branch,
+        year: row.year,
+        batch: row.batch,
         score: row.percentage,
         totalMarks: row.total_marks,
         percentage: row.percentage,
