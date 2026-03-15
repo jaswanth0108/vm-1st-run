@@ -18,6 +18,13 @@ const LANGUAGE_CONFIG = {
 };
 
 /**
+ * Check if a command/binary is available on the system.
+ */
+const isCommandAvailable = (cmd) => new Promise((resolve) => {
+    exec(`which ${cmd} || where ${cmd}`, (err) => resolve(!err));
+});
+
+/**
  * Runs code in a given language with optional stdin.
  * @param {string} language - one of: javascript, python, c, cpp, java
  * @param {string} code
@@ -29,6 +36,20 @@ const runCode = async (language, code, input = '') => {
 
     if (!config) {
         throw new CustomError(`Unsupported language: ${language}. Supported: ${Object.keys(LANGUAGE_CONFIG).join(', ')}`, 400);
+    }
+
+    // Pre-check: verify the required binary is available
+    const binaryMap = { c: 'gcc', cpp: 'g++', java: 'javac', python: 'python3', javascript: 'node' };
+    const binary = binaryMap[lang];
+    if (binary) {
+        const available = await isCommandAvailable(binary);
+        if (!available) {
+            return {
+                success: true,
+                output: '',
+                error: `Language "${language}" is not available on this server. Only JavaScript and Python are supported in the current deployment.`
+            };
+        }
     }
 
     const uniqueId = crypto.randomUUID();
