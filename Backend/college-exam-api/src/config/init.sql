@@ -108,3 +108,5 @@ INSERT INTO users (name, username, password_hash, role)
 SELECT 'Admin', 'admin', '$2a$10$0zR9t1m88/T2Ff2b2l6l.O9yX5c5l6l.O9yX5c5l6l.O9yX5c5l6l.O', 'admin'
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
 
+-- Add time_taken column to answers (seconds spent on each question)
+ALTER TABLE answers ADD COLUMN IF NOT EXISTS time_taken INT DEFAULT 0;

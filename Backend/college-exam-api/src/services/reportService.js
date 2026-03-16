@@ -27,7 +27,8 @@ const generateReport = async (submissionId) => {
 
     for (const q of questions) {
 
-        totalMarks += q.marks;
+        const questionMaxMarks = 10;
+        totalMarks += questionMaxMarks;
 
         const answer = answers.find(a => a.question_id === q.id);
 
@@ -39,28 +40,22 @@ const generateReport = async (submissionId) => {
         let isCorrect = false;
         let marksAwarded = 0;
 
-        if (q.type === 'MCQ') {
-
+        if (q.type === 'mcq' || q.type === 'MCQ') {
             isCorrect = (answer.student_answer === q.correct_answer);
-            marksAwarded = isCorrect ? q.marks : 0;
-
+            marksAwarded = isCorrect ? 10 : 0;
         } 
-        else if (q.type === 'Coding') {
-
-            if (q.test_cases) {
-
-                const testCases = typeof q.test_cases === 'string'
-                    ? JSON.parse(q.test_cases)
-                    : q.test_cases;
-
-                const evaluation = await compilerService.evaluateTestCases(
-                    answer.student_answer,
-                    testCases
-                );
-
-                isCorrect = evaluation.allPassed;
-                marksAwarded = isCorrect ? q.marks : 0;
-            }
+        else if (q.type === 'coding' || q.type === 'Coding') {
+            // Frontend already evaluates 2, 5, 10 marks using correct languages via /api/compile
+            // and saves it directly to marks_awarded during submitExam.
+            marksAwarded = answer.marks_awarded || 0;
+            // Cap at 10 just in case
+            if (marksAwarded > 10) marksAwarded = 10;
+            isCorrect = (marksAwarded === 10);
+        }
+        else {
+            marksAwarded = answer.marks_awarded || 10;
+            if (marksAwarded > 10) marksAwarded = 10;
+            isCorrect = marksAwarded > 0;
         }
 
         await pool.query(
@@ -68,8 +63,12 @@ const generateReport = async (submissionId) => {
             [isCorrect, marksAwarded, answer.id]
         );
 
-        if (isCorrect) {
+        if (marksAwarded === questionMaxMarks) {
             correct++;
+            obtainedMarks += marksAwarded;
+        } else if (marksAwarded > 0) {
+            // Partial score (e.g. 2 or 5 for coding)
+            wrong++; 
             obtainedMarks += marksAwarded;
         } else {
             wrong++;
@@ -130,7 +129,34 @@ const getStudentReport = async (studentId, examId) => {
 
     if (reports.length === 0) throw new CustomError('Report not found', 404);
 
-    return reports[0];
+    const report = reports[0];
+
+    // Fetch per-question answers using the submission_id stored in the report
+    const { rows: answerRows } = await pool.query(
+        `SELECT question_id, student_answer, marks_awarded, time_taken
+         FROM answers
+         WHERE submission_id = $1`,
+        [report.submission_id]
+    );
+
+    // Build the three maps the frontend report.html expects
+    const answers = {};
+    const questionScores = {};
+    const questionTimeData = {};
+
+    for (const row of answerRows) {
+        const qId = String(row.question_id);
+        answers[qId] = row.student_answer;
+        questionScores[qId] = row.marks_awarded || 0;
+        questionTimeData[qId] = row.time_taken || 0;
+    }
+
+    return {
+        ...report,
+        answers,
+        questionScores,
+        questionTimeData
+    };
 };
 
 const getClassResults = async (examId) => {
