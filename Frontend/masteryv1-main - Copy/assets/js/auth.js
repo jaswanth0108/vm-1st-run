@@ -30,7 +30,16 @@ class Auth {
         }
         return { success: true };
       } else {
-        return { success: false, message: data.error?.message || data.error || 'Login failed' };
+        // Parse a clean message from the backend response
+        let errMsg = 'Login failed. Please try again.';
+        if (data.message && typeof data.message === 'string') {
+          errMsg = data.message;
+        } else if (data.error && typeof data.error === 'string') {
+          errMsg = data.error;
+        } else if (data.error && data.error.message) {
+          errMsg = data.error.message;
+        }
+        return { success: false, message: errMsg };
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -104,9 +113,8 @@ async function handleLogin(event) {
       window.location.href = "student/index.html";
     }
   } else {
-    // Improved error alert: handle objects or strings
-    const errMsg = result.message;
-    alert(typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg);
+    const errMsg = result.message || 'Invalid username or password. Please check your details and try again.';
+    alert(errMsg);
     // Clear inputs on failure
     document.getElementById("username").value = "";
     document.getElementById("password").value = "";
