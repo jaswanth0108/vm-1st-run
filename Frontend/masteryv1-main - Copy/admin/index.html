@@ -2419,11 +2419,13 @@
             id = String(id).toUpperCase();
             if (!confirm('Are you sure you want to delete student ' + id + '?')) return;
 
-            const success = await UserService.deleteUser(id);
-            if (success) {
-                renderStudents();
-            } else {
-                alert('Failed to delete student.');
+            try {
+                const success = await UserService.deleteUser(id);
+                if (success) {
+                    renderStudents();
+                }
+            } catch (error) {
+                alert('Failed to delete student. Note: If the backend was just updated, it may take 1-2 minutes for the "Delete" endpoint to become active on Render. Error: ' + error.message);
             }
         }
 
@@ -2482,8 +2484,12 @@
             const section = document.getElementById('newStudentSection').value.trim().toUpperCase() || 'A';
             const batch = document.getElementById('newStudentBatch').value.trim();
 
-            if (!id || !name || !pass) {
-                alert("ID, Name and Password are required.");
+            if (!id || !name) {
+                alert("ID and Name are required.");
+                return;
+            }
+            if (!isEditingStudent && !pass) {
+                alert("Password is required for new students.");
                 return;
             }
 
