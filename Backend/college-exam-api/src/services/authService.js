@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const pool = require('../config/db');
 const CustomError = require('../utils/customError');
 
@@ -13,10 +14,11 @@ const registerUser = async (name, username, password, role, profile = {}) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const { branch, year, section, batch } = profile;
+    const newId = 'usr_' + crypto.randomUUID();
 
     const { rows } = await pool.query(
-        'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
-        [name, username, passwordHash, role, branch, year, section, batch]
+        'INSERT INTO users (id, name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
+        [newId, name, username, passwordHash, role, branch, year, section, batch]
     );
 
     return { id: rows[0].id, name, username, role, ...profile };
@@ -48,10 +50,11 @@ const bulkRegisterUsers = async (users) => {
 
             const salt = await bcrypt.genSalt(10);
             const passwordHash = await bcrypt.hash(password, salt);
+            const newId = 'usr_' + crypto.randomUUID();
 
             await connection.query(
-                'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-                [name, username, passwordHash, role, branch, year, section, batch]
+                'INSERT INTO users (id, name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+                [newId, name, username, passwordHash, role, branch, year, section, batch]
             );
 
             successCount++;
