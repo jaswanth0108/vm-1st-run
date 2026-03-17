@@ -539,8 +539,15 @@
                         solutionContent = `<strong style="color:#15803d;">Correct Option:</strong> ${q.options[idx]}`;
                     }
                 } else if (q.type === 'coding') {
+                    let parts = [];
+                    if (q.testIn) {
+                        parts.push(`<strong style="color:#1e40af;">Sample Input:</strong><br><pre style="margin:4px 0 8px 0; background:#f1f5f9; padding:6px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:0.82rem; border:1px solid #e2e8f0;">${q.testIn}</pre>`);
+                    }
                     if (q.testOut) {
-                        solutionContent = `<strong>Expected Output:</strong><br><pre style="margin:0; background:none; font-family:inherit;">${q.testOut}</pre>`;
+                        parts.push(`<strong style="color:#15803d;">Sample Output:</strong><br><pre style="margin:4px 0 0 0; background:#f0fdf4; padding:6px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:0.82rem; border:1px solid #bbf7d0;">${q.testOut}</pre>`);
+                    }
+                    if (parts.length > 0) {
+                        solutionContent = parts.join('');
                     }
                 }
 
