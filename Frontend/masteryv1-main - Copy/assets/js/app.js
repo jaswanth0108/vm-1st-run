@@ -152,7 +152,7 @@ class UserService {
     static async saveUser(user, isUpdate = false) {
         const payload = {
             name: user.name || 'Student',
-            username: user.id || user.username,
+            username: user.username || user.id, // Prioritize provided Roll No string over any internal ID field
             password: user.password,
             role: 'Student',
             branch: user.branch,

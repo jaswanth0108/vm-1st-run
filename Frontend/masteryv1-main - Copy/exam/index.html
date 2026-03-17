@@ -1600,13 +1600,10 @@
         // Piston API Runner
         function processRuntimeInput(input) {
             if (!input) return "";
-            // Normalize literal \n (two-char sequence from test case data) to real newlines
-            let normalized = input.replace(/\\n/g, '\n');
-            // Split each line's space/tab-separated tokens into separate lines
-            // so "10 20" becomes "10\n20" (two separate inputs)
-            return normalized.trim().split('\n').map(line =>
-                line.trim().split(/[ \t]+/).join('\n')
-            ).filter(s => s.length > 0).join('\n');
+            // Only normalize literal \n (two-char sequence from test case data) to real newlines.
+            // Do NOT split space-separated tokens — each line should be preserved as-is.
+            // Python's input() reads a whole line; splitting "10 20" into "10\n20" is WRONG.
+            return input.replace(/\\n/g, '\n').trimEnd();
         }
 
         async function runCode() {

@@ -412,12 +412,8 @@
                         result.examId = result.exam_id;
                         result.studentId = result.student_id;
                         result.score = result.percentage;
-                        result.studentName = result.student_name || studentId;
-                        result.branch = result.branch;
-                        result.year = result.year;
-                        result.batch = result.batch;
-                        result.section = result.section;
-                        result.username = result.username || '';  // Excel StudentID (e.g. 25L31A05X7)
+                        result.username = result.username || 'UNASSIGNED'; // Strictly Roll No
+                        result.studentName = result.student_name || 'Student';
                         result.timestamp = result.generated_at ? new Date(result.generated_at).getTime() : Date.now();
                         result.answers = result.answers || {};
                         result.questionScores = result.questionScores || {};
@@ -431,6 +427,11 @@
                     result = results
                         .filter(r => String(r.examId) === String(examId))
                         .sort((a, b) => b.timestamp - a.timestamp)[0] || null;
+                }
+                
+                if (result) {
+                    result.username = result.username || 'UNASSIGNED';
+                    result.studentName = result.studentName || result.student_name || 'Student';
                 }
 
                 if (!examData || !result) {

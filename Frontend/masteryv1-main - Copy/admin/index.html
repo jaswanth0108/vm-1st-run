@@ -2241,9 +2241,12 @@
                     if (r.score >= 80) scoreColor = 'var(--success)';
                     if (r.score < 40) scoreColor = 'var(--danger)';
 
+                    const isNumericId = r.username && r.username.length < 5 && !isNaN(r.username);
+                    const idDisplay = (r.username && !isNumericId) ? r.username : 'UNASSIGNED';
+
                     return `
                         <tr style="border-bottom: 1px solid var(--border);">
-                            <td style="padding: 0.75rem;">${r.studentId}</td>
+                            <td style="padding: 0.75rem;">${idDisplay}</td>
                             <td style="padding: 0.75rem; font-weight:500;">${student.name}</td>
                             <td style="padding: 0.75rem;">${student.branch}</td>
                             <td style="padding: 0.75rem;">${student.batch || 'N/A'} - ${student.section || 'A'}</td>
@@ -2321,7 +2324,7 @@
                 };
 
                 // Check required fields (support various column name formats)
-                const id = findVal(['studentid', 'rollno', 'username', 'id', 'htno']);
+                const id = findVal(['studentid', 'rollno', 'username', 'htno', 'regno']); // Removed 'id' to avoid auto-increment collisions
                 const pass = findVal(['password', 'pass', 'pwd']);
                 const name = findVal(['name', 'studentname', 'fullname']) || 'Student';
                 const branch = findVal(['branch', 'dept', 'specialization']) || 'General';
@@ -2330,11 +2333,17 @@
                 const batch = findVal(['batch', 'jdate', 'yearofjoining']) || '';
 
                 if (id && pass) {
+                    const uID = String(id).trim().toUpperCase();
+                    // Basic validation: Roll numbers should likely be alphanumeric and at least 5 chars
+                    if (uID.length < 5 && !isNaN(uID)) {
+                        console.warn(`Skipping student with suspicious numeric ID: ${uID}`);
+                        return;
+                    }
                     // Extract digit from year (e.g. "1st Year" -> "1", "Year 2" -> "2")
                     let cleanYear = String(year).replace(/\D/g, '').charAt(0) || '1';
 
                     // Store strict credentials with robust normalization
-                    const uID = String(id).trim().toUpperCase();
+                    // uID already declared above
                     usersDB[uID] = {
                         id: uID,
                         password: String(pass).trim().toUpperCase(),
@@ -2386,7 +2395,7 @@
             if (searchVal) {
                 students = students.filter(s =>
                     (s.name || '').toLowerCase().includes(searchVal) ||
-                    (s.username || s.id || '').toLowerCase().includes(searchVal)
+                    (s.username || '').toLowerCase().includes(searchVal)
                 );
             }
 
@@ -2395,9 +2404,16 @@
                 return;
             }
 
-            tbody.innerHTML = students.map(s => `
+                const isNumericId = s.username && s.username.length < 5 && !isNaN(s.username);
+                const idDisplay = s.username 
+                    ? (isNumericId 
+                        ? `<span style="color:var(--danger); cursor:help;" title="Numeric/Legacy ID found. Consider removing this student and re-adding with a valid Roll No.">${s.username} (Invalid)</span>` 
+                        : s.username)
+                    : '<span style="color:var(--danger)">No ID</span>';
+
+                return `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 0.75rem;">${s.username || s.id}</td>
+                    <td style="padding: 0.75rem;">${idDisplay}</td>
                     <td style="padding: 0.75rem;">${s.name}</td>
                     <td style="padding: 0.75rem;">${s.branch || '--'}</td>
                     <td style="padding: 0.75rem;">${s.section || 'A'}</td>
@@ -2452,7 +2468,7 @@
             }
 
             isEditingStudent = true;
-            document.getElementById('newStudentId').value = student.id;
+            document.getElementById('newStudentId').value = student.username || '';
             document.getElementById('newStudentId').disabled = true; // Cannot change ID
             document.getElementById('newStudentName').value = student.name;
             document.getElementById('newStudentPass').value = student.password || ''; // Password might be missing in old data
@@ -2478,6 +2494,11 @@
         async function saveNewStudent(e) {
             e.preventDefault();
             const id = document.getElementById('newStudentId').value.trim().toUpperCase();
+            const rollNoRegex = /^[A-Z0-9]{5,20}$/; // Basic Roll No format
+            if (!rollNoRegex.test(id)) {
+                alert('Invalid Student ID format. Please use a valid Roll Number (e.g., 25L31A05Z5). Numeric-only IDs under 5 digits are not allowed.');
+                return;
+            }
             const name = document.getElementById('newStudentName').value.trim();
             const pass = document.getElementById('newStudentPass').value.trim().toUpperCase();
             const branch = document.getElementById('newStudentBranch').value;
@@ -2871,9 +2892,7 @@
 
                     if (result) {
                         // Attempted
-                        const answers = result.answers || {};
-                        attemptedQs = Object.keys(answers).length;
-                        attemptStr = attemptedQs;
+                        attemptStr = '<span style="color:var(--success)">Attempted</span>';
                         scoreStr = `${result.score}%`;
 
                         // Test Cases Logic
@@ -2895,13 +2914,13 @@
                     return `
                         <tr style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 0.75rem; font-weight: 500;">${s.name}</td>
-                            <td style="padding: 0.75rem; color: var(--text-muted);">${s.id}</td>
+                            <td style="padding: 0.75rem; color: var(--text-muted);">${s.username || 'N/A'}</td>
                             <td style="padding: 0.75rem;">${totalQs}</td>
                             <td style="padding: 0.75rem;">${attemptStr}</td>
                             <td style="padding: 0.75rem; font-weight: 600;">${scoreStr}</td>
                             <td style="padding: 0.75rem;">${testCasesStr}</td>
                         </tr>
-                     `;
+                    `;
                 }).join('');
             }
 

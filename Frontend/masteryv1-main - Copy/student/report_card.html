@@ -315,7 +315,7 @@
 
         // Populate Basics
         document.getElementById('stuName').innerText = session.name;
-        document.getElementById('stuId').innerText = session.id;
+        document.getElementById('stuId').innerText = session.username || 'UNASSIGNED';
         document.getElementById('stuBranch').innerText = `${session.branch || 'N/A'} / ${session.batch || 'N/A'}`;
         document.getElementById('genDate').innerText = new Date().toLocaleDateString();
 

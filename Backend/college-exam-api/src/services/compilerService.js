@@ -10,15 +10,22 @@ const TEMP_DIR = path.join(os.tmpdir(), 'vm_compiler');
 
 // All supported language configs
 const LANGUAGE_CONFIG = {
-    javascript: { ext: 'js',   compile: null,                              run: (f)    => `node "${f}"` },
-    python:     { ext: 'py',   compile: null,                              run: (f)    => `python3 "${f}"` },
-    c:          { ext: 'c',    compile: (f, o) => `gcc "${f}" -o "${o}" -lm`,  run: (o) => `"${o}"` },
-    cpp:        { ext: 'cpp',  compile: (f, o) => `g++ "${f}" -o "${o}" -lm`,  run: (o) => `"${o}"` },
-    java:       { ext: 'java', compile: (f, dir) => `javac -d "${dir}" "${f}"`, run: (dir) => `java -cp "${dir}" Main` }
+    javascript: { ext: 'js', compile: null, run: (f) => `node "${f}"` },
+    python: { 
+        ext: 'py', 
+        compile: null, 
+        run: async (f) => {
+            const hasPython3 = await isCommandAvailable('python3');
+            return hasPython3 ? `python3 "${f}"` : `python "${f}"`;
+        }
+    },
+    c: { ext: 'c', compile: (f, o) => `gcc "${f}" -o "${o}" -lm`, run: (o) => `"${o}"` },
+    cpp: { ext: 'cpp', compile: (f, o) => `g++ "${f}" -o "${o}" -lm`, run: (o) => `"${o}"` },
+    java: { ext: 'java', compile: (f, dir) => `javac -d "${dir}" "${f}"`, run: (dir) => `java -cp "${dir}" Main` }
 };
 
 /**
- * Check if a system binary is available (used for graceful error if compiler missing)
+ * Check if a system binary is available
  */
 const isCommandAvailable = (cmd) => new Promise((resolve) => {
     exec(`which ${cmd} 2>/dev/null || where ${cmd} 2>nul`, (err) => resolve(!err));
@@ -26,30 +33,13 @@ const isCommandAvailable = (cmd) => new Promise((resolve) => {
 
 /**
  * Runs code in the specified language with optional stdin.
- * @param {string} language - javascript | python | c | cpp | java
- * @param {string} code
- * @param {string} input - stdin text
  */
 const runCode = async (language, code, input = '') => {
     const lang = language.toLowerCase();
     const config = LANGUAGE_CONFIG[lang];
 
     if (!config) {
-        throw new CustomError(`Unsupported language: "${language}". Supported: ${Object.keys(LANGUAGE_CONFIG).join(', ')}`, 400);
-    }
-
-    // Check required binary is available
-    const binaryMap = { c: 'gcc', cpp: 'g++', java: 'javac', python: 'python3', javascript: 'node' };
-    const binary = binaryMap[lang];
-    if (binary) {
-        const available = await isCommandAvailable(binary);
-        if (!available) {
-            return {
-                success: true,
-                output: '',
-                error: `Compiler for "${language}" is not installed on this server. Please contact your administrator.`
-            };
-        }
+        throw new CustomError(`Unsupported language: "${language}"`, 400);
     }
 
     const uniqueId = crypto.randomUUID();
@@ -92,7 +82,10 @@ const runCode = async (language, code, input = '') => {
         } else if (config.compile) {
             runCmd = config.run(outputBin);
         } else {
-            runCmd = config.run(codeFile);
+            // Handle async run functions (like Python detection)
+            runCmd = typeof config.run === 'function' && config.run.constructor.name === 'AsyncFunction'
+                ? await config.run(codeFile)
+                : config.run(codeFile);
         }
 
         const fullCmd = `${runCmd} < "${inputFile}"`;
