@@ -167,17 +167,20 @@
 
         /* Answer Box Style (Screen & Print) */
         .answer-content {
-            width: 5cm;
-            height: 5cm;
-            min-width: 5cm;
-            max-width: 5cm;
-            max-height: 5cm;
+            width: 100%;
+            max-height: 150px;
             border: 1px solid #e2e8f0;
             padding: 0.5rem;
-            overflow: hidden;
+            overflow-y: auto;
             background: #fff;
             position: relative;
             margin-bottom: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .solution-content {
+            max-height: 80px;
+            overflow-y: hidden;
         }
 
         /* Modal Styles */
@@ -302,17 +305,23 @@
                 break-inside: avoid;
             }
 
-            .answer-content {
+            .answer-content,
+            .solution-content {
                 border-color: #000;
+                max-height: none !important;
+                overflow: visible !important;
             }
 
-            .answer-content>div:last-child {
+            .answer-content>div:last-child,
+            .fade-gradient {
                 display: none !important;
             }
 
+            /* Allow table to flex naturally based on content instead of strict cm widths */
             table {
                 width: 100%;
-                table-layout: fixed;
+                table-layout: auto;
+                word-wrap: break-word;
             }
 
             table th,
@@ -321,29 +330,11 @@
                 border: 1px solid #ccc;
             }
 
-            table th:nth-child(1),
-            table td:nth-child(1) {
-                width: 1cm;
-            }
-
-            table th:nth-child(2),
-            table td:nth-child(2) {
-                width: auto;
-            }
-
-            table th:nth-child(3),
-            table td:nth-child(3) {
-                width: 5.5cm;
-            }
-
-            table th:nth-child(4),
-            table td:nth-child(4) {
-                width: 4cm;
-            }
-
             pre {
-                max-height: none;
-                overflow: visible;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                max-height: none !important;
+                overflow: visible !important;
             }
         }
     </style>
@@ -570,9 +561,9 @@
                             </button>
                         </td>
                         <td style="width: 25%;">
-                            <div style="max-height: 80px; overflow-y: hidden; position: relative; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                            <div class="solution-content" style="position: relative; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
                                 <div style="font-size: 0.85rem; line-height: 1.4;">${solutionContent}</div>
-                                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 30px; background: linear-gradient(transparent, #f8fafc); pointer-events: none;"></div>
+                                <div class="fade-gradient" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 30px; background: linear-gradient(transparent, #f8fafc); pointer-events: none;"></div>
                             </div>
                             <button class="view-full-btn" onclick='openModal("Solution", ${JSON.stringify(solutionContent)})'>
                                 <span>⤢</span> View Full Solution
