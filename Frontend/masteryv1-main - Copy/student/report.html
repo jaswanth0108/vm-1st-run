@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -607,7 +607,7 @@
                             <h3 style="font-size: 0.85rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; margin-bottom: 0.5rem; text-transform: uppercase;">STUDENT</h3>
                             <p style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.3; max-width: 250px;">${result.studentName || 'Unknown Student'}</p>
                             <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 0.25rem;">${result.branch || session.branch || 'Unknown'}${result.section || session.section ? ' - ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
-                            <div style="font-size: 0.95rem; color: #64748b;">Student ID: \</div>
+                            <div style="font-size: 0.95rem; color: #64748b;">Student ID: ${result.username || 'N/A'}</div>
                         </div>
                     </div>
                     <div style="padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
