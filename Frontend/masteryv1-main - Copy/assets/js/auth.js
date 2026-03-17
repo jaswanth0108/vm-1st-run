@@ -69,15 +69,19 @@ class Auth {
     const session = this.checkSession();
     if (!session || session.role !== role) {
       // Redirect to login if invalid
-      // Handle relative paths - for local development, we might be in a subdir
-      // We'll rely on relative navigation usually, but for security redirects:
+      // If invalid or no session, redirect based on current path
       const path = window.location.pathname;
-      if (
-        !path.includes("index.html") &&
-        path !== "/" &&
-        !path.endsWith("vignan/")
-      ) {
+      
+      // If we are already on the main login page, don't redirect to avoid infinite loops
+      if (path.endsWith("index.html") && !path.includes("/admin/") && !path.includes("/student/") || path === "/" || path.endsWith("vignan/")) {
+        return false;
+      }
+      
+      // If we are in a protected route (e.g. /admin/index.html), redirect to main login
+      if (path.includes("/admin/") || path.includes("/student/")) {
         window.location.href = "../index.html";
+      } else {
+        window.location.href = "index.html";
       }
       return false;
     }
