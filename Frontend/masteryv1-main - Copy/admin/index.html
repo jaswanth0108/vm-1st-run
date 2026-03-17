@@ -2404,6 +2404,7 @@
                 return;
             }
 
+            tbody.innerHTML = students.map(s => {
                 const isNumericId = s.username && s.username.length < 5 && !isNaN(s.username);
                 const idDisplay = s.username 
                     ? (isNumericId 
@@ -2429,7 +2430,8 @@
                             onclick="deleteStudent(this.getAttribute('data-id'))">Delete</button>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
         async function deleteStudent(id) {
