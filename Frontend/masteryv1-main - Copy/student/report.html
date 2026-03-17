@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -417,7 +417,7 @@
                         result.year = result.year;
                         result.batch = result.batch;
                         result.section = result.section;
-                        result.username = result.username || studentId;
+                        result.username = result.username || '';  // Excel StudentID (e.g. 25L31A05X7)
                         result.timestamp = result.generated_at ? new Date(result.generated_at).getTime() : Date.now();
                         result.answers = result.answers || {};
                         result.questionScores = result.questionScores || {};
@@ -607,7 +607,7 @@
                             <h3 style="font-size: 0.85rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; margin-bottom: 0.5rem; text-transform: uppercase;">STUDENT</h3>
                             <p style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.3; max-width: 250px;">${result.studentName || 'Unknown Student'}</p>
                             <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 0.25rem;">${result.branch || session.branch || 'Unknown'}${result.section || session.section ? ' - ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
-                            <div style="font-size: 0.95rem; color: #64748b;">ID: ${result.username || result.studentId}</div>
+                            <div style="font-size: 0.95rem; color: #64748b;">Student ID: \</div>
                         </div>
                     </div>
                     <div style="padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
