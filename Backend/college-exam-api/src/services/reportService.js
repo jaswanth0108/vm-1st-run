@@ -41,7 +41,7 @@ const generateReport = async (submissionId) => {
         let marksAwarded = 0;
 
         if (q.type === 'mcq' || q.type === 'MCQ') {
-            isCorrect = (answer.student_answer === q.correct_answer);
+            isCorrect = (answer.student_answer == q.correct_answer);
             marksAwarded = isCorrect ? 10 : 0;
         } 
         else if (q.type === 'coding' || q.type === 'Coding') {
