@@ -2311,10 +2311,12 @@
 
                 tbody.innerHTML = students.map(s => {
                     if (!s) return '';
-                    const safeId = String(s.id || '').replace(/"/g, '&quot;');
+                    // Always use username (roll number) as the identifier, not the internal id
+                    const safeUsername = String(s.username || s.id || '').replace(/"/g, '&quot;');
+                    const displayId = s.username || s.id || '--';
                     return `
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <td style="padding: 0.75rem;">${s.id || '--'}</td>
+                            <td style="padding: 0.75rem;">${displayId}</td>
                             <td style="padding: 0.75rem;">${s.name || 'Student'}</td>
                             <td style="padding: 0.75rem;">${s.branch || '--'}</td>
                             <td style="padding: 0.75rem;">${s.section || 'A'}</td>
@@ -2322,11 +2324,11 @@
                             <td style="padding: 0.75rem;">
                                 <button class="btn btn-outline" 
                                     style="padding: 0.25rem 0.5rem; margin-right: 0.5rem; font-size: 0.8rem;" 
-                                    data-id="${safeId}"
+                                    data-id="${safeUsername}"
                                     onclick="openEditStudentModal(this.getAttribute('data-id'))">Edit</button>
                                 <button class="btn btn-outline" 
                                     style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: var(--danger); font-size: 0.8rem;" 
-                                    data-id="${safeId}"
+                                    data-id="${safeUsername}"
                                     onclick="deleteStudent(this.getAttribute('data-id'))">Delete</button>
                             </td>
                         </tr>

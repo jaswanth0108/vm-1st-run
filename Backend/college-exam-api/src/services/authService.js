@@ -142,8 +142,13 @@ const updateUser = async (username, userData) => {
     return { username, name, branch, year, section, batch };
 };
 
-const deleteUser = async (username) => {
-    const result = await pool.query('DELETE FROM users WHERE UPPER(username) = UPPER($1)', [username]);
+const deleteUser = async (identifier) => {
+    // Try to delete by username first (rollNo), then fall back to internal id
+    let result = await pool.query('DELETE FROM users WHERE UPPER(username) = UPPER($1)', [identifier]);
+    if (result.rowCount === 0) {
+        // Fallback: try by internal id column (in case frontend passed the internal id)
+        result = await pool.query('DELETE FROM users WHERE id = $1', [identifier]);
+    }
     if (result.rowCount === 0) {
         throw new CustomError('User not found', 404);
     }
