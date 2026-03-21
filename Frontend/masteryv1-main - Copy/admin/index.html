@@ -1274,7 +1274,38 @@
         let editingExamId = null;
 
         // Tabs
+        function resetReportView() {
+            // Hide loaded report content and reset to default "select exam" state
+            const reportContent = document.getElementById('reportContent');
+            if (reportContent) reportContent.style.display = 'none';
+
+            // Reset the exam dropdown to blank
+            const examSelect = document.getElementById('reportExamSelect');
+            if (examSelect) examSelect.value = '';
+
+            // Collapse any drill-down views back to the main report view
+            const mainView = document.getElementById('mainReportView');
+            const sectionView = document.getElementById('sectionPerformanceView');
+            const studentView = document.getElementById('studentPerformanceView');
+            if (mainView) mainView.style.display = 'block';
+            if (sectionView) sectionView.style.display = 'none';
+            if (studentView) studentView.style.display = 'none';
+
+            // Clear active filters and cached report data
+            window.activeBranchFilter = null;
+            window.reportGlobalStats = null;
+            window.reportBranchStats = null;
+            currentReportResults = [];
+            currentReportExam = null;
+        }
+
         function switchTab(tabId) {
+            // If leaving the reports tab, reset it to default state
+            const activePane = document.querySelector('.tab-pane.active');
+            if (activePane && activePane.id === 'tab-reports' && tabId !== 'reports') {
+                resetReportView();
+            }
+
             // Hide all
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
@@ -1283,13 +1314,10 @@
             document.getElementById('tab-' + tabId).classList.add('active');
 
             // Highlight nav
-            const navMap = { 'dashboard': 0, 'create_exam': 1, 'reports': 2, 'students': 3 };
             const navs = document.querySelectorAll('.nav-link');
-            // Remove all
             navs.forEach(n => n.classList.remove('active'));
-            // Add active
             const link = document.querySelector(`.nav-link[onclick="switchTab('${tabId}')"]`);
-            if (link) link.classList.add('active'); // Safer selection
+            if (link) link.classList.add('active');
 
             if (tabId === 'students') renderStudents();
             if (tabId === 'dashboard') renderExamsList();
