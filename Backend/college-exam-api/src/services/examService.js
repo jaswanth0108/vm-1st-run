@@ -299,7 +299,7 @@ const attemptExam = async (studentId, examId) => {
     }
 };
 
-const submitExam = async (studentId, examId, answers, questionScores, questionTimeData) => {
+const submitExam = async (studentId, examId, answers, questionScores, questionTimeData, codingTestCaseData) => {
 
     const connection = await pool.connect();
 
@@ -339,29 +339,33 @@ const submitExam = async (studentId, examId, answers, questionScores, questionTi
 
             const placeholders = Object.keys(answers).map((qId, i) => {
 
-                const base = i * 5;
+                const base = i * 6;
                 const marksAwarded = (questionScores && questionScores[qId] !== undefined)
                     ? parseInt(questionScores[qId], 10)
                     : 0;
                 const timeTaken = (questionTimeData && questionTimeData[qId] !== undefined)
                     ? parseInt(questionTimeData[qId], 10)
                     : 0;
+                const testCases = (codingTestCaseData && codingTestCaseData[qId])
+                    ? JSON.stringify(codingTestCaseData[qId])
+                    : null;
 
                 values.push(
                     submissionId,
                     parseInt(qId, 10),
                     answers[qId],
                     marksAwarded,
-                    timeTaken
+                    timeTaken,
+                    testCases
                 );
 
-                return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5})`;
+                return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6})`;
 
             }).join(', ');
 
             const query = `
                 INSERT INTO answers
-                (submission_id, question_id, student_answer, marks_awarded, time_taken)
+                (submission_id, question_id, student_answer, marks_awarded, time_taken, test_cases_passed)
                 VALUES ${placeholders}
             `;
 

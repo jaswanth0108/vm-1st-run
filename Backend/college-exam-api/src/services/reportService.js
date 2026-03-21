@@ -133,29 +133,37 @@ const getStudentReport = async (studentId, examId) => {
 
     // Fetch per-question answers using the submission_id stored in the report
     const { rows: answerRows } = await pool.query(
-        `SELECT question_id, student_answer, marks_awarded, time_taken
+        `SELECT question_id, student_answer, marks_awarded, time_taken, test_cases_passed
          FROM answers
          WHERE submission_id = $1`,
         [report.submission_id]
     );
 
-    // Build the three maps the frontend report.html expects
+    // Build the maps the frontend report.html expects
     const answers = {};
     const questionScores = {};
     const questionTimeData = {};
+    const codingTestCaseData = {};
 
     for (const row of answerRows) {
         const qId = String(row.question_id);
         answers[qId] = row.student_answer;
         questionScores[qId] = row.marks_awarded || 0;
         questionTimeData[qId] = row.time_taken || 0;
+        
+        if (row.test_cases_passed) {
+            codingTestCaseData[qId] = typeof row.test_cases_passed === 'string' 
+                ? JSON.parse(row.test_cases_passed) 
+                : row.test_cases_passed;
+        }
     }
 
     return {
         ...report,
         answers,
         questionScores,
-        questionTimeData
+        questionTimeData,
+        codingTestCaseData
     };
 };
 
@@ -186,9 +194,15 @@ const getClassResults = async (examId) => {
 };
 
 const getAllReports = async (studentId = null) => {
-    // JOIN with users to get username and name directly
+    // JOIN with users to get username and name directly, and subquery answers to get test cases.
     let query = `
-        SELECT r.*, u.username, u.name as student_name, u.branch, u.year, u.batch, u.section
+        SELECT r.*, u.username, u.name as student_name, u.branch, u.year, u.batch, u.section,
+               (
+                   SELECT json_object_agg(a.question_id, a.test_cases_passed)
+                   FROM answers a
+                   WHERE a.submission_id = r.submission_id
+                     AND a.test_cases_passed IS NOT NULL
+               ) as coding_test_case_data
         FROM reports r
         JOIN users u ON r.student_id = u.id
     `;
@@ -215,7 +229,8 @@ const getAllReports = async (studentId = null) => {
         totalMarks: row.total_marks,
         percentage: row.percentage,
         submissionId: row.submission_id,
-        timestamp: row.generated_at ? new Date(row.generated_at).getTime() : 0
+        timestamp: row.generated_at ? new Date(row.generated_at).getTime() : 0,
+        codingTestCaseData: row.coding_test_case_data || {}
     }));
 };
 

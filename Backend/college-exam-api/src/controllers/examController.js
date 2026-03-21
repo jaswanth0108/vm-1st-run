@@ -109,8 +109,8 @@ const submitExam = async (req, res, next) => {
     try {
         const studentId = req.user.userId;
         const examId = req.params.id;
-        const { answers, questionScores, questionTimeData } = req.body;
-        const data = await examService.submitExam(studentId, examId, answers, questionScores, questionTimeData);
+        const { answers, questionScores, questionTimeData, codingTestCaseData } = req.body;
+        const data = await examService.submitExam(studentId, examId, answers, questionScores, questionTimeData, codingTestCaseData);
         res.status(200).json({ success: true, data });
     } catch (error) {
         next(error);

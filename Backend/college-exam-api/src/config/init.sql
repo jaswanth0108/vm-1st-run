@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS answers (
     student_answer TEXT NOT NULL,
     is_correct BOOLEAN NULL,
     marks_awarded INT DEFAULT 0,
+    test_cases_passed JSONB DEFAULT NULL,
     FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
@@ -110,3 +111,6 @@ WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
 
 -- Add time_taken column to answers (seconds spent on each question)
 ALTER TABLE answers ADD COLUMN IF NOT EXISTS time_taken INT DEFAULT 0;
+
+-- Add test_cases_passed to answers
+ALTER TABLE answers ADD COLUMN IF NOT EXISTS test_cases_passed JSONB DEFAULT NULL;
