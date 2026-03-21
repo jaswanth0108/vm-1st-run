@@ -45,7 +45,7 @@ const createExam = async (teacherId, examData) => {
         if (questions && questions.length > 0) {
             const values = [];
             const placeholders = questions.map((q, i) => {
-                const base = i * 7;
+                const base = i * 9;
                 const rawType = (q.type || 'MCQ').toLowerCase();
                 let normalizedType = 'MCQ';
                 if (rawType.includes('coding')) normalizedType = 'Coding';
@@ -59,14 +59,16 @@ const createExam = async (teacherId, examData) => {
                     q.options ? JSON.stringify(q.options) : (q.mcq_options ? JSON.stringify(q.mcq_options) : null),
                     q.correct || q.correct_answer || null,
                     q.marks || 1,
-                    q.hiddenCases ? JSON.stringify(q.hiddenCases) : (q.test_cases ? JSON.stringify(q.test_cases) : null)
+                    q.hiddenCases ? JSON.stringify(q.hiddenCases) : (q.test_cases ? JSON.stringify(q.test_cases) : null),
+                    q.testIn || null,
+                    q.testOut || null
                 );
-                return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7})`;
+                return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7},$${base+8},$${base+9})`;
             }).join(', ');
 
             const query = `
                 INSERT INTO questions
-                (exam_id, type, problem_statement, mcq_options, correct_answer, marks, test_cases)
+                (exam_id, type, problem_statement, mcq_options, correct_answer, marks, test_cases, sample_input, sample_output)
                 VALUES ${placeholders}
             `;
             await connection.query(query, values);
@@ -139,7 +141,9 @@ const getExamById = async (examId) => {
         correct_answer: q.correct_answer,
         marks: q.marks,
         test_cases: q.test_cases,
-        hiddenCases: q.test_cases // Frontend might look for hiddenCases
+        hiddenCases: q.test_cases, // Frontend might look for hiddenCases
+        testIn: q.sample_input,
+        testOut: q.sample_output
     }));
 
     return {
@@ -235,16 +239,18 @@ const addQuestions = async (examId, questions) => {
             q.options ? JSON.stringify(q.options) : (q.mcq_options ? JSON.stringify(q.mcq_options) : null),
             q.correct || q.correct_answer || null,
             q.marks || 1,
-            q.hiddenCases ? JSON.stringify(q.hiddenCases) : (q.test_cases ? JSON.stringify(q.test_cases) : null)
+            q.hiddenCases ? JSON.stringify(q.hiddenCases) : (q.test_cases ? JSON.stringify(q.test_cases) : null),
+            q.testIn || null,
+            q.testOut || null
         );
 
-        return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7})`;
+        return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7},$${base+8},$${base+9})`;
 
     }).join(', ');
 
     const query = `
         INSERT INTO questions
-        (exam_id, type, problem_statement, mcq_options, correct_answer, marks, test_cases)
+        (exam_id, type, problem_statement, mcq_options, correct_answer, marks, test_cases, sample_input, sample_output)
         VALUES ${placeholders}
     `;
 

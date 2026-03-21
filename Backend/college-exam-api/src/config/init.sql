@@ -114,3 +114,7 @@ ALTER TABLE answers ADD COLUMN IF NOT EXISTS time_taken INT DEFAULT 0;
 
 -- Add test_cases_passed to answers
 ALTER TABLE answers ADD COLUMN IF NOT EXISTS test_cases_passed JSONB DEFAULT NULL;
+
+-- Add sample input and output for coding questions
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_input TEXT;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_output TEXT;
