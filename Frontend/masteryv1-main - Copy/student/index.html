@@ -659,9 +659,6 @@
                 const filteredExams = (session.role === 'admin')
                     ? exams
                     : exams.filter(e => {
-                        // Only show published exams to students
-                        if (e.status && e.status !== 'published') return false;
-
                         const studentBatch = String(session.batch || '').trim();
                         const studentBranch = String(session.branch || '').toUpperCase().trim();
 

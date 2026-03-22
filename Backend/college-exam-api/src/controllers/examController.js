@@ -32,6 +32,12 @@ const getExams = async (req, res, next) => {
 const getExamById = async (req, res, next) => {
     try {
         const exam = await examService.getExamById(req.params.id);
+        
+        // Hide questions from students if exam is not published
+        if (req.user && req.user.role === 'student' && exam.status !== 'published') {
+            exam.questions = [];
+        }
+
         res.status(200).json({
             success: true,
             data: exam

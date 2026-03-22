@@ -270,6 +270,10 @@ const attemptExam = async (studentId, examId) => {
         throw new CustomError('Exam not found', 404);
     }
 
+    if (exams[0].status !== 'published') {
+        throw new CustomError('This exam is not published yet', 403);
+    }
+
     try {
 
         const result = await pool.query(
