@@ -509,6 +509,9 @@
 </head>
 
 <body>
+    <!-- Interactive Background -->
+    <div id="interactive-bg" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1; background: radial-gradient(circle 600px at 50% 50%, rgba(167, 139, 250, 0.15), transparent 80%); transition: background 0.15s ease-out;"></div>
+
     <!-- Header image -->
     <img src="../assets/img/vignan_header.png" alt="Header"
         style="display: block; width: 100%; max-height: 120px; object-fit: contain; background: white;">
@@ -773,6 +776,18 @@
                 container.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">${feedback}</div>`;
             }
         })();
+
+        // Interactive Background Script
+        const interBg = document.getElementById('interactive-bg');
+        if (interBg) {
+            window.addEventListener('mousemove', (e) => {
+                requestAnimationFrame(() => {
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    interBg.style.background = `radial-gradient(circle 600px at ${x}px ${y}px, rgba(167, 139, 250, 0.15), transparent 80%)`;
+                });
+            });
+        }
     </script>
 </body>
 
