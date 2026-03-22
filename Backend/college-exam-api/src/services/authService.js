@@ -71,18 +71,6 @@ const bulkRegisterUsers = async (users) => {
 };
 
 const loginUser = async (username, password, role) => {
-    // Hardcoded Admin Bypass
-    if (username === 'admin' && password === 'admin123') {
-        const token = jwt.sign(
-            { userId: 'admin_01', role: 'admin' },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-        return {
-            user: { id: 'admin_01', name: 'Administrator', username: 'admin', role: 'admin' },
-            token
-        };
-    }
 
     const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     if (rows.length === 0) {
@@ -103,10 +91,10 @@ const loginUser = async (username, password, role) => {
     );
 
     return {
-        user: { 
-            id: user.id, 
-            name: user.name, 
-            username: user.username, 
+        user: {
+            id: user.id,
+            name: user.name,
+            username: user.username,
             role: user.role,
             branch: user.branch,
             year: user.year,
