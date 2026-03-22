@@ -223,7 +223,7 @@ const addQuestions = async (examId, questions) => {
 
     const placeholders = questions.map((q, i) => {
 
-        const base = i * 7;
+        const base = i * 9;
         
         // Normalize type to match DB CHECK constraint: 'MCQ', 'Descriptive', 'Coding'
         const rawType = (q.type || 'MCQ').toLowerCase();
