@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS reports (
     obtained_marks INT NOT NULL,
     percentage DECIMAL(5,2) NOT NULL,
     status VARCHAR(10) CHECK (status IN ('Pass', 'Fail')) NOT NULL,
+    coding_test_case_data JSONB DEFAULT '{}',
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,

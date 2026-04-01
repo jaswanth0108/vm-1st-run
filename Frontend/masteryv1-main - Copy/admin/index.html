@@ -2916,21 +2916,7 @@
 
                     let attemptStr = '<span style="color:var(--text-muted)">Not Attempted</span>';
                     let scoreStr = '--';
-                    
-                    // Pre-calculate total hidden cases for the exam
-                    let totalExamHiddenCases = 0;
-                    if (currentReportExam && currentReportExam.questions) {
-                        currentReportExam.questions.forEach(q => {
-                            if (q.type === 'coding') {
-                                const cases = q.hiddenCases || q.test_cases || [];
-                                totalExamHiddenCases += cases.length;
-                            }
-                        });
-                    }
-
-                    // Default test cases string based on whether coding questions exist
-                    let testCasesStr = totalExamHiddenCases > 0 ? `0 / ${totalExamHiddenCases}` : 'N/A';
-                    
+                    let testCasesStr = '--';
                     let totalQs = currentReportExam ? currentReportExam.questions.length : '--';
                     let attemptedQs = 0;
 
@@ -2940,6 +2926,7 @@
                         scoreStr = `${result.score}%`;
 
                         // Test Cases Logic
+                        // result.codingTestCaseData = { qId: { passed: X, total: Y } }
                         // Values may be objects or JSON strings from PostgreSQL json_object_agg
                         const ctcData = result.codingTestCaseData;
                         const ctcKeys = ctcData ? Object.keys(ctcData) : [];
@@ -2957,9 +2944,10 @@
                                     totalCases += (parseInt(d.total, 10) || 0);
                                 }
                             });
-                            
-                            const finalTotalCases = totalCases > 0 ? totalCases : totalExamHiddenCases;
-                            testCasesStr = finalTotalCases > 0 ? `${totalPassed} / ${finalTotalCases}` : (totalPassed > 0 ? `${totalPassed}` : '0');
+                            testCasesStr = totalCases > 0 ? `${totalPassed} / ${totalCases}` : (totalPassed > 0 ? `${totalPassed}` : '0');
+                        } else {
+                            // Non-coding exam or student didn't run/submit any code
+                            testCasesStr = 'N/A';
                         }
                     }
 

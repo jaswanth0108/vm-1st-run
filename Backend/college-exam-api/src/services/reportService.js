@@ -79,10 +79,19 @@ const generateReport = async (submissionId) => {
     const percentage = totalMarks > 0 ? (obtainedMarks / totalMarks) * 100 : 0;
     const status = percentage >= 40 ? 'Pass' : 'Fail';
 
+    const codingTestCaseData = {};
+    for (const ans of answers) {
+        if (ans.test_cases_passed) {
+            codingTestCaseData[ans.question_id] = typeof ans.test_cases_passed === 'string'
+                ? JSON.parse(ans.test_cases_passed)
+                : ans.test_cases_passed;
+        }
+    }
+
     const result = await pool.query(
         `INSERT INTO reports
-        (submission_id, student_id, exam_id, total_questions, attempted, correct, wrong, unattempted, total_marks, obtained_marks, percentage, status)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        (submission_id, student_id, exam_id, total_questions, attempted, correct, wrong, unattempted, total_marks, obtained_marks, percentage, status, coding_test_case_data)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
         ON CONFLICT (submission_id) DO UPDATE SET
             total_questions = EXCLUDED.total_questions,
             attempted = EXCLUDED.attempted,
@@ -93,6 +102,7 @@ const generateReport = async (submissionId) => {
             obtained_marks = EXCLUDED.obtained_marks,
             percentage = EXCLUDED.percentage,
             status = EXCLUDED.status,
+            coding_test_case_data = EXCLUDED.coding_test_case_data,
             generated_at = CURRENT_TIMESTAMP
         RETURNING id`,
         [
@@ -107,7 +117,8 @@ const generateReport = async (submissionId) => {
             totalMarks,
             obtainedMarks,
             percentage,
-            status
+            status,
+            JSON.stringify(codingTestCaseData)
         ]
     );
 
@@ -143,19 +154,12 @@ const getStudentReport = async (studentId, examId) => {
     const answers = {};
     const questionScores = {};
     const questionTimeData = {};
-    const codingTestCaseData = {};
 
     for (const row of answerRows) {
         const qId = String(row.question_id);
         answers[qId] = row.student_answer;
         questionScores[qId] = row.marks_awarded || 0;
         questionTimeData[qId] = row.time_taken || 0;
-        
-        if (row.test_cases_passed) {
-            codingTestCaseData[qId] = typeof row.test_cases_passed === 'string' 
-                ? JSON.parse(row.test_cases_passed) 
-                : row.test_cases_passed;
-        }
     }
 
     return {
@@ -163,7 +167,7 @@ const getStudentReport = async (studentId, examId) => {
         answers,
         questionScores,
         questionTimeData,
-        codingTestCaseData
+        codingTestCaseData: report.coding_test_case_data || {}
     };
 };
 
@@ -194,15 +198,9 @@ const getClassResults = async (examId) => {
 };
 
 const getAllReports = async (studentId = null) => {
-    // JOIN with users to get username and name directly, and subquery answers to get test cases.
+    // JOIN with users to get username and name directly.
     let query = `
-        SELECT r.*, u.username, u.name as student_name, u.branch, u.year, u.batch, u.section,
-               (
-                   SELECT json_object_agg(a.question_id, a.test_cases_passed)
-                   FROM answers a
-                   WHERE a.submission_id = r.submission_id
-                     AND a.test_cases_passed IS NOT NULL
-               ) as coding_test_case_data
+        SELECT r.*, u.username, u.name as student_name, u.branch, u.year, u.batch, u.section
         FROM reports r
         JOIN users u ON r.student_id = u.id
     `;
