@@ -115,3 +115,6 @@ ALTER TABLE answers ADD COLUMN IF NOT EXISTS test_cases_passed JSONB DEFAULT NUL
 -- Add sample input and output for coding questions
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_input TEXT;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_output TEXT;
+
+-- Add coding_test_case_data to reports (persistent test case results snapshot)
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS coding_test_case_data JSONB DEFAULT '{}';

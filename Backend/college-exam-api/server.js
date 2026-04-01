@@ -69,6 +69,37 @@ app.use((req, res, next) => {
 // Global Error Handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+// Auto-run migrations on startup (safe: all statements use IF NOT EXISTS / ON CONFLICT)
+async function runStartupMigrations() {
+    const pool = require('./src/config/db');
+    const migrations = [
+        `ALTER TABLE exams ALTER COLUMN teacher_id DROP NOT NULL`,
+        `ALTER TABLE exams ADD COLUMN IF NOT EXISTS branch JSONB DEFAULT '["All"]'`,
+        `ALTER TABLE exams ADD COLUMN IF NOT EXISTS batch JSONB DEFAULT '["All"]'`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS branch VARCHAR(50)`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS year VARCHAR(10)`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS section VARCHAR(10)`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS batch VARCHAR(20)`,
+        `ALTER TABLE exams ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published'`,
+        `ALTER TABLE exams ADD COLUMN IF NOT EXISTS attempt_limit INT DEFAULT 1`,
+        `ALTER TABLE answers ADD COLUMN IF NOT EXISTS time_taken INT DEFAULT 0`,
+        `ALTER TABLE answers ADD COLUMN IF NOT EXISTS test_cases_passed JSONB DEFAULT NULL`,
+        `ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_input TEXT`,
+        `ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_output TEXT`,
+        `ALTER TABLE reports ADD COLUMN IF NOT EXISTS coding_test_case_data JSONB DEFAULT '{}'`
+    ];
+    for (const sql of migrations) {
+        try {
+            await pool.query(sql);
+        } catch (e) {
+            // Ignore errors for statements that may not apply (e.g. DROP NOT NULL already done)
+            console.warn(`Migration skipped (${e.message.slice(0, 80)})`);
+        }
+    }
+    console.log('Startup migrations complete.');
+}
+
+app.listen(PORT, async () => {
     console.log(`Server is listening on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    await runStartupMigrations();
 });
