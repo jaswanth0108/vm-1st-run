@@ -1,0 +1,37 @@
+Why You Are Able To Log In With Both Passwords
+==============================================
+
+You successfully changed your admin credentials in the database! Your new password works perfectly because the system is reading it securely from the database.
+
+However, the reason your old password (`admin123`) still works is because there is a "Hardcoded Admin Bypass" left in your backend code. This means the code checks if you typed "admin123" BEFORE it even looks at the database. 
+
+To permanently stop the old password from working, you need to delete this hardcoded bypass.
+
+How to Fix It (Step-by-Step)
+----------------------------
+1. Open this file in your code editor (like VS Code):
+   `Backend/college-exam-api/src/services/authService.js`
+
+2. Scroll down to line 74 where the `loginUser` function starts.
+
+3. You will see a block of code that looks exactly like this:
+
+    // Hardcoded Admin Bypass
+    if (username === 'admin' && password === 'admin123') {
+        const token = jwt.sign(
+            { userId: 'admin_01', role: 'admin' },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+        return {
+            user: { id: 'admin_01', name: 'Administrator', username: 'admin', role: 'admin' },
+            token
+        };
+    }
+
+4. DELETE THAT ENTIRE BLOCK OF CODE (lines 74 to 85).
+
+5. Save the `authService.js` file.
+6. Commit the change and push it to GitHub (or wait for Render to redeploy).
+
+Once that block is deleted, your old "admin123" password will immediately stop working forever, and ONLY your secure database password will work!

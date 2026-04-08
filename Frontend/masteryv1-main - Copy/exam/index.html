@@ -780,6 +780,10 @@
         let currentQuestionStartTime = null;
         let activeQuestionId = null;
 
+        // Typing Speed State (NEW — does not affect existing question types)
+        let typingStats = {};    // { qId: { wpm: N, accuracy: N, typingStartTime: T } }
+        let typingIntervals = {}; // { qId: intervalId } — live WPM refresh per question
+
         // Init
         const params = new URLSearchParams(window.location.search);
         const examId = params.get('id');
@@ -1051,7 +1055,17 @@
                         qScore = codingResults[q.id];
                     }
                 } else {
-                    if (currentAnswers[q.id] && currentAnswers[q.id].trim().length > 0) qScore = 10;
+                    // Check if this is a Typing Speed Check question
+                    if (q.correct && String(q.correct).startsWith('TYPING_PASSAGE::')) {
+                        const stats = typingStats[q.id];
+                        const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                        const typed = currentAnswers[q.id] || '';
+                        const accuracy = computeTypingAccuracy(passage, typed);
+                        // Score out of 10 based purely on accuracy
+                        qScore = Math.round((accuracy / 100) * 10);
+                    } else {
+                        if (currentAnswers[q.id] && currentAnswers[q.id].trim().length > 0) qScore = 10;
+                    }
                 }
                 questionScores[q.id] = qScore;
                 score += qScore;
@@ -1148,7 +1162,17 @@
                         qScore = codingResults[q.id];
                     }
                 } else {
-                    if (currentAnswers[q.id] && currentAnswers[q.id].trim().length > 0) qScore = 10;
+                    // Check if this is a Typing Speed Check question
+                    if (q.correct && String(q.correct).startsWith('TYPING_PASSAGE::')) {
+                        const stats = typingStats[q.id];
+                        const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                        const typed = currentAnswers[q.id] || '';
+                        const accuracy = computeTypingAccuracy(passage, typed);
+                        // Score out of 10 based purely on accuracy
+                        qScore = Math.round((accuracy / 100) * 10);
+                    } else {
+                        if (currentAnswers[q.id] && currentAnswers[q.id].trim().length > 0) qScore = 10;
+                    }
                 }
 
                 questionScores[q.id] = qScore;
@@ -1448,10 +1472,75 @@
                 // Show Test Case info (Moved to main template)
                 // if (q.testIn) { ... }
             } else {
-                // Text
-                inputHtml = `<textarea class="input-field" rows="10" style="width:100%;" placeholder="Type your answer here..." oninput="saveAnswer('${q.id}', this.value, ${index})">${currentAnswers[q.id] || ''}</textarea>`;
-                document.getElementById('compilerPanel').style.display = 'none';
-                area.parentElement.style.gridTemplateColumns = '250px 1fr';
+                // Check if this is a Typing Speed Check question
+                const isTypingQuestion = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
+
+                if (isTypingQuestion) {
+                    // Stop any previous typing interval for this question
+                    if (typingIntervals[q.id]) {
+                        clearInterval(typingIntervals[q.id]);
+                        typingIntervals[q.id] = null;
+                    }
+                    const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+
+                    // Sanitize passage for safe HTML embedding
+                    const safePassage = passage.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+                    inputHtml = `
+                        <div style="margin-top:1rem;">
+                            <!-- Live Stats Bar -->
+                            <div style="display:flex; gap:1.5rem; margin-bottom:1rem;">
+                                <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:100px;">
+                                    <div style="font-size:0.7rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">WPM</div>
+                                    <div id="typing-wpm-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">0</div>
+                                </div>
+                                <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:100px;">
+                                    <div style="font-size:0.7rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Accuracy</div>
+                                    <div id="typing-acc-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">—</div>
+                                </div>
+                                <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:100px;">
+                                    <div style="font-size:0.7rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Progress</div>
+                                    <div id="typing-progress-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">0%</div>
+                                </div>
+                            </div>
+
+                            <!-- Passage Display -->
+                            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:1.25rem; margin-bottom:1rem; user-select:none; -webkit-user-select:none;">
+                                <div style="font-size:0.72rem; color:rgba(34,211,238,0.7); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.6rem;">📖 Passage to Type</div>
+                                <p id="typing-passage-display-${q.id}" style="font-family:'JetBrains Mono',monospace; font-size:0.95rem; line-height:1.9; color:#e2e8f0; white-space:pre-wrap; margin:0;">${safePassage}</p>
+                            </div>
+
+                            <!-- Typing Input Area -->
+                            <div style="position:relative;">
+                                <div style="font-size:0.72rem; color:rgba(34,211,238,0.7); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.5rem;">⌨️ Your Typing</div>
+                                <textarea
+                                    id="typing-input-${q.id}"
+                                    class="input-field"
+                                    rows="8"
+                                    style="width:100%; font-family:'JetBrains Mono',monospace; font-size:0.95rem; line-height:1.9; resize:vertical; border-color:rgba(34,211,238,0.3);"
+                                    placeholder="Start typing the passage here..."
+                                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                    oninput="handleTypingInput('${q.id}', this.value, ${index}, ${JSON.stringify(passage).replace(/"/g, '&quot;')})"
+                                    onfocus="startTypingTimer('${q.id}')"
+                                >${currentAnswers[q.id] ? currentAnswers[q.id].replace(/</g,'&lt;') : ''}</textarea>
+                            </div>
+                            <div style="margin-top:0.5rem; font-size:0.78rem; color:rgba(148,163,184,0.6);">⚠️ Do not copy-paste. Type the passage manually for accurate scoring.</div>
+                        </div>
+                    `;
+                    document.getElementById('compilerPanel').style.display = 'none';
+                    area.parentElement.style.gridTemplateColumns = '250px 1fr';
+
+                    // Re-initialize live WPM interval after the DOM is updated (see after area.innerHTML assignment)
+                    // We store the passage so the interval callback can reference it
+                    window._typingPassageMap = window._typingPassageMap || {};
+                    window._typingPassageMap[q.id] = passage;
+
+                } else {
+                    // Ordinary text / descriptive question
+                    inputHtml = `<textarea class="input-field" rows="10" style="width:100%;" placeholder="Type your answer here..." oninput="saveAnswer('${q.id}', this.value, ${index})">${currentAnswers[q.id] || ''}</textarea>`;
+                    document.getElementById('compilerPanel').style.display = 'none';
+                    area.parentElement.style.gridTemplateColumns = '250px 1fr';
+                }
             }
 
             area.innerHTML = `
@@ -1500,11 +1589,107 @@
                     </div>
                 </div>
             `;
+
+            // POST-RENDER: If this is a typing question, start the live WPM interval
+            const currentQ = currentExam.questions[index];
+            if (currentQ && currentQ.correct && String(currentQ.correct).startsWith('TYPING_PASSAGE::')) {
+                const qId = currentQ.id;
+                // Clear any old interval
+                if (typingIntervals[qId]) clearInterval(typingIntervals[qId]);
+                // Restore live stats if student already started typing
+                if (typingStats[qId] && typingStats[qId].typingStartTime) {
+                    updateTypingDisplay(qId, window._typingPassageMap[qId] || String(currentQ.correct).replace('TYPING_PASSAGE::', ''), currentAnswers[qId] || '');
+                }
+                // Start live refresh interval (updates every second when student is on this question)
+                typingIntervals[qId] = setInterval(() => {
+                    if (typingStats[qId] && typingStats[qId].typingStartTime) {
+                        const passage = window._typingPassageMap && window._typingPassageMap[qId] ? window._typingPassageMap[qId] : String(currentQ.correct).replace('TYPING_PASSAGE::','');
+                        updateTypingDisplay(qId, passage, currentAnswers[qId] || '');
+                    }
+                }, 1000);
+            }
         }
 
         function saveAnswer(qId, value, index) {
             currentAnswers[qId] = value;
             document.getElementById(`nav-btn-${index}`).classList.add('answered');
+        }
+
+        // ══════════════════════════════════════════════════
+        // TYPING SPEED CHECK — Helper Functions
+        // These are NEW and do NOT affect any existing logic.
+        // ══════════════════════════════════════════════════
+
+        /** Called on textarea onfocus — records start time on first keystroke */
+        function startTypingTimer(qId) {
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
+            if (!typingStats[qId].typingStartTime) {
+                typingStats[qId].typingStartTime = Date.now();
+            }
+        }
+
+        /** Called on every input event in the typing textarea */
+        function handleTypingInput(qId, typed, navIndex, passage) {
+            // Ensure timer starts
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
+            if (!typingStats[qId].typingStartTime) typingStats[qId].typingStartTime = Date.now();
+
+            // Save raw answer
+            currentAnswers[qId] = typed;
+            const navBtn = document.getElementById(`nav-btn-${navIndex}`);
+            if (navBtn && typed.length > 0) navBtn.classList.add('answered');
+
+            // Update display immediately on input
+            updateTypingDisplay(qId, passage, typed);
+        }
+
+        /** Computes character-level accuracy between typed and target passage */
+        function computeTypingAccuracy(passage, typed) {
+            if (!typed || typed.length === 0) return 0;
+            const compareLen = Math.min(passage.length, typed.length);
+            let correct = 0;
+            for (let i = 0; i < compareLen; i++) {
+                if (typed[i] === passage[i]) correct++;
+            }
+            // Extra characters (typed more than passage) are errors
+            const totalPassageLen = passage.length;
+            return Math.round((correct / totalPassageLen) * 100);
+        }
+
+        /** Computes WPM = (typed chars / 5) / elapsed minutes */
+        function computeTypingWPM(typed, startTime) {
+            if (!startTime || !typed || typed.length === 0) return 0;
+            const elapsedMs = Date.now() - startTime;
+            const elapsedMinutes = elapsedMs / 60000;
+            if (elapsedMinutes < 0.01) return 0; // avoid division by near-zero
+            const words = typed.length / 5; // standard: 1 word = 5 chars
+            return Math.round(words / elapsedMinutes);
+        }
+
+        /** Refreshes the live WPM, accuracy, and progress display elements */
+        function updateTypingDisplay(qId, passage, typed) {
+            const wpmEl = document.getElementById(`typing-wpm-${qId}`);
+            const accEl = document.getElementById(`typing-acc-${qId}`);
+            const progEl = document.getElementById(`typing-progress-${qId}`);
+            if (!wpmEl || !accEl || !progEl) return; // not rendered yet
+
+            const startTime = typingStats[qId] ? typingStats[qId].typingStartTime : null;
+            const wpm = computeTypingWPM(typed, startTime);
+            const accuracy = computeTypingAccuracy(passage, typed);
+            const progress = passage.length > 0 ? Math.min(100, Math.round((typed.length / passage.length) * 100)) : 0;
+
+            // Store latest stats
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
+            typingStats[qId].wpm = wpm;
+            typingStats[qId].accuracy = accuracy;
+
+            wpmEl.textContent = wpm;
+            accEl.textContent = accuracy + '%';
+            progEl.textContent = progress + '%';
+
+            // Color coding for accuracy
+            const color = accuracy >= 90 ? '#22c55e' : accuracy >= 70 ? '#f59e0b' : '#ef4444';
+            accEl.style.color = color;
         }
 
         // Monaco Editor

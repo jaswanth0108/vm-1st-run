@@ -837,10 +837,11 @@
                     <!-- Questions will be added here -->
                 </div>
 
-                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
                     <button class="btn btn-outline" onclick="addQuestion('mcq')">+ Add MCQ</button>
                     <button class="btn btn-outline" onclick="addQuestion('coding')">+ Add Coding</button>
                     <button class="btn btn-outline" onclick="addQuestion('text')">+ Add Text</button>
+                    <button class="btn btn-outline" onclick="addQuestion('typing')" style="border-color: rgba(34, 211, 238, 0.4); color: #22d3ee;">⌨️ Add Typing Check</button>
                     <div style="margin-left: auto;">
                         <input type="file" id="wordUpload" hidden onchange="parseWordFile(this)">
                         <button class="btn btn-outline" onclick="openFormatModal()" style="margin-right: 0.5rem;">View
@@ -1438,13 +1439,26 @@
             const div = document.createElement('div');
             div.className = 'question-card fade-in';
             div.dataset.id = id;
+
+            // Determine the displayed label for the card header
+            const typeLabel = type === 'typing' ? '⌨️ TYPING SPEED CHECK' : `${type.toUpperCase()} Question`;
+
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                    <strong>${type.toUpperCase()} Question</strong>
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; align-items:center;">
+                    <strong style="${type === 'typing' ? 'color:#22d3ee;' : ''}">${typeLabel}</strong>
                     <button style="color:var(--danger); background:none; border:none;" onclick="this.parentElement.parentElement.remove()">Remove</button>
                 </div>
                 <input type="hidden" class="q-type" value="${type}">
-                <textarea class="input-field q-text" placeholder="Enter question text..." rows="3" style="margin-bottom:1rem;">${q.text}</textarea>
+                ${type === 'typing' ? `
+                    <div style="background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.2); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.5rem;">
+                        <label style="font-size:0.8rem; color:#22d3ee; font-weight:600; display:block; margin-bottom:0.5rem;">📝 Question / Instruction (instructions to show to student)</label>
+                        <textarea class="input-field q-text" placeholder="e.g. Type the following passage as fast and accurately as you can." rows="2" style="margin-bottom:0.75rem;">${q.text || ''}</textarea>
+                        <label style="font-size:0.8rem; color:#22d3ee; font-weight:600; display:block; margin-bottom:0.5rem;">📖 Passage to Type (students will retype this exactly)</label>
+                        <textarea class="input-field q-typing-passage" placeholder="Enter the passage here. Students must retype this exactly. E.g: The quick brown fox jumps over the lazy dog." rows="5" style="font-family: 'JetBrains Mono', monospace; font-size:0.9rem; line-height:1.6;">${q.typingPassage || (q.correct && q.correct.startsWith('TYPING_PASSAGE::') ? q.correct.replace('TYPING_PASSAGE::', '') : '')}</textarea>
+                        <div style="margin-top:0.5rem; font-size:0.75rem; color:rgba(34,211,238,0.6);">ℹ️ Students are graded on WPM (typing speed) and accuracy. Score = 10 × (accuracy/100).</div>
+                    </div>
+                ` : `
+                <textarea class="input-field q-text" placeholder="Enter question text..." rows="3" style="margin-bottom:1rem;">${q.text || ''}</textarea>
                 ${type === 'mcq' ? `
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;">
                         <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -1517,6 +1531,7 @@
                         </div>
                     </div>
                 ` : ''}
+                `}
                 <input type="hidden" class="q-type" value="${type}">
             `;
             container.appendChild(div);
@@ -1564,6 +1579,7 @@
             // Patterns
             const qStartPattern = /^(?:Q[\.|:]|\d+[\.|:])\s*(.+)/i;
             const typePattern = /^Type:\s*(.+)/i;
+            const passagePattern = /^(?:Passage|Typing\s*Passage):?\s*(.+)/i;
 
             // MCQ Patterns
             const optPattern = /^([a-d])[\)|\.]\s*(.+)/i;
@@ -1610,6 +1626,18 @@
                     const t = typeMatch[1].toLowerCase();
                     if (t.includes('coding')) currentQ.type = 'coding';
                     else if (t.includes('mcq')) currentQ.type = 'mcq';
+                    else if (t.includes('typing') || t.includes('speed')) {
+                        currentQ.type = 'typing';
+                    }
+                    return;
+                }
+
+                // 2.5 Passage Detection
+                const passageMatch = line.match(passagePattern);
+                if (passageMatch) {
+                    currentQ.type = 'typing';
+                    currentQ.correct = passageMatch[1];
+                    readMode = 'passage';
                     return;
                 }
 
@@ -1709,6 +1737,10 @@
                 }
                 if (readMode === 'hiddenOut' && currentHiddenIdx >= 0) {
                     currentQ.hiddenCases[currentHiddenIdx].output += (currentQ.hiddenCases[currentHiddenIdx].output ? '\n' : '') + line;
+                    return;
+                }
+                if (readMode === 'passage') {
+                    currentQ.correct += (currentQ.correct ? '\n' : '') + line;
                     return;
                 }
 
@@ -1844,6 +1876,19 @@
                     });
                     qData.correct = qData.testOut;
                 }
+                // Typing Speed Check: store passage in correct_answer with prefix identifier.
+                // The type is sent as 'text' so the DB stores it as 'Descriptive' (already allowed).
+                if (type === 'typing') {
+                    const passageEl = card.querySelector('.q-typing-passage');
+                    const passage = passageEl ? passageEl.value.trim() : '';
+                    if (!passage) {
+                        alert('Please enter a passage for the Typing Speed Check question.');
+                        return;
+                    }
+                    qData.correct = 'TYPING_PASSAGE::' + passage;
+                    // Map to 'text' type — the backend normalizes this to 'Descriptive'
+                    qData.type = 'text';
+                }
                 questions.push(qData);
             });
 
@@ -1973,7 +2018,15 @@
 
                 // Clear and add questions
                 document.getElementById('questionsContainer').innerHTML = '';
-                exam.questions.forEach(q => addQuestion(q.type, q));
+                exam.questions.forEach(q => {
+                    // Detect typing questions by the TYPING_PASSAGE:: prefix in correct_answer
+                    const isTypingQ = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
+                    if (isTypingQ) {
+                        addQuestion('typing', { ...q, type: 'typing', typingPassage: String(q.correct).replace('TYPING_PASSAGE::', '') });
+                    } else {
+                        addQuestion(q.type, q);
+                    }
+                });
 
                 document.querySelector('#tab-create_exam h2').innerText = 'Edit Exam';
 

@@ -457,6 +457,25 @@
             }
         })();
 
+
+        function computeTypingAccuracy(passage, typed) {
+            if (!typed || typed.length === 0) return 0;
+            const compareLen = Math.min(passage.length, typed.length);
+            let correct = 0;
+            for (let i = 0; i < compareLen; i++) {
+                if (typed[i] === passage[i]) correct++;
+            }
+            const totalPassageLen = passage.length;
+            return Math.round((correct / totalPassageLen) * 100);
+        }
+
+        function computeTypingWPM(typed, totalSeconds) {
+            if (!totalSeconds || !typed || typed.length === 0) return 0;
+            const elapsedMinutes = totalSeconds / 60;
+            const words = typed.length / 5;
+            return Math.round(words / elapsedMinutes);
+        }
+
         function renderReport(exam, result) {
             const date = new Date(result.timestamp).toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -511,9 +530,26 @@
                         studentAnswer = '<span style="color:#64748b; font-style:italic;">No Code Submitted</span>';
                     }
                 } else {
-                    // Text
+                    // Text / Typing
                     if (rawAnswer) {
-                        studentAnswer = `<div style="white-space: pre-wrap; font-size: 0.9rem;">${rawAnswer.replace(/</g, '&lt;')}</div>`;
+                        const isTyping = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
+                        let metricsHtml = '';
+                        if (isTyping) {
+                            const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                            const sec = result.questionTimeData ? result.questionTimeData[q.id] : 0;
+                            const accuracy = computeTypingAccuracy(passage, rawAnswer);
+                            const wpm = computeTypingWPM(rawAnswer, sec);
+                            metricsHtml = `
+                                <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="background: #f0fdf4; color: #15803d; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #bbf7d0;">Acc: ${accuracy}%</span>
+                                    <span style="background: #eff6ff; color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #bfdbfe;">Speed: ${wpm} WPM</span>
+                                </div>
+                            `;
+                        }
+                        studentAnswer = `
+                            <div style="white-space: pre-wrap; font-size: 0.9rem;">${rawAnswer.replace(/</g, '&lt;')}</div>
+                            ${metricsHtml}
+                        `;
                     } else {
                         studentAnswer = '<span style="color:#64748b; font-style:italic;">Not Answered</span>';
                     }
