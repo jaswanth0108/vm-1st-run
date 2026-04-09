@@ -1,5 +1,6 @@
 const express = require('express');
 const { runCode } = require('../services/compilerService');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -7,8 +8,10 @@ const router = express.Router();
  * POST /api/compile
  * Body: { language: string, code: string, input: string }
  * Response: { success: true, output: string, error: string|null }
+ * 
+ * Security: Requires JWT authentication
  */
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
     const { language, code, input } = req.body;
 
     if (!language || !code) {

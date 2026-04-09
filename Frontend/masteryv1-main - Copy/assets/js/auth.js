@@ -44,7 +44,7 @@ class Auth {
     } catch (error) {
       console.error('Login error:', error);
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        return { success: false, message: 'Cannot connect to backend server. Please ensure you have run "node server.js" in the terminal.' };
+        return { success: false, message: 'Cannot connect to backend server. The server may be sleeping. Please try again after a few seconds or contact administrator.' };
       }
       return { success: false, message: 'Server error during login. Please try again later.' };
     }

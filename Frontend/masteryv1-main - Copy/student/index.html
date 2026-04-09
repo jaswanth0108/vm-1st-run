@@ -42,11 +42,18 @@
             justify-content: space-between;
             align-items: center;
             border-radius: 99px;
-            background: rgba(15, 14, 23, 0.75);
+            background: rgba(15, 14, 23, 0.8);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(108, 99, 255, 0.18);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.35), 0 0 60px -20px rgba(108, 99, 255, 0.25);
+            border: 1px solid rgba(108, 99, 255, 0.25);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 60px -15px rgba(108, 99, 255, 0.35);
+            transition: all 0.3s ease;
+        }
+
+        .portal-nav:hover {
+            border-color: rgba(108, 99, 255, 0.4);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 80px -20px rgba(108, 99, 255, 0.4);
+            transform: translateY(-2px);
         }
 
         .portal-logo {
@@ -99,6 +106,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            animation: fadeIn 0.6s ease-out;
         }
 
         .welcome-greeting::before {
@@ -108,6 +116,13 @@
             height: 2px;
             background: linear-gradient(90deg, #6c63ff, #a78bfa);
             border-radius: 2px;
+            animation: expandLine 0.8s ease-out 0.3s forwards;
+            transform: scaleX(0);
+            transform-origin: left;
+        }
+
+        @keyframes expandLine {
+            to { transform: scaleX(1); }
         }
 
         .welcome-title {
@@ -118,6 +133,7 @@
             letter-spacing: -0.03em;
             margin-bottom: 0.85rem;
             color: #f1f5f9;
+            animation: fadeIn 0.6s ease-out 0.2s both;
         }
 
         .welcome-title .highlight {
@@ -127,6 +143,23 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: gradientShift 5s ease-in-out infinite;
+            position: relative;
+        }
+
+        .welcome-title .highlight::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            background: inherit;
+            filter: blur(15px);
+            opacity: 0.4;
+            z-index: -1;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.7; }
         }
 
         @keyframes gradientShift {
@@ -147,6 +180,7 @@
             max-width: 500px;
             line-height: 1.6;
             font-weight: 400;
+            animation: fadeIn 0.6s ease-out 0.4s both;
         }
 
         /* ── STAT CARDS ── */
@@ -161,7 +195,7 @@
             background: rgba(255, 255, 255, 0.04);
             border-radius: 1.25rem;
             padding: 1.75rem 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             position: relative;
@@ -176,18 +210,25 @@
             left: 0;
             right: 0;
             height: 2px;
+            background-size: 200% 100%;
+            animation: shimmerBar 3s linear infinite;
+        }
+
+        @keyframes shimmerBar {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         .stat-card.rank::before {
-            background: linear-gradient(90deg, #6c63ff, #a78bfa);
+            background: linear-gradient(90deg, #6c63ff, #a78bfa, #22d3ee);
         }
 
         .stat-card.taken::before {
-            background: linear-gradient(90deg, #22d3ee, #6c63ff);
+            background: linear-gradient(90deg, #22d3ee, #6c63ff, #ec4899);
         }
 
         .stat-card.avg::before {
-            background: linear-gradient(90deg, #ec4899, #a78bfa);
+            background: linear-gradient(90deg, #ec4899, #a78bfa, #6c63ff);
         }
 
         .stat-card::after {
@@ -198,7 +239,8 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            opacity: 0.07;
+            opacity: 0.1;
+            transition: all 0.5s ease;
         }
 
         .stat-card.rank::after {
@@ -215,7 +257,14 @@
 
         .stat-card:hover {
             transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 12px 40px -8px rgba(108, 99, 255, 0.35);
+            box-shadow: 0 12px 40px -8px rgba(108, 99, 255, 0.4);
+            border-color: rgba(108, 99, 255, 0.3);
+        }
+
+        .stat-card:hover::after {
+            width: 150px;
+            height: 150px;
+            opacity: 0.15;
         }
 
         .stat-icon {
@@ -281,24 +330,26 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            background: rgba(52, 211, 153, 0.12);
-            border: 1px solid rgba(52, 211, 153, 0.35);
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.45);
             color: #34d399;
             font-size: 0.72rem;
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            padding: 0.3rem 0.75rem;
+            padding: 0.4rem 0.85rem;
             border-radius: 99px;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.2);
         }
 
         .live-pulse-badge::before {
             content: '';
-            width: 7px;
-            height: 7px;
+            width: 8px;
+            height: 8px;
             background: #34d399;
             border-radius: 50%;
             animation: livePulse 1.4s ease-in-out infinite;
+            box-shadow: 0 0 8px #34d399;
         }
 
         @keyframes livePulse {
@@ -307,11 +358,20 @@
             100% {
                 opacity: 1;
                 transform: scale(1);
+                box-shadow: 0 0 8px #34d399;
             }
-
             50% {
-                opacity: 0.4;
-                transform: scale(0.7);
+                opacity: 0.5;
+                transform: scale(0.8);
+                box-shadow: 0 0 4px #34d399;
+            }
+        }
+
+        @keyframes livePulseEnd {
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+                box-shadow: 0 0 4px #34d399;
             }
         }
 
@@ -355,13 +415,8 @@
         }
 
         @keyframes shimmerBar {
-            0% {
-                background-position: 0% 0%;
-            }
-
-            100% {
-                background-position: 200% 0%;
-            }
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
         }
 
         .exam-card--active:hover {
@@ -372,6 +427,15 @@
                 0 0 60px -10px rgba(167, 139, 250, 0.35),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             border-color: rgba(108, 99, 255, 0.85);
+        }
+
+        /* Glow effect on active cards */
+        .exam-card--active:hover::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(108, 99, 255, 0.15), transparent 60%);
+            pointer-events: none;
         }
 
         /* ── COMPLETED / TAKEN: soft muted ── */
@@ -396,7 +460,7 @@
         .exam-card--completed:hover {
             transform: translateY(-4px);
             filter: saturate(0.6) brightness(0.9);
-            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.15);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.2);
         }
 
         /* ── DRAFT: neutral dim ── */
@@ -509,8 +573,39 @@
 </head>
 
 <body>
-    <!-- Interactive Background -->
-    <div id="interactive-bg" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1; background: radial-gradient(circle 350px at 50% 50%, rgba(167, 139, 250, 0.15), transparent 80%); transition: background 0.15s ease-out;"></div>
+    <!-- Enhanced Interactive Background with Multiple Gradients -->
+    <div id="interactive-bg" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1;">
+        <div style="position: absolute; inset: 0; background: 
+            radial-gradient(ellipse 80% 50% at 20% 20%, rgba(108, 99, 255, 0.2) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 70% at 80% 80%, rgba(34, 211, 238, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse 50% 50% at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+            transition: background 0.1s ease-out;
+            animation: bgPulse 8s ease-in-out infinite;"></div>
+    </div>
+    <script>
+        // Enhanced Interactive Background
+        const interBg = document.getElementById('interactive-bg');
+        if (interBg) {
+            let lastMove = 0;
+            window.addEventListener('mousemove', (e) => {
+                const now = Date.now();
+                if (now - lastMove > 20) {
+                    lastMove = now;
+                    requestAnimationFrame(() => {
+                        const x = e.clientX;
+                        const y = e.clientY;
+                        const innerDiv = interBg.querySelector('div');
+                        if (innerDiv) {
+                            innerDiv.style.background = `
+                                radial-gradient(ellipse 350px 250px at ${x}px ${y}px, rgba(108, 99, 255, 0.25) 0%, transparent 50%),
+                                radial-gradient(ellipse 300px 200px at ${window.innerWidth - x}px ${window.innerHeight - y}px, rgba(34, 211, 238, 0.2) 0%, transparent 50%),
+                                radial-gradient(ellipse 250px 180px at ${x * 0.5 + window.innerWidth * 0.5}px ${y * 0.5 + window.innerHeight * 0.5}px, rgba(236, 72, 153, 0.12) 0%, transparent 40%)`;
+                        }
+                    });
+                }
+            });
+        }
+    </script>
 
     <!-- Header image -->
     <img src="../assets/img/vignan_header.png" alt="Header"
