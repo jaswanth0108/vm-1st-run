@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: vm-1st-run-api
+    name: vm-1st-run
     env: node
     buildCommand: npm install
     startCommand: node server.js
