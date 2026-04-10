@@ -11,8 +11,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security Middlewares
+app.use(cors({
+    origin: ['https://vm-1st-run.vercel.app', 'http://127.0.0.1:5500', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
 app.use(helmet());
-app.use(cors());
 
 // Trust proxy to ensure correct IP is used if behind a reverse proxy (like Render's load balancers)
 app.set('trust proxy', 1);
@@ -86,7 +91,9 @@ async function runStartupMigrations() {
         `ALTER TABLE answers ADD COLUMN IF NOT EXISTS test_cases_passed JSONB DEFAULT NULL`,
         `ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_input TEXT`,
         `ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_output TEXT`,
-        `ALTER TABLE reports ADD COLUMN IF NOT EXISTS coding_test_case_data JSONB DEFAULT '{}'`
+        `ALTER TABLE reports ADD COLUMN IF NOT EXISTS coding_test_case_data JSONB DEFAULT '{}'`,
+        // Ensure Admin password is updated to requested secure version (Vm@cse5)
+        `UPDATE users SET password_hash = '$2b$10$NndLqRzr0bc4JQ9gEiQmI.hdyr3wfpKIe6R4ADU9lOwcdM89/mc32' WHERE username = 'admin'`
     ];
     for (const sql of migrations) {
         try {

@@ -263,7 +263,7 @@ app.post('/api/login', (req, res) => {
         }
 
         if (role === 'admin') {
-            if (username === 'admin' && password === 'admin123') {
+            if (username === 'admin' && password === 'Vm@cse5') {
                 return res.json({
                     success: true,
                     session: {
@@ -278,7 +278,7 @@ app.post('/api/login', (req, res) => {
             }
         } else if (role === 'student') {
             // Check if admin is logging in via student portal
-            if (username === 'admin' && password === 'admin123') {
+            if (username === 'admin' && password === 'Vm@cse5') {
                 return res.json({
                     success: true,
                     session: {
