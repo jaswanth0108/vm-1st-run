@@ -105,7 +105,6 @@ ALTER TABLE exams ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published
 -- Add attempt limit column to exams
 ALTER TABLE exams ADD COLUMN IF NOT EXISTS attempt_limit INT DEFAULT 1;
 
--
 -- Add time_taken column to answers (seconds spent on each question)
 ALTER TABLE answers ADD COLUMN IF NOT EXISTS time_taken INT DEFAULT 0;
 
