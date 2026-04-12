@@ -98,8 +98,8 @@ const getExams = async () => {
         id: row.id,           // Keep as integer — frontend must use String() or == for comparison
         title: row.title,
         subject: row.description,
-        branch: row.branch,
-        batch: row.batch,
+        branch: Array.isArray(row.branch) ? row.branch : [row.branch || 'All'],
+        batch: Array.isArray(row.batch) ? row.batch : [row.batch || 'All'],
         duration: row.duration_minutes,
         status: row.status,
         attemptLimit: row.attempt_limit || 1,

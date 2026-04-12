@@ -164,11 +164,13 @@
             const passIn = document.getElementById('password');
 
             if (role === 'student') {
-                // Enforce Uppercase
+                // Enforce Uppercase for Username (Roll Number)
                 userIn.style.textTransform = 'uppercase';
-                passIn.style.textTransform = 'uppercase';
                 userIn.oninput = function () { this.value = this.value.toUpperCase(); };
-                passIn.oninput = function () { this.value = this.value.toUpperCase(); };
+                
+                // DO NOT Enforce Uppercase for Password
+                passIn.style.textTransform = 'none';
+                passIn.oninput = null;
             } else {
                 // Disable Uppercase
                 userIn.style.textTransform = 'none';

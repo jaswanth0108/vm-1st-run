@@ -748,12 +748,14 @@
             console.log('[Student] Exams fetched:', exams.length, exams);
 
             if (exams.length === 0) {
+                console.log('[Student] No exams returned from API.');
                 container.innerHTML = `
                 <div class="empty-state">
                     <span class="empty-state-icon">📭</span>
                     <p>No exams available at the moment. Check back soon!</p>
                 </div>`;
             } else {
+                console.log(`[Student] API returned ${exams.length} total exams.`);
                 const filteredExams = (session.role === 'admin')
                     ? exams
                     : exams.filter(e => {
@@ -764,29 +766,40 @@
                         const parseExamField = (field) => {
                             if (!field) return [];
                             if (Array.isArray(field)) return field.map(b => String(b).toUpperCase().trim());
-                            // Could be a JSON string from Postgres JSONB
-                            if (typeof field === 'string' && field.startsWith('[')) {
-                                try { return JSON.parse(field).map(b => String(b).toUpperCase().trim()); } catch(e) {}
+                            if (typeof field === 'string') {
+                                // Could be a JSON string from Postgres JSONB or a comma-separated string
+                                if (field.startsWith('[')) {
+                                    try { return JSON.parse(field).map(b => String(b).toUpperCase().trim()); } catch(e) {}
+                                }
+                                return field.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
                             }
-                            return field.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
+                            return [];
                         };
 
                         const examBranches = parseExamField(e.branch);
                         const examBatches  = parseExamField(e.batch);
 
-                        // If exam targets 'All' or has no restrictions → always show
                         const branchOpen = examBranches.length === 0 || examBranches.includes('ALL');
                         const batchOpen  = examBatches.length === 0 || examBatches.includes('ALL');
 
-                        // === Branch Matching ===
                         const branchMatch = branchOpen || !studentBranch || studentBranch === 'UNDEFINED'
                             || examBranches.includes(studentBranch);
 
-                        // === Batch Matching ===
-                        const batchMatch = batchOpen || !studentBatch || studentBatch === 'undefined'
+                        const batchMatch = batchOpen || !studentBatch || studentBatch === 'UNDEFINED'
                             || examBatches.includes(studentBatch.toUpperCase());
 
-                        return branchMatch && batchMatch;
+                        const isVisible = branchMatch && batchMatch;
+
+                        if (!isVisible) {
+                            console.groupCollapsed(`[Filter] Exam "${e.title}" hidden`);
+                            console.log('Reason: Criteria mismatch');
+                            console.log('Student:', { branch: studentBranch, batch: studentBatch });
+                            console.log('Exam Targets:', { branches: examBranches, batches: examBatches });
+                            console.log('Match Results:', { branchMatch, batchMatch });
+                            console.groupEnd();
+                        }
+
+                        return isVisible;
                     });
 
                 if (filteredExams.length === 0) {

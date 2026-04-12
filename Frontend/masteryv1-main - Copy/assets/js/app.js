@@ -16,7 +16,10 @@ class ExamService {
         const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
             headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
-        if (!response.ok) throw new Error('Failed to fetch exams');
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(`${response.status}: ${errData.message || 'Failed to fetch exams'}`);
+        }
         const data = await response.json();
         return data.data || data;
     }
