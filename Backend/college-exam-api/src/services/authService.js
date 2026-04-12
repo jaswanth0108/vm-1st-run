@@ -4,18 +4,23 @@ const pool = require('../config/db');
 const CustomError = require('../utils/customError');
 
 const registerUser = async (name, username, password, role, profile = {}) => {
-    const { rows: existing } = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
-    if (existing.length > 0) {
-        throw new CustomError('Username already registered', 400);
-    }
-
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
-
     const { branch, year, section, batch } = profile;
 
+    // Upsert: if username already exists, update their details and password.
+    // This prevents duplicate key errors when admin re-adds a student.
     const { rows } = await pool.query(
-        'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+        `INSERT INTO users (name, username, password_hash, role, branch, year, section, batch)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (username) DO UPDATE
+           SET name = EXCLUDED.name,
+               password_hash = EXCLUDED.password_hash,
+               branch = EXCLUDED.branch,
+               year = EXCLUDED.year,
+               section = EXCLUDED.section,
+               batch = EXCLUDED.batch
+         RETURNING id`,
         [name, username, passwordHash, role, branch, year, section, batch]
     );
 
@@ -33,28 +38,30 @@ const bulkRegisterUsers = async (users) => {
         for (const user of users) {
             const { name, username, password, role, branch, year, section, batch } = user;
 
-            // Check if user exists
-            const { rows } = await connection.query('SELECT password_hash FROM users WHERE username = $1', [username]);
-
-            if (rows.length > 0) {
-                // Update existing user details
-                await connection.query(
-                    'UPDATE users SET name = $1, branch = $2, year = $3, section = $4, batch = $5 WHERE username = $6',
-                    [name, branch, year, section, batch, username]
-                );
-                updateCount++;
-                continue;
-            }
-
             const salt = await bcrypt.genSalt(10);
             const passwordHash = await bcrypt.hash(password, salt);
 
-            await connection.query(
-                'INSERT INTO users (name, username, password_hash, role, branch, year, section, batch) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            // Upsert: insert new student or update existing one on username conflict.
+            const result = await connection.query(
+                `INSERT INTO users (name, username, password_hash, role, branch, year, section, batch)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                 ON CONFLICT (username) DO UPDATE
+                   SET name = EXCLUDED.name,
+                       password_hash = EXCLUDED.password_hash,
+                       branch = EXCLUDED.branch,
+                       year = EXCLUDED.year,
+                       section = EXCLUDED.section,
+                       batch = EXCLUDED.batch
+                 RETURNING (xmax = 0) AS inserted`,
                 [name, username, passwordHash, role, branch, year, section, batch]
             );
 
-            successCount++;
+            // xmax = 0 means a new row was inserted; otherwise it was updated
+            if (result.rows[0].inserted) {
+                successCount++;
+            } else {
+                updateCount++;
+            }
         }
 
         await connection.query('COMMIT');
