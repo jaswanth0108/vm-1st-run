@@ -115,7 +115,8 @@ class ExamService {
         });
         if (!response.ok) throw new Error('Failed to fetch results');
         const data = await response.json();
-        return data.data || data;
+        const results = data.data || data;
+        return Array.isArray(results) ? results : [];
     }
 
     static async getStudentResults(studentId) {

@@ -689,10 +689,15 @@
             window.location.href = '../index.html';
         }
         if (session) {
-            const displayName = (session.name && session.name.toLowerCase() !== 'student') 
-                ? session.name 
-                : (session.username || 'Student');
+            // Improve name display: prioritize real name, fallback to username, last resort 'Student'
+            const sName = String(session.name || '').trim();
+            const sUser = String(session.username || '').trim();
+            
+            const isGeneric = !sName || ['STUDENT', 'UNDEFINED', 'NULL'].includes(sName.toUpperCase());
+            const displayName = isGeneric ? (sUser || 'Student') : sName;
+            
             document.getElementById('studentName').innerText = displayName;
+            console.log(`[Student Portal] Session info:`, { originalName: sName, username: sUser, displayed: displayName });
         }
 
         // Wrap everything dependent on API in an IIFE
@@ -844,68 +849,73 @@
                     </div>`;
                 } else {
                     container.innerHTML = filteredExams.map(exam => {
-                        const isTaken = results.some(r => String(r.examId) === String(exam.id));
-                        const isDraft = exam.status !== 'published';
-                        const attempts = results.filter(r => String(r.examId) === String(exam.id));
-                        const attemptCount = attempts.length;
-                        const limit = exam.attemptLimit || 1;
-                        const canAttempt = limit === -1 || attemptCount < limit;
+                        try {
+                            const isTaken = results.some(r => String(r.examId) === String(exam.id));
+                            const isDraft = exam.status !== 'published';
+                            const attempts = results.filter(r => String(r.examId) === String(exam.id));
+                            const attemptCount = attempts.length;
+                            const limit = exam.attemptLimit || 1;
+                            const canAttempt = limit === -1 || attemptCount < limit;
 
-                        let statusBadge;
-                        if (isDraft) {
-                            statusBadge = `<span class="status-badge" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.3); color:#fbbf24;">⏳ Coming Soon</span>`;
-                        } else if (attemptCount > 0) {
-                            statusBadge = `<span class="status-badge" style="background:${canAttempt ? 'rgba(108,99,255,0.15)' : 'rgba(52,211,153,0.12)'}; color:${canAttempt ? '#818cf8' : '#34d399'}; border:1px solid ${canAttempt ? 'rgba(108,99,255,0.3)' : 'rgba(52,211,153,0.3)'};">Attempts: ${attemptCount}${limit === -1 ? '' : '/' + limit}</span>`;
-                        } else {
-                            statusBadge = `<span class="status-badge status-active">🟢 Active</span>`;
-                        }
+                            let statusBadge;
+                            if (isDraft) {
+                                statusBadge = `<span class="status-badge" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.3); color:#fbbf24;">⏳ Coming Soon</span>`;
+                            } else if (attemptCount > 0) {
+                                statusBadge = `<span class="status-badge" style="background:${canAttempt ? 'rgba(108,99,255,0.15)' : 'rgba(52,211,153,0.12)'}; color:${canAttempt ? '#818cf8' : '#34d399'}; border:1px solid ${canAttempt ? 'rgba(108,99,255,0.3)' : 'rgba(52,211,153,0.3)'};">Attempts: ${attemptCount}${limit === -1 ? '' : '/' + limit}</span>`;
+                            } else {
+                                statusBadge = `<span class="status-badge status-active">🟢 Active</span>`;
+                            }
 
-                        let actionBtn;
-                        const isAdmin = session.role === 'admin';
+                            let actionBtn;
+                            const isAdmin = session.role === 'admin';
 
-                        if (isAdmin) {
-                            actionBtn = `<button class="btn btn-outline" disabled style="margin-top: auto; width: 100%; cursor: not-allowed; opacity: 0.5; font-family:'Space Grotesk',sans-serif; font-weight:600;">Admin View Only</button>`;
-                        } else if (isDraft) {
-                            actionBtn = `<button class="btn btn-outline" disabled style="margin-top: auto; width: 100%; opacity: 0.4; cursor: not-allowed; font-family:'Space Grotesk',sans-serif;">Not Published Yet</button>`;
-                        } else if (!canAttempt) {
-                            const bestScore = Math.max(...attempts.map(a => a.score));
-                            actionBtn = `
-                            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; width: 100%;">
-                                <div style="text-align: center; font-size: 0.85rem; color: #34d399; font-weight: 700; font-family:'Space Grotesk',sans-serif; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2); border-radius:0.5rem; padding:0.4rem;">
-                                    🏅 Best Score: ${bestScore}%
+                            if (isAdmin) {
+                                actionBtn = `<button class="btn btn-outline" disabled style="margin-top: auto; width: 100%; cursor: not-allowed; opacity: 0.5; font-family:'Space Grotesk',sans-serif; font-weight:600;">Admin View Only</button>`;
+                            } else if (isDraft) {
+                                actionBtn = `<button class="btn btn-outline" disabled style="margin-top: auto; width: 100%; opacity: 0.4; cursor: not-allowed; font-family:'Space Grotesk',sans-serif;">Not Published Yet</button>`;
+                            } else if (!canAttempt) {
+                                const bestScore = Math.max(...attempts.map(a => a.score), 0);
+                                actionBtn = `
+                                <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; width: 100%;">
+                                    <div style="text-align: center; font-size: 0.85rem; color: #34d399; font-weight: 700; font-family:'Space Grotesk',sans-serif; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2); border-radius:0.5rem; padding:0.4rem;">
+                                        🏅 Best Score: ${bestScore}%
+                                    </div>
+                                    <a href="report.html?id=${exam.id}" class="btn" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; border: none; box-shadow: 0 4px 15px -3px rgba(16,185,129,0.4); font-family:'Space Grotesk',sans-serif; font-weight:600;">📄 View Report</a>
+                                </div>`;
+                            } else {
+                                actionBtn = `
+                                <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; width: 100%;">
+                                    <a href="../exam/index.html?id=${exam.id}" class="btn btn-primary" style="text-align: center; width: 100%; justify-content: center; font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:0.02em;">${attemptCount > 0 ? '🔁 Retake Exam' : '🚀 Start Exam'}</a>
+                                    ${attemptCount > 0 ? `<a href="report.html?id=${exam.id}" class="btn" style="width: 100%; justify-content: center; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; border: none; box-shadow: 0 4px 12px -3px rgba(16,185,129,0.4); font-family:'Space Grotesk',sans-serif; font-weight:600;">📄 View Report</a>` : ''}
+                                </div>`;
+                            }
+
+                            const cardClass = isDraft ? 'exam-card--draft'
+                                : (isTaken && !canAttempt) ? 'exam-card--completed'
+                                    : 'exam-card--active';
+
+                            return `
+                            <div class="exam-card fade-in ${cardClass}">
+                                <div>
+                                    <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.25rem;">
+                                        ${statusBadge}
+                                        ${isTaken ? '<span class="status-badge" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ Completed</span>' : ''}
+                                    </div>
+                                    <h3 class="exam-card-title">${exam.title}</h3>
+                                    <p class="exam-card-subject">${exam.subject}</p>
                                 </div>
-                                <a href="report.html?id=${exam.id}" class="btn" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; border: none; box-shadow: 0 4px 15px -3px rgba(16,185,129,0.4); font-family:'Space Grotesk',sans-serif; font-weight:600;">📄 View Report</a>
-                            </div>`;
-                        } else {
-                            actionBtn = `
-                            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; width: 100%;">
-                                <a href="../exam/index.html?id=${exam.id}" class="btn btn-primary" style="text-align: center; width: 100%; justify-content: center; font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:0.02em;">${attemptCount > 0 ? '🔁 Retake Exam' : '🚀 Start Exam'}</a>
-                                ${attemptCount > 0 ? `<a href="report.html?id=${exam.id}" class="btn" style="width: 100%; justify-content: center; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; border: none; box-shadow: 0 4px 12px -3px rgba(16,185,129,0.4); font-family:'Space Grotesk',sans-serif; font-weight:600;">📄 View Report</a>` : ''}
-                            </div>`;
-                        }
 
-                        const cardClass = isDraft ? 'exam-card--draft'
-                            : (isTaken && !canAttempt) ? 'exam-card--completed'
-                                : 'exam-card--active';
-
-                        return `
-                        <div class="exam-card fade-in ${cardClass}">
-                            <div>
-                                <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.25rem;">
-                                    ${statusBadge}
-                                    ${isTaken ? '<span class="status-badge" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ Completed</span>' : ''}
+                                <div class="exam-meta">
+                                    <span>⏱ ${exam.duration} mins</span>
+                                    <span>📝 ${exam.question_count || 0} questions</span>
                                 </div>
-                                <h3 class="exam-card-title">${exam.title}</h3>
-                                <p class="exam-card-subject">${exam.subject}</p>
-                            </div>
 
-                            <div class="exam-meta">
-                                <span>⏱ ${exam.duration} mins</span>
-                                <span>📝 ${exam.question_count || 0} questions</span>
-                            </div>
-
-                            ${actionBtn}
-                        </div>`;
+                                ${actionBtn}
+                            </div>`;
+                        } catch (cardErr) {
+                            console.error(`Malformed exam card:`, exam, cardErr);
+                            return `<div style="border:1px dashed rgba(255,100,100,0.3); padding:1rem; border-radius:1rem; font-size:0.8rem;">⚠️ Skipping malformed exam record</div>`;
+                        }
                     }).join('');
                 }
             }
