@@ -2,6 +2,22 @@ const pool = require('../config/db');
 const CustomError = require('../utils/customError');
 const reportService = require('./reportService');
 
+const parseJsonField = (field, defaultValue = []) => {
+    if (!field) return defaultValue;
+    if (Array.isArray(field)) return field;
+    if (typeof field === 'string') {
+        try {
+            const parsed = JSON.parse(field);
+            return Array.isArray(parsed) ? parsed : [parsed];
+        } catch (e) {
+            // If it's a string but NOT JSON, split by comma or return as single-item array
+            if (field.includes(',')) return field.split(',').map(s => s.trim());
+            return [field];
+        }
+    }
+    return [field];
+};
+
 const createExam = async (teacherId, examData) => {
     // Admin dashboard sends: title, subject, branch, batch, duration, questions
     const { title, subject, duration, questions, branch, batch, status } = examData;
@@ -98,8 +114,8 @@ const getExams = async () => {
         id: row.id,           // Keep as integer — frontend must use String() or == for comparison
         title: row.title,
         subject: row.description,
-        branch: Array.isArray(row.branch) ? row.branch : [row.branch || 'All'],
-        batch: Array.isArray(row.batch) ? row.batch : [row.batch || 'All'],
+        branch: parseJsonField(row.branch, ['All']),
+        batch: parseJsonField(row.batch, ['All']),
         duration: row.duration_minutes,
         status: row.status,
         attemptLimit: row.attempt_limit || 1,
@@ -151,8 +167,8 @@ const getExamById = async (examId) => {
         title: exam.title,
         subject: exam.description,
         description: exam.description,
-        branch: exam.branch,
-        batch: exam.batch,
+        branch: parseJsonField(exam.branch, ['All']),
+        batch: parseJsonField(exam.batch, ['All']),
         duration: exam.duration_minutes,
         status: exam.status,
         startTime: exam.start_time,

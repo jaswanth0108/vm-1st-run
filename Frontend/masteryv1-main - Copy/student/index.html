@@ -759,15 +759,22 @@
                 const filteredExams = (session.role === 'admin')
                     ? exams
                     : exams.filter(e => {
-                        const studentBatch = String(session.batch || '').trim();
+                        const studentBatch = String(session.batch || '').toUpperCase().trim();
                         const studentBranch = String(session.branch || '').toUpperCase().trim();
 
                         // Helper: parse branch/batch from exam (handles JSONB arrays or comma-string)
                         const parseExamField = (field) => {
                             if (!field) return [];
-                            if (Array.isArray(field)) return field.map(b => String(b).toUpperCase().trim());
+                            if (Array.isArray(field)) {
+                                // Handles nested array strings if they occur
+                                return field.flatMap(b => {
+                                    if (typeof b === 'string' && b.startsWith('[')) {
+                                        try { return JSON.parse(b).map(x => String(x).toUpperCase().trim()); } catch(e) {}
+                                    }
+                                    return [String(b).toUpperCase().trim()];
+                                });
+                            }
                             if (typeof field === 'string') {
-                                // Could be a JSON string from Postgres JSONB or a comma-separated string
                                 if (field.startsWith('[')) {
                                     try { return JSON.parse(field).map(b => String(b).toUpperCase().trim()); } catch(e) {}
                                 }
@@ -782,11 +789,11 @@
                         const branchOpen = examBranches.length === 0 || examBranches.includes('ALL');
                         const batchOpen  = examBatches.length === 0 || examBatches.includes('ALL');
 
-                        const branchMatch = branchOpen || !studentBranch || studentBranch === 'UNDEFINED'
+                        const branchMatch = branchOpen || !studentBranch || studentBranch === 'UNDEFINED' || studentBranch === 'NULL'
                             || examBranches.includes(studentBranch);
 
-                        const batchMatch = batchOpen || !studentBatch || studentBatch === 'UNDEFINED'
-                            || examBatches.includes(studentBatch.toUpperCase());
+                        const batchMatch = batchOpen || !studentBatch || studentBatch === 'UNDEFINED' || studentBatch === 'NULL'
+                            || examBatches.includes(studentBatch);
 
                         const isVisible = branchMatch && batchMatch;
 
