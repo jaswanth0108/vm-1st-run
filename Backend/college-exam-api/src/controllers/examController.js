@@ -33,9 +33,13 @@ const getExamById = async (req, res, next) => {
     try {
         const exam = await examService.getExamById(req.params.id);
         
-        // Hide questions from students if exam is not published
-        if (req.user && req.user.role === 'student' && exam.status !== 'published') {
-            exam.questions = [];
+        // Hide questions from students if exam is not in a live state (published/active)
+        if (req.user && req.user.role === 'student') {
+            const status = String(exam.status || '').toLowerCase();
+            const isLive = ['published', 'active', 'live'].includes(status);
+            if (!isLive) {
+                exam.questions = [];
+            }
         }
 
         res.status(200).json({
