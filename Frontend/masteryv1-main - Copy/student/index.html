@@ -584,8 +584,8 @@
     </div>
     <script>
         // Enhanced Interactive Background
-        const interBg = document.getElementById('interactive-bg');
-        if (interBg) {
+        const interBgElement = document.getElementById('interactive-bg');
+        if (interBgElement) {
             let lastMove = 0;
             window.addEventListener('mousemove', (e) => {
                 const now = Date.now();
@@ -594,7 +594,7 @@
                     requestAnimationFrame(() => {
                         const x = e.clientX;
                         const y = e.clientY;
-                        const innerDiv = interBg.querySelector('div');
+                        const innerDiv = interBgElement.querySelector('div');
                         if (innerDiv) {
                             innerDiv.style.background = `
                                 radial-gradient(ellipse 350px 250px at ${x}px ${y}px, rgba(108, 99, 255, 0.25) 0%, transparent 50%),
@@ -689,7 +689,10 @@
             window.location.href = '../index.html';
         }
         if (session) {
-            document.getElementById('studentName').innerText = session.name;
+            const displayName = (session.name && session.name.toLowerCase() !== 'student') 
+                ? session.name 
+                : (session.username || 'Student');
+            document.getElementById('studentName').innerText = displayName;
         }
 
         // Wrap everything dependent on API in an IIFE
@@ -756,6 +759,19 @@
                 </div>`;
             } else {
                 console.log(`[Student] API returned ${exams.length} total exams.`);
+                
+                // Diagnostic Table for Admin/Debug
+                console.groupCollapsed('🔍 Diagnostic Info: Session & Data');
+                console.log('Session Data:', session);
+                console.table(exams.map(e => ({ 
+                    id: e.id, 
+                    title: e.title, 
+                    branch: JSON.stringify(e.branch), 
+                    batch: JSON.stringify(e.batch),
+                    status: e.status
+                })));
+                console.groupEnd();
+
                 const filteredExams = (session.role === 'admin')
                     ? exams
                     : exams.filter(e => {
@@ -768,15 +784,22 @@
                             if (Array.isArray(field)) {
                                 // Handles nested array strings if they occur
                                 return field.flatMap(b => {
-                                    if (typeof b === 'string' && b.startsWith('[')) {
-                                        try { return JSON.parse(b).map(x => String(x).toUpperCase().trim()); } catch(e) {}
+                                    if (typeof b === 'string' && b.trim().startsWith('[')) {
+                                        try { 
+                                            const p = JSON.parse(b);
+                                            return Array.isArray(p) ? p.map(x => String(x).toUpperCase().trim()) : [String(p).toUpperCase().trim()];
+                                        } catch(e) {}
                                     }
                                     return [String(b).toUpperCase().trim()];
                                 });
                             }
                             if (typeof field === 'string') {
-                                if (field.startsWith('[')) {
-                                    try { return JSON.parse(field).map(b => String(b).toUpperCase().trim()); } catch(e) {}
+                                const fTrim = field.trim();
+                                if (fTrim.startsWith('[')) {
+                                    try { 
+                                        const p = JSON.parse(fTrim);
+                                        return Array.isArray(p) ? p.map(b => String(b).toUpperCase().trim()) : [String(p).toUpperCase().trim()];
+                                    } catch(e) {}
                                 }
                                 return field.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
                             }
@@ -788,6 +811,10 @@
 
                         const branchOpen = examBranches.length === 0 || examBranches.includes('ALL');
                         const batchOpen  = examBatches.length === 0 || examBatches.includes('ALL');
+
+                        // PERMISSIVE MATCHING: If student session data is missing, we let them see it
+                        const hasNoSessionData = (!studentBranch || studentBranch === 'UNDEFINED' || studentBranch === 'NULL') &&
+                                                 (!studentBatch || studentBatch === 'UNDEFINED' || studentBatch === 'NULL');
 
                         const branchMatch = branchOpen || !studentBranch || studentBranch === 'UNDEFINED' || studentBranch === 'NULL'
                             || examBranches.includes(studentBranch);
@@ -802,7 +829,7 @@
                             console.log('Reason: Criteria mismatch');
                             console.log('Student:', { branch: studentBranch, batch: studentBatch });
                             console.log('Exam Targets:', { branches: examBranches, batches: examBatches });
-                            console.log('Match Results:', { branchMatch, batchMatch });
+                            console.log('Match Results:', { branchMatch, batchMatch, branchOpen, batchOpen });
                             console.groupEnd();
                         }
 
@@ -874,7 +901,7 @@
 
                             <div class="exam-meta">
                                 <span>⏱ ${exam.duration} mins</span>
-                                <span>📝 ${exam.questions.length} questions</span>
+                                <span>📝 ${exam.question_count || 0} questions</span>
                             </div>
 
                             ${actionBtn}
@@ -892,18 +919,7 @@
             }
         })();
 
-        // Interactive Background Script
-        const interBg = document.getElementById('interactive-bg');
-        if (interBg) {
-            window.addEventListener('mousemove', (e) => {
-                requestAnimationFrame(() => {
-                    const x = e.clientX;
-                    const y = e.clientY;
-                    interBg.style.background = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(167, 139, 250, 0.15), transparent 80%)`;
-                });
-            });
-        }
-    </script>
+        </script>
 </body>
 
 </html>
