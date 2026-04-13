@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examination - Next Gen Exam Portal</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+    <!-- Floating Geometric Shapes for Background -->
+    <div class="floating-shape floating-shape-1"></div>
+    <div class="floating-shape floating-shape-2"></div>
+    <div class="floating-shape floating-shape-3"></div>
+
+    <img src="assets/img/vignan_header.png" alt="Header"
+        style="display: block; width: 100%; height: auto; max-height: 120px; object-fit: contain; background: white; margin: 0 auto; ">
+    <div class="main-wrapper">
+        <!-- Navigation -->
+        <nav class="glass-panel nav-glass">
+            <!-- Spacer for Grid Balance -->
+            <div></div>
+            <div class="logo"
+                style="font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                <img src="assets/img/Logo.png" alt="Logo" style="height: 40px; width: auto;">
+                VIGNAN MASTERY 1.0
+            </div>
+            <div class="auth-buttons" style="justify-self: end;">
+                <button onclick="showLoginModel('student')" class="btn btn-outline"
+                    style="margin-right: 0.5rem;">Student Login</button>
+
+                <button onclick="showLoginModel('admin')" class="btn btn-primary">Admin Portal</button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="container"
+            style="padding-top: 0px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <div class="fade-in">
+                <div class="hero-badge">
+                    🚀 The #1 Exam Platform
+                </div>
+                <h1 class="hero-title">
+                    "It always seems <br>
+                    <span class="highlight">impossible </span>
+                    until it's done"
+                </h1>
+                <p class="hero-description"
+                    style="font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 3rem; line-height: 1.6;">
+                    Participate exams with integrity and style. A beautiful world with technology will be yours
+                </p>
+                <div style="display: flex; gap: 2rem; justify-content: center;">
+                    <div class="stat-card-premium float-card">
+                        <h3 style="color: var(--text-main); font-size: 2.5rem; font-weight: 800;">6000+</h3>
+                        <p style="color: var(--text-muted); font-weight: 500;">Active Students</p>
+                    </div>
+                    <div class="stat-card-premium float-card">
+                        <h3 style="color: var(--text-main); font-size: 2.5rem; font-weight: 800;">99.9%</h3>
+                        <p style="color: var(--text-muted); font-weight: 500;">Platform Uptime</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Login Modal (Hidden by default) -->
+        <div id="loginModal" style="display: none;" class="modal-glass-overlay">
+            <div class="modal-glass-content">
+                <button onclick="hideLoginModal()"
+                    style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); font-size: 1.5rem;">&times;</button>
+
+                <h2 id="modalTitle" style="margin-bottom: 2rem; text-align: center;">Login</h2>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label>ID / Username</label>
+                        <input type="text" id="username" class="input-field" placeholder="Enter your ID" required
+                            style="background: var(--background);">
+                    </div>
+                    <div class="input-group" id="studentDetailsGroup"
+                        style="display:none; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label>Section</label>
+                            <input type="text" id="loginSection" class="input-field"
+                                style="background: var(--background);" placeholder="e.g. 1" maxlength="1" pattern="\d"
+                                oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+                        </div>
+                        <div>
+                            <label>Branch</label>
+                            <select id="loginBranch" class="input-field" style="background: var(--background);">
+                                <option value="CSE">CSE</option>
+                                <option value="ECE">ECE</option>
+                                <option value="EEE">EEE</option>
+                                <option value="IT">IT</option>
+                                <option value="MECH">MECH</option>
+                                <option value="CIVIL">CIVIL</option>
+                                <option value="AI">AI</option>
+                                <option value="AIDS">AIDS</option>
+                                <option value="DS">DS</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label>Batch</label>
+                            <select id="loginBatch" class="input-field" style="background: var(--background);">
+                                <option value="2022-2026">2022-2026</option>
+                                <option value="2023-2027">2023-2027</option>
+                                <option value="2024-2028">2024-2028</option>
+                                <option value="2025-2029">2025-2029</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="password" class="input-field" placeholder="Enter password"
+                                required style="background: var(--background); padding-right: 2.5rem;">
+                            <button type="button" onclick="togglePassword()"
+                                style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        // Inline UI helper for landing page
+        const modal = document.getElementById('loginModal');
+        const modalTitle = document.getElementById('modalTitle');
+        window.currentRole = 'student';
+
+        // Force Logout on Landing Page Load
+        localStorage.removeItem('ems_session');
+
+        function showLoginModel(role) {
+            window.currentRole = role;
+            modalTitle.innerText = role === 'admin' ? 'Admin Access' : 'Student Login';
+
+            // Toggle Year & Branch
+            const detailsGroup = document.getElementById('studentDetailsGroup');
+            detailsGroup.style.display = role === 'student' ? 'grid' : 'none';
+
+            modal.style.display = 'flex';
+
+            // Conditional Capitalization
+            const userIn = document.getElementById('username');
+            const passIn = document.getElementById('password');
+
+            if (role === 'student') {
+                // Enforce Uppercase for Username (Roll Number)
+                userIn.style.textTransform = 'uppercase';
+                userIn.oninput = function () { this.value = this.value.toUpperCase(); };
+
+                // DO NOT Enforce Uppercase for Password
+                passIn.style.textTransform = 'none';
+                passIn.oninput = null;
+            } else {
+                // Disable Uppercase
+                userIn.style.textTransform = 'none';
+                passIn.style.textTransform = 'none';
+                userIn.oninput = null;
+                passIn.oninput = null;
+            }
+        }
+
+        function hideLoginModal() {
+            modal.style.display = 'none';
+        }
+
+        // Close on clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideLoginModal();
+        });
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                setTimeout(() => {
+                    input.type = 'password';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+
+</html>
