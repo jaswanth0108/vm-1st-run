@@ -908,11 +908,22 @@
         const TIMER_KEY = `exam_start_${examId}_${session.id}`;
 
         async function initExam() {
-            // 1. Request Fullscreen
-            document.documentElement.requestFullscreen().catch(err => {
-                console.warn('Fullscreen denied:', err);
-                alert('Fullscreen is required. Please allow it.');
-            });
+            // 1. Request Fullscreen Safely
+            try {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    const promise = elem.requestFullscreen();
+                    if (promise) promise.catch(err => console.warn('Fullscreen denied:', err));
+                } else if (elem.webkitRequestFullscreen) {
+                    const promise = elem.webkitRequestFullscreen();
+                    if (promise) promise.catch(err => console.warn('Fullscreen denied:', err));
+                } else if (elem.msRequestFullscreen) {
+                    const promise = elem.msRequestFullscreen();
+                    if (promise) promise.catch(err => console.warn('Fullscreen denied:', err));
+                }
+            } catch (err) {
+                console.warn('Fullscreen request failed or not supported:', err);
+            }
 
             // 2. Hide Overlay
             document.getElementById('startOverlay').style.display = 'none';
