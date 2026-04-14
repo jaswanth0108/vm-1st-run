@@ -852,6 +852,8 @@
             const displayName = session.name && session.name !== 'Student' ? session.name : (session.username || 'Student');
             document.getElementById('studentInfo').innerText = `${displayName} (${session.id})`;
         }
+
+        if (!examId) {
             // Auto-redirect to dashboard
             window.location.href = '../student/index.html';
             throw new Error('No ID');
