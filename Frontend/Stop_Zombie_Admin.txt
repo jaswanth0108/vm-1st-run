@@ -1,0 +1,38 @@
+Why The Old Password Came Back (The "Zombie" Admin)
+===================================================
+
+Excellent job removing the Hardcoded Bypass from `authService.js`! However, the reason the old login came back when you redeployed the database is because of a "safety net" script in your database configuration.
+
+Inside your file `Backend/college-exam-api/src/config/init.sql`, there is a command that says:
+`WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');`
+
+Because you changed your admin username to something new (e.g. 'my_admin_jaswanth'), the database woke up, looked for the exact username `admin`, saw it was missing, and completely re-created the default `admin` with the `admin123` password!
+
+You now have TWO admin accounts in your database: your new secure one, and the old zombie one.
+
+Here is exactly how to kill the old one permanently in 2 Steps:
+-----------------------------------------------------------------
+
+### STEP 1: Delete the "auto-create" code in your project
+1. Open this file in your code editor:
+   `Backend/college-exam-api/src/config/init.sql`
+2. Scroll to the very bottom (lines 107 to 110).
+3. Find and DELETE these exact lines:
+
+    -- Seed Default Admin User (Password: admin123)
+    INSERT INTO users (name, username, password_hash, role)
+    SELECT 'Admin', 'admin', '$2a$10$0zR9t1m88/T2Ff2b2l6l.O9yX5c5l6l.O9yX5c5l6l.O9yX5c5l6l.O', 'admin'
+    WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
+
+4. Save the file and push it to GitHub/Render. This stops the zombie from ever coming back!
+
+### STEP 2: Delete the zombie from the live database
+1. Open pgAdmin 4.
+2. Open the Query Tool on your database.
+3. Run this exact SQL query to delete the old admin:
+
+    DELETE FROM users WHERE username = 'admin';
+
+4. (Make sure you don't delete your new custom username!)
+
+Once you do both steps, the old account is deleted from pgAdmin, and your code will NEVER try to magically bring it back to life!

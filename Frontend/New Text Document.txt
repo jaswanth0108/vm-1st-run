@@ -1,0 +1,3 @@
+Admin username: admin
+Admin password: admin123
+pgsql password: admin

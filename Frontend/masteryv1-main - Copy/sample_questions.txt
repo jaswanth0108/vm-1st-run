@@ -1,0 +1,103 @@
+1. Write a program to find the sum of two integers.
+Input: 10 20
+Output: 30
+Constraints: -1000 <= A, B <= 1000
+Test Case 1:
+Input: 5 5
+Output: 10
+Test Case 2:
+Input: -1 1
+Output: 0
+
+2. Write a program to check if a number is even or odd. Print "Even" or "Odd".
+Input: 4
+Output: Even
+Constraints: 1 <= N <= 1000
+Test Case 1:
+Input: 7
+Output: Odd
+Test Case 2:
+Input: 0
+Output: Even
+
+3. Write a program to calculate the factorial of a small number N.
+Input: 5
+Output: 120
+Constraints: 0 <= N <= 12
+Test Case 1:
+Input: 3
+Output: 6
+Test Case 2:
+Input: 4
+Output: 24
+
+4. Write a program to find the maximum of three numbers.
+Input: 10 20 30
+Output: 30
+Constraints: -1000 <= A, B, C <= 1000
+Test Case 1:
+Input: 5 1 9
+Output: 9
+Test Case 2:
+Input: 8 8 2
+Output: 8
+
+5. Write a program to print numbers from 1 to N separated by spaces.
+Input: 5
+Output: 1 2 3 4 5
+Constraints: 1 <= N <= 100
+Test Case 1:
+Input: 3
+Output: 1 2 3
+
+6. Write a program to check if a string is a palindrome (reads same forwards and backwards). Print "Yes" or "No".
+Input: madam
+Output: Yes
+Constraints: Length <= 100, lowercase letters
+Test Case 1:
+Input: hello
+Output: No
+Test Case 2:
+Input: racecar
+Output: Yes
+
+7. Write a program to count the number of vowels (a, e, i, o, u) in a string.
+Input: apple
+Output: 2
+Constraints: Length <= 100, lowercase English letters
+Test Case 1:
+Input: sky
+Output: 0
+Test Case 2:
+Input: education
+Output: 5
+
+8. Write a program to check if a number is Prime. Print "Yes" or "No".
+Input: 7
+Output: Yes
+Constraints: 1 <= N <= 100
+Test Case 1:
+Input: 10
+Output: No
+Test Case 2:
+Input: 13
+Output: Yes
+
+9. Write a program to find the square of a number.
+Input: 5
+Output: 25
+Constraints: -100 <= N <= 100
+Test Case 1:
+Input: 4
+Output: 16
+Test Case 2:
+Input: -3
+Output: 9
+
+10. Write a program to print the multiplication table of N up to 10 (separated by spaces).
+Input: 2
+Output: 2 4 6 8 10 12 14 16 18 20
+Constraints: 1 <= N <= 20
+Test Case 1:
+Input: 3
+Output: 3 6 9 12 15 18 21 24 27 30

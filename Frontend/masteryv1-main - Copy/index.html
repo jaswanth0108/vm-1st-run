@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"> 
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Examination - Next Gen Exam Portal</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +20,7 @@
     <div class="floating-shape floating-shape-1"></div>
     <div class="floating-shape floating-shape-2"></div>
     <div class="floating-shape floating-shape-3"></div>
-
+    
     <img src="assets/img/vignan_header.png" alt="Header"
         style="display: block; width: 100%; height: auto; max-height: 120px; object-fit: contain; background: white; margin: 0 auto; ">
     <div class="main-wrapper">
@@ -36,7 +36,7 @@
             <div class="auth-buttons" style="justify-self: end;">
                 <button onclick="showLoginModel('student')" class="btn btn-outline"
                     style="margin-right: 0.5rem;">Student Login</button>
-
+                    
                 <button onclick="showLoginModel('admin')" class="btn btn-primary">Admin Portal</button>
             </div>
         </nav>
@@ -71,7 +71,8 @@
         </section>
 
         <!-- Login Modal (Hidden by default) -->
-        <div id="loginModal" style="display: none;" class="modal-glass-overlay">
+        <div id="loginModal"
+            style="display: none;" class="modal-glass-overlay">
             <div class="modal-glass-content">
                 <button onclick="hideLoginModal()"
                     style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); font-size: 1.5rem;">&times;</button>
@@ -88,9 +89,7 @@
                         style="display:none; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div>
                             <label>Section</label>
-                            <input type="text" id="loginSection" class="input-field"
-                                style="background: var(--background);" placeholder="e.g. 1" maxlength="1" pattern="\d"
-                                oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+                            <input type="text" id="loginSection" class="input-field" style="background: var(--background);" placeholder="e.g. 1" maxlength="1" pattern="\d" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
                         </div>
                         <div>
                             <label>Branch</label>
@@ -168,7 +167,7 @@
                 // Enforce Uppercase for Username (Roll Number)
                 userIn.style.textTransform = 'uppercase';
                 userIn.oninput = function () { this.value = this.value.toUpperCase(); };
-
+                
                 // DO NOT Enforce Uppercase for Password
                 passIn.style.textTransform = 'none';
                 passIn.oninput = null;
