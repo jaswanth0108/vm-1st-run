@@ -239,18 +239,20 @@
     <button onclick="window.location.href='index.html'" class="btn btn-outline back-btn" style="color: #1e293b; border-color: #cbd5e1; background: white;">← Back to Dashboard</button>
     <button onclick="window.print()" class="btn btn-primary print-btn">🖨 Print Report Card</button>
 
+
     <div class="report-container" id="reportContent">
-        <!-- Header -->
+
+        <!-- ── Header: Logo left, Title right ── -->
         <div class="report-header">
             <div class="org-details">
                 <h1>VIGNAN MASTERY</h1>
                 <p>Vignan's Institute of Information Technology</p>
-                <p>Duvvada, Visakhaptnam,Andhra Pradesh - 530049</p>
+                <p>Duvvada, Visakhaptnam, Andhra Pradesh - 530049</p>
             </div>
+            <div class="report-title">Student Report Card</div>
+        </div>
 
-        <div class="report-title">Student Report Card</div>
-
-        <!-- Student Details -->
+        <!-- ── Student Details Grid ── -->
         <div class="student-details">
             <div>
                 <div class="detail-row">
@@ -264,7 +266,7 @@
             </div>
             <div>
                 <div class="detail-row">
-                    <span class="detail-label">Branch/Batch:</span>
+                    <span class="detail-label">Branch / Batch:</span>
                     <span class="detail-value" id="stuBranch">--</span>
                 </div>
                 <div class="detail-row" style="margin-top: 1rem;">
@@ -274,11 +276,11 @@
             </div>
         </div>
 
-        <!-- Report Table -->
+        <!-- ── Results Table ── -->
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50px;">#</th>
+                    <th style="width: 50px; text-align:center;">#</th>
                     <th>Subject</th>
                     <th>Exam Name</th>
                     <th style="text-align: center;">Score</th>
@@ -290,12 +292,12 @@
             </tbody>
         </table>
 
-        <!-- Summary -->
-        <div style="text-align: right; margin-bottom: 2rem;">
-            <p><strong>Cumulative Average Score:</strong> <span id="cumAvg">--</span>%</p>
+        <!-- ── Cumulative Summary ── -->
+        <div style="text-align: right; margin-top: 1rem; margin-bottom: 2rem; font-size: 0.95rem;">
+            <strong>Cumulative Average Score:</strong>&nbsp;<span id="cumAvg" style="font-size:1.1rem; font-weight:700; color:#2563eb;">--</span>%
         </div>
 
-        <!-- Signatures -->
+        <!-- ── Signatures ── -->
         <div class="signature-section">
             <div class="signature-box">
                 <div class="signature-line"></div>
@@ -307,12 +309,14 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- ── Footer ── -->
         <div class="footer">
             <p>This is a computer-generated report card. Any alteration invalidates this document.</p>
             <p>&copy; 2026 Vignan Mastery. All Rights Reserved.</p>
         </div>
+
     </div>
+
 
     <script src="../assets/js/config.js"></script>
     <script src="../assets/js/app.js"></script>
