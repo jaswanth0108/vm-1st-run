@@ -12,345 +12,335 @@
     <!-- Styles -->
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        /* ── Reset dark-theme globals so the report renders as a light document ── */
+        /* ══════════════════════════════════════════
+           GLOBAL RESET — suppress dark theme bleed
+           ══════════════════════════════════════════ */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
         body {
-            background: #f8fafc !important;
+            background: #e8edf2 !important;
             color: #1e293b !important;
+            font-family: 'Source Sans 3', 'Inter', system-ui, sans-serif !important;
         }
-        /* Suppress the animated dark mesh gradient from style.css */
-        body::before {
-            display: none !important;
-        }
-        /* Reset heading colours that style.css sets to var(--text-main) / light */
-        h1, h2, h3, h4, h5, h6 {
-            color: #1e293b;
-        }
-        /* Prevent .card hover transform from lifting the table rows */
-        .card:hover {
-            transform: none;
-        }
+        body::before  { display: none !important; }
+        h1,h2,h3,h4,h5,h6 { color: #1e293b; font-family: 'Source Sans 3', system-ui, sans-serif; }
+        .card:hover   { transform: none !important; }
 
+        /* ── Outer page wrapper ── */
         .report-container {
-            width: 21cm;
-            min-height: 29.7cm;
-            margin: 2rem auto;
-            background: white;
-            padding: 2.54cm;
-            /* A4 Margins */
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-            box-sizing: border-box;
-            position: relative;
-            border-radius: 0;
+            max-width: 960px;
+            margin: 2.5rem auto;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.18), 0 4px 16px -4px rgba(37,99,235,0.12);
+            border: 1px solid #cbd5e1;
         }
 
-        /* Responsive override for smaller screens */
-        @media (max-width: 850px) {
-            .report-container {
-                width: 95%;
-                min-height: auto;
-                padding: 1.5rem;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                border-radius: 0.75rem;
-            }
-        }
-
+        /* ── Header band ── */
         .report-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #3b82f6 100%);
+            padding: 2rem 2.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 2rem;
-            margin-bottom: 2rem;
+            position: relative;
         }
-
+        .report-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f59e0b, #ef4444, #8b5cf6, #22d3ee);
+        }
         .report-title {
-            font-size: 2rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
             font-weight: 700;
-            color: #2563eb;
-            margin-bottom: 0.5rem;
+            color: #fff;
+            letter-spacing: 0.02em;
+            line-height: 1.1;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            margin-bottom: 0;
+        }
+        .report-header-right {
+            text-align: right;
+        }
+        .report-header-right .score-pill {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+        .report-header-right .score-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.2rem;
+        }
+        .report-header-right .gen-date {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 0.5rem;
         }
 
+        /* ── Body padding ── */
+        .report-body {
+            padding: 2rem 2.5rem;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #2563eb;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        /* ── Meta grid ── */
         .meta-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
         }
-
-        .meta-group h3 {
-            font-size: 0.85rem;
-            color: #64748b;
+        .meta-card {
+            background: #f8faff;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            padding: 1.1rem 1.4rem;
+        }
+        .meta-card h3 {
+            font-size: 0.68rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.1em;
+            color: #64748b;
             margin-bottom: 0.5rem;
         }
-
-        .meta-group p {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1e293b;
+        .meta-card p {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
         }
-
-        .score-summary {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .score-summary .big-score {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #2563eb;
-            line-height: 1;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th,
-        td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: top;
-            color: #1e293b;
-        }
-
-        th {
-            font-weight: 600;
+        .meta-card .sub {
+            font-size: 0.82rem;
             color: #64748b;
-            font-size: 0.9rem;
-            background: #f8fafc;
+            font-weight: 400;
         }
-
-        .badge {
-            padding: 0.25rem 0.75rem;
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
             border-radius: 99px;
             font-size: 0.75rem;
             font-weight: 600;
+            padding: 0.2rem 0.65rem;
+            margin-top: 0.4rem;
+            margin-right: 0.3rem;
         }
 
-        .badge-success {
-            background: #dcfce7;
-            color: #15803d;
+        /* ── Score summary ── */
+        .score-summary {
+            background: linear-gradient(90deg, #eff6ff, #dbeafe);
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            padding: 1.25rem 1.75rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-
-        .badge-warning {
-            background: #fef3c7;
-            color: #b45309;
+        .score-summary .big-score {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            line-height: 1;
         }
+        .score-meta { color: #475569; font-size: 0.9rem; }
+        .score-meta strong { color: #0f172a; }
 
-        .badge-danger {
-            background: #fee2e2;
-            color: #b91c1c;
+        /* ── Status badges ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.65rem;
+            border-radius: 99px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
         }
+        .badge-success { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+        .badge-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-        .print-btn {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            z-index: 100;
-        }
-
-        .back-btn {
-            position: fixed;
-            top: 2rem;
-            left: 2rem;
-            z-index: 100;
-        }
-
-        pre {
-            background: #f1f5f9;
-            padding: 0.5rem;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            font-size: 0.85rem;
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Answer Box Style (Screen & Print) */
-        .answer-content {
+        /* ── Table ── */
+        table {
             width: 100%;
-            max-height: 150px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
             border: 1px solid #e2e8f0;
-            padding: 0.5rem;
-            overflow-y: auto;
-            background: #fff;
-            position: relative;
-            margin-bottom: 0.5rem;
-            border-radius: 4px;
+            margin-bottom: 0;
+            font-size: 0.88rem;
         }
+        thead tr {
+            background: linear-gradient(90deg, #1e3a8a, #2563eb);
+        }
+        th {
+            padding: 0.75rem 0.9rem;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #fff;
+            border: none;
+        }
+        tbody tr:nth-child(even) { background: #f8faff; }
+        tbody tr:hover { background: #eff6ff; }
+        td {
+            padding: 0.85rem 0.9rem;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+            vertical-align: top;
+        }
+        tbody tr:last-child td { border-bottom: none; }
 
+        /* Answer / solution cells */
+        .answer-content {
+            max-height: 120px;
+            border: 1px solid #e2e8f0;
+            padding: 0.4rem 0.6rem;
+            overflow-y: auto;
+            background: #fafafa;
+            position: relative;
+            margin-bottom: 0.4rem;
+            border-radius: 4px;
+            font-size: 0.83rem;
+        }
         .solution-content {
-            max-height: 80px;
+            max-height: 70px;
             overflow-y: hidden;
         }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-            transform: translateY(20px);
-            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
+        pre {
+            background: #f1f5f9;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 0.8rem;
+            max-height: 120px;
             overflow-y: auto;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
         }
-
         .view-full-btn {
             background: none;
             border: none;
             color: #2563eb;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             padding: 0;
-            margin-top: 0.25rem;
-            font-weight: 500;
+            margin-top: 0.2rem;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.2rem;
+            font-family: inherit;
+        }
+        .view-full-btn:hover { text-decoration: underline; }
+
+        /* ── Footer ── */
+        .report-footer {
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+            padding: 0.85rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
         }
 
-        .view-full-btn:hover {
-            text-decoration: underline;
+        /* ── Fixed buttons ── */
+        .print-btn {
+            position: fixed; bottom: 2rem; right: 2rem;
+            box-shadow: 0 8px 25px rgba(37,99,235,0.35); z-index: 100;
+        }
+        .back-btn {
+            position: fixed; top: 1.5rem; left: 1.5rem;
+            z-index: 100; font-size: 0.85rem;
         }
 
-        /* Print Styles */
-        @page {
-            size: A4 portrait;
-            margin: 2.54cm;
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15,23,42,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden;
+            transition: all 0.25s ease; backdrop-filter: blur(6px);
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: white; border-radius: 12px;
+            width: 90%; max-width: 620px; max-height: 82vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.3);
+            transform: translateY(24px);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            overflow: hidden;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(90deg, #1e3a8a, #2563eb);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { color: #fff; font-size: 0.95rem; margin: 0; }
+        .modal-body {
+            padding: 1.5rem; overflow-y: auto;
+            font-size: 0.92rem; line-height: 1.65; color: #1e293b;
+        }
+        .modal-footer {
+            padding: 0.85rem 1.5rem; border-top: 1px solid #e2e8f0; text-align: right;
         }
 
+        /* ── Responsive ── */
+        @media (max-width: 780px) {
+            .report-container { border-radius: 0; }
+            .meta-grid { grid-template-columns: 1fr; }
+            .report-body { padding: 1.25rem; }
+        }
+
+        /* ── Print ── */
+        @page { size: A4 portrait; margin: 1.5cm; }
         @media print {
-
-            .print-btn,
-            .back-btn {
-                display: none;
-            }
-
-            .no-print,
-            .view-full-btn,
-            .modal-overlay {
-                display: none !important;
-            }
-
-            body {
-                background: white;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                font-family: 'Times New Roman', Times, serif;
-                font-size: 11pt;
-            }
-
-            .report-container {
-                box-shadow: none;
-                max-width: 100%;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                border: none;
-            }
-
-            .meta-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 2rem;
-            }
-
-            .card,
-            .report-header,
-            table {
-                break-inside: avoid;
-            }
-
-            .answer-content,
-            .solution-content {
-                border-color: #000;
-                max-height: none !important;
-                overflow: visible !important;
-            }
-
-            .answer-content>div:last-child,
-            .fade-gradient {
-                display: none !important;
-            }
-
-            /* Allow table to flex naturally based on content instead of strict cm widths */
-            table {
-                width: 100%;
-                table-layout: auto;
-                word-wrap: break-word;
-            }
-
-            table th,
-            table td {
-                padding: 0.2cm;
-                border: 1px solid #ccc;
-            }
-
-            pre {
-                white-space: pre-wrap;
-                word-wrap: break-word;
-                max-height: none !important;
-                overflow: visible !important;
-            }
+            .print-btn, .back-btn, .view-full-btn, .modal-overlay { display: none !important; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .report-container { box-shadow: none; margin: 0; max-width: 100%; border: none; border-radius: 0; }
+            .answer-content, .solution-content { max-height: none !important; overflow: visible !important; }
+            .fade-gradient { display: none !important; }
+            table { border-collapse: collapse; }
+            th, td { border: 1px solid #ccc !important; padding: 0.2cm !important; }
         }
     </style>
+
 </head>
 
 <body>
@@ -367,18 +357,19 @@
     <div id="answerModal" class="modal-overlay" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3 id="modalTitle" style="font-size: 1.1rem; margin: 0;">Full Answer</h3>
+                <h3 id="modalTitle">Full Answer</h3>
                 <button onclick="closeModal()"
-                    style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+                    style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:6px; font-size:1.2rem; color:#fff; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; line-height:1;">&times;</button>
             </div>
             <div id="modalBody" class="modal-body">
                 <!-- Content injected via JS -->
             </div>
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; text-align: right;">
+            <div class="modal-footer">
                 <button class="btn btn-primary" onclick="closeModal()">Close</button>
             </div>
         </div>
     </div>
+
 
     <script src="../assets/js/config.js"></script>
     <script src="../assets/js/app.js"></script>
@@ -643,73 +634,82 @@
             const totalTimeStr = `${totalM}m ${totalS}s`;
 
             const html = `
-                <!-- ── Report Header ── -->
+                <!-- ══ Header Band ══ -->
                 <div class="report-header">
                     <div>
                         <div class="report-title">Exam Report</div>
-                        <div style="color:#64748b; font-size:0.9rem; margin-top:0.25rem;">Generated on ${date}</div>
+                        <div style="font-size:0.78rem; color:rgba(255,255,255,0.65); margin-top:0.35rem;">Vignan Mastery Portal</div>
                     </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:1.5rem; font-weight:800; color:#2563eb;">${result.score}%</div>
-                        <div style="font-size:0.8rem; color:#64748b; margin-top:0.2rem;">Overall Score</div>
+                    <div class="report-header-right">
+                        <div class="score-pill">${result.score}%</div>
+                        <div class="score-label">Overall Score</div>
+                        <div class="gen-date">Generated: ${date}</div>
                     </div>
                 </div>
 
-                <!-- ── Student & Exam Meta ── -->
-                <div class="meta-grid" style="margin-bottom:2rem;">
-                    <div style="padding:1.25rem 1.5rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.5rem;">
-                        <h3 style="font-size:0.75rem; font-weight:700; color:#64748b; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.75rem;">Student</h3>
-                        <p style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:0.4rem; line-height:1.3;">${result.studentName || 'Unknown Student'}</p>
-                        <div style="font-size:0.88rem; color:#64748b; margin-bottom:0.2rem;">${(result.branch || session.branch || '')}${(result.section || session.section) ? ' – ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
-                        <div style="font-size:0.88rem; color:#64748b;">ID: <strong style="color:#1e293b;">${result.username || 'N/A'}</strong></div>
-                    </div>
-                    <div style="padding:1.25rem 1.5rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.5rem;">
-                        <h3 style="font-size:0.75rem; font-weight:700; color:#64748b; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.75rem;">Exam Details</h3>
-                        <p style="font-size:1.05rem; font-weight:700; color:#1e293b; margin-bottom:0.4rem;">${exam.title}</p>
-                        <div style="font-size:0.88rem; color:#64748b; margin-bottom:0.6rem;">${exam.subject}</div>
-                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.78rem;">⏱ ${exam.duration} mins</span>
-                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.78rem;">📝 ${exam.questions.length} Questions</span>
+                <!-- ══ Body ══ -->
+                <div class="report-body">
+
+                    <!-- Student & Exam Meta -->
+                    <p class="section-label">Student & Exam Information</p>
+                    <div class="meta-grid">
+                        <div class="meta-card">
+                            <h3>Student</h3>
+                            <p>${result.studentName || 'Unknown Student'}</p>
+                            <div class="sub">${(result.branch || session.branch || '')}${(result.section || session.section) ? ' – ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
+                            <div class="sub" style="margin-top:0.2rem;">ID: <strong style="color:#0f172a;">${result.username || 'N/A'}</strong></div>
+                        </div>
+                        <div class="meta-card">
+                            <h3>Exam Details</h3>
+                            <p>${exam.title}</p>
+                            <div class="sub">${exam.subject}</div>
+                            <div style="margin-top:0.5rem;">
+                                <span class="meta-pill">⏱ ${exam.duration} mins</span>
+                                <span class="meta-pill">📝 ${exam.questions.length} Questions</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- ── Score Summary ── -->
-                <div class="score-summary" style="margin-bottom:2rem;">
-                    <h3 style="color:#64748b; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.5rem;">Total Score</h3>
-                    <div class="big-score">${result.score}%</div>
-                    <div style="margin-top:0.75rem; font-size:1rem; font-weight:500; color:#1e293b;">
-                        Time Taken: <span style="font-family:'JetBrains Mono',monospace; font-weight:700;">${totalTimeStr}</span>
+                    <!-- Score Summary -->
+                    <p class="section-label">Result Summary</p>
+                    <div class="score-summary">
+                        <div>
+                            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin-bottom:0.4rem;">Total Score</div>
+                            <div class="big-score">${result.score}%</div>
+                        </div>
+                        <div class="score-meta" style="text-align:right;">
+                            <div>Time Taken: <strong style="font-family:'JetBrains Mono',monospace;">${totalTimeStr}</strong></div>
+                            <div style="margin-top:0.4rem;">Raw Marks: <strong>${obtainedMarks}</strong> / ${totalMarks}</div>
+                        </div>
                     </div>
-                    <p style="color:#64748b; margin-top:0.4rem; font-size:0.95rem;">
-                        Raw Marks: <strong style="color:#1e293b;">${obtainedMarks}</strong> / ${totalMarks}
-                    </p>
-                </div>
 
-                <!-- ── Detailed Breakdown Table ── -->
-                <h3 style="font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid #e2e8f0;">Detailed Breakdown</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="text-align:center; width:40px;">#</th>
-                            <th style="width:28%;">Question</th>
-                            <th style="width:22%;">Your Answer</th>
-                            <th style="width:22%;">Solution</th>
-                            <th style="text-align:center; width:10%;">Time</th>
-                            <th style="text-align:right; width:10%;">Marks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${qRows}
-                    </tbody>
-                </table>
+                    <!-- Detailed Breakdown -->
+                    <p class="section-label">Detailed Breakdown</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align:center; width:40px;">#</th>
+                                <th style="width:28%;">Question</th>
+                                <th style="width:22%;">Your Answer</th>
+                                <th style="width:22%;">Solution</th>
+                                <th style="text-align:center; width:10%;">Time</th>
+                                <th style="text-align:right; width:10%;">Marks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${qRows}
+                        </tbody>
+                    </table>
 
-                <!-- ── Footer ── -->
-                <div style="margin-top:3rem; border-top:1px solid #e2e8f0; padding-top:1.5rem; display:flex; justify-content:space-between; color:#94a3b8; font-size:0.78rem;">
-                    <div>Vignan Mastery Portal</div>
+                </div><!-- /.report-body -->
+
+                <!-- Footer strip -->
+                <div class="report-footer">
+                    <div>Vignan Mastery — Vignan's Institute of Information Technology</div>
                     <div>Page 1 of 1</div>
                 </div>
             `;
+
 
 
             document.getElementById('reportContent').innerHTML = html;
