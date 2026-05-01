@@ -2025,9 +2025,6 @@
             let passedHidden = 0;
             let totalHidden = q.hiddenCases.length;
 
-            // Get auth token for secure API calls
-            const authToken = localStorage.getItem('college_exam_portal_token') || '';
-
             for (let i = 0; i < totalHidden; i++) {
                 const testCase = q.hiddenCases[i];
                 // outputDiv.innerHTML += `> Case ${i + 1}... `; 
