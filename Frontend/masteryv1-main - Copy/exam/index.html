@@ -996,42 +996,44 @@
         let timerInterval = null;
         const TIMER_KEY = `exam_start_${examId}_${session.id}`;
 
-        async function initExam() {
-            // 1. Request Fullscreen Safely
+        function initExam() {
+            // ── Step 1: Fullscreen MUST be called synchronously within the user gesture
+            const elem = document.documentElement;
             try {
-                const elem = document.documentElement;
                 if (elem.requestFullscreen) {
-                    await elem.requestFullscreen();
+                    elem.requestFullscreen().catch(err => console.warn('Fullscreen denied:', err));
                 } else if (elem.webkitRequestFullscreen) {
                     elem.webkitRequestFullscreen();
                 } else if (elem.msRequestFullscreen) {
                     elem.msRequestFullscreen();
                 }
             } catch (err) {
-                console.warn('Fullscreen request failed or not supported:', err);
+                console.warn('Fullscreen request failed:', err);
             }
 
-            // 2. ACTIVATE PROCTORING (only after fullscreen is up)
+            // ── Step 2: Activate proctoring now (fullscreen request is in-flight)
             examActive = true;
 
-            // 3. Hide Overlay
+            // ── Step 3: Hide the start overlay immediately
             document.getElementById('startOverlay').style.display = 'none';
 
-            // 3. Setup Timer Persistence
+            // ── Step 4: Continue async logic
+            _initExamAsync();
+        }
+
+        async function _initExamAsync() {
             const now = Date.now();
 
-            // RETAKE LOGIC: Check if this is a new attempt
+            // Check if this is a fresh attempt or a resumed one
             const studentResults = await ExamService.getStudentResults(session.id);
-            const previousAttempts = studentResults.filter(r => r.examId === examId);
+            const previousAttempts = studentResults.filter(r => String(r.examId) === String(examId));
 
-            // If we have previous attempts, we might need to reset the timer key
-            // verification: if the stored start time is OLDER than the latest result, it's an old timer
             let startTime = localStorage.getItem(TIMER_KEY);
 
             if (previousAttempts.length > 0 && startTime) {
-                const lastAttemptTime = Math.max(...previousAttempts.map(r => r.timestamp));
+                const lastAttemptTime = Math.max(...previousAttempts.map(r => r.timestamp || 0));
                 if (parseInt(startTime) < lastAttemptTime) {
-                    // This timer belongs to a finished attempt. Reset it.
+                    // Stale timer from a previous completed attempt — reset
                     localStorage.removeItem(TIMER_KEY);
                     startTime = null;
                 }
@@ -1039,16 +1041,16 @@
 
             if (!startTime) {
                 startTime = now;
-                localStorage.setItem(TIMER_KEY, startTime);
+                localStorage.setItem(TIMER_KEY, String(startTime));
             }
 
-            // Calculate remaining seconds
             const elapsedSeconds = Math.floor((now - parseInt(startTime)) / 1000);
             time = (currentExam.duration * 60) - elapsedSeconds;
 
             if (time <= 0) {
-                alert('Time has expired for this exam.');
-                submitExam();
+                alert('Time has expired for this exam. Auto-submitting.');
+                examActive = false;
+                submitExam(true); // pass flag to skip confirm dialog
                 return;
             }
 
@@ -1343,9 +1345,10 @@
             }
         }
 
-        async function submitExam() {
+        async function submitExam(skipConfirm = false) {
             if (isSubmitting) return;
-            if (!confirm('Are you sure you want to finish the exam?')) return;
+            // Strict boolean check to prevent Event objects (from onclick) bypassing confirmation
+            if (skipConfirm !== true && !confirm('Are you sure you want to finish the exam?')) return;
 
             isSubmitting = true;
             examActive = false; // Stop all proctoring warnings
