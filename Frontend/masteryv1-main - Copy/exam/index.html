@@ -537,36 +537,92 @@
             }
         }
 
-        /* ══════════════════════════════════════════════
-           TYPING MASTER — Character Highlight Styles
-           ══════════════════════════════════════════════ */
-        .typing-char {
-            display: inline;
+        /* ══════════════════════════════════════════════════════
+           TYPING MASTER — Full typing.com-style Interface
+           ══════════════════════════════════════════════════════ */
+
+        /* The outer typing container — click anywhere to focus */
+        .tm-wrapper {
             position: relative;
+            background: rgba(15, 14, 23, 0.6);
+            border: 2px solid rgba(108, 99, 255, 0.25);
+            border-radius: 0.75rem;
+            padding: 1.5rem 1.75rem;
+            cursor: text;
+            user-select: none;
+            transition: border-color 0.3s ease;
+            min-height: 160px;
+        }
+        .tm-wrapper:focus-within {
+            border-color: rgba(108, 99, 255, 0.6);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
+        }
+        .tm-wrapper.unfocused::after {
+            content: '▶ Click here to start typing';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: rgba(167, 139, 250, 0.7);
+            background: rgba(15, 14, 23, 0.65);
+            border-radius: 0.75rem;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        /* The passage text area — fully visible, no scroll bar shown */
+        .tm-passage {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
-            line-height: 2;
+            font-size: 1.05rem;
+            line-height: 2.2;
             white-space: pre-wrap;
+            word-break: break-word;
+            outline: none;
         }
-        .typing-char.pending  { color: #64748b; }
-        .typing-char.correct  { color: #34d399; }
-        .typing-char.wrong    {
+
+        /* Hidden textarea sits exactly over the passage to capture keystrokes */
+        .tm-hidden-input {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            resize: none;
+            border: none;
+            outline: none;
+            background: transparent;
+            caret-color: transparent;
+            cursor: text;
+            z-index: 2;
+            font-size: 1rem;
+            padding: 1.5rem 1.75rem;
+        }
+
+        /* Individual character spans */
+        .tc { display: inline; }
+        .tc.pending { color: #475569; }
+        .tc.correct { color: #e2e8f0; }
+        .tc.wrong {
             color: #fff;
-            background: rgba(239, 68, 68, 0.7);
-            border-radius: 3px;
-            text-decoration: underline wavy #ef4444;
+            background: rgba(239, 68, 68, 0.55);
+            border-radius: 2px;
         }
-        .typing-char.cursor-pos {
-            border-left: 2px solid #a78bfa;
-            animation: tmCursor 0.8s step-end infinite;
-            margin-left: -1px;
+        /* Blinking underline cursor exactly like typing.com */
+        .tc.cursor {
+            border-bottom: 3px solid #a78bfa;
+            animation: tmBlink 0.9s step-end infinite;
+            margin-bottom: -3px;
         }
-        @keyframes tmCursor {
-            0%,100% { border-left-color: #a78bfa; }
-            50%      { border-left-color: transparent; }
+        @keyframes tmBlink {
+            0%,100% { border-bottom-color: #a78bfa; }
+            50%      { border-bottom-color: transparent; }
         }
-        #typing-errors-badge {
-            transition: color 0.3s;
+        /* Space character needs a little styling to show errors */
+        .tc.wrong-space {
+            background: rgba(239, 68, 68, 0.45);
+            border-radius: 2px;
         }
 
         /* ── RESPONSIVE STYLES ── */
@@ -1604,50 +1660,62 @@
                             typingIntervals[q.id] = null;
                         }
                         const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
-                        const safePassage = passage.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                                              inputHtml = `
+                            <div style="margin-top:0.75rem;">
 
-                        inputHtml = `
-                            <div style="margin-top:1rem;">
                                 <!-- Stats Row: WPM / Accuracy / Errors / Progress -->
-                                <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
-                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
-                                        <div style="font-size:0.65rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">WPM</div>
-                                        <div id="typing-wpm-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">0</div>
+                                <div style="display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">WPM</div>
+                                        <div id="typing-wpm-${q.id}" style="font-size:1.6rem; font-weight:800; color:#22d3ee; line-height:1.1;">0</div>
                                     </div>
-                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
-                                        <div style="font-size:0.65rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Accuracy</div>
-                                        <div id="typing-acc-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">—</div>
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Accuracy</div>
+                                        <div id="typing-acc-${q.id}" style="font-size:1.6rem; font-weight:800; color:#22d3ee; line-height:1.1;">—</div>
                                     </div>
-                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
-                                        <div style="font-size:0.65rem; color:#f87171; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Errors</div>
-                                        <div id="typing-errors-${q.id}" style="font-size:1.8rem; font-weight:800; color:#f87171; line-height:1.1;">0</div>
+                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#f87171; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Errors</div>
+                                        <div id="typing-errors-${q.id}" style="font-size:1.6rem; font-weight:800; color:#f87171; line-height:1.1;">0</div>
                                     </div>
-                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
-                                        <div style="font-size:0.65rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Progress</div>
-                                        <div id="typing-progress-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">0%</div>
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Progress</div>
+                                        <div id="typing-progress-${q.id}" style="font-size:1.6rem; font-weight:800; color:#22d3ee; line-height:1.1;">0%</div>
                                     </div>
-                                </div>
-
-                                <!-- Passage with per-character spans for live highlighting -->
-                                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:1.25rem; margin-bottom:1rem;">
-                                    <div style="font-size:0.72rem; color:rgba(34,211,238,0.7); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.6rem;">📖 Passage to Type — type below, see highlights above</div>
-                                    <div id="typing-passage-${q.id}" style="font-family:'JetBrains Mono',monospace; font-size:0.95rem; line-height:2; white-space:pre-wrap; margin:0; user-select:none;">
-                                        ${Array.from(passage).map((ch, i) => `<span class="typing-char pending" data-idx="${i}">${ch === ' ' ? '&nbsp;' : ch === '\n' ? '↵\n' : ch.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('')}
+                                    <div style="margin-left:auto; display:flex; align-items:center; font-size:0.75rem; color:#475569;">
+                                        <span id="typing-hint-${q.id}" style="color:rgba(167,139,250,0.7); font-style:italic;">&#9654; Click the passage below to start typing</span>
                                     </div>
                                 </div>
 
-                                <!-- Typing textarea -->
-                                <div style="position:relative;">
+                                <!-- Typing Master Passage Box -->
+                                <div style="font-size:0.65rem; color:rgba(34,211,238,0.6); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.5rem;">&#128214; Passage — type the highlighted text</div>
+                                <div class="tm-wrapper unfocused" id="tm-wrapper-${q.id}"
+                                    onclick="focusTypingInput('${q.id}')">
+
+                                    <!-- Hidden textarea that captures all keystrokes -->
                                     <textarea
                                         id="typing-input-${q.id}"
-                                        class="input-field"
-                                        rows="7"
-                                        style="width:100%; font-family:'JetBrains Mono',monospace; font-size:0.95rem;"
-                                        placeholder="Start typing here — watch the passage highlight above..."
-                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                        class="tm-hidden-input"
+                                        autocomplete="off" autocorrect="off"
+                                        autocapitalize="off" spellcheck="false"
                                         oninput="handleTypingInput('${q.id}', this.value, ${index}, ${JSON.stringify(passage).replace(/"/g, '&quot;')})"
-                                        onfocus="startTypingTimer('${q.id}')"
-                                    >${currentAnswers[q.id] ? currentAnswers[q.id].replace(/</g,'&lt;') : ''}</textarea>
+                                        onfocus="onTypingFocus('${q.id}')"
+                                        onblur="onTypingBlur('${q.id}')"
+                                    >${currentAnswers[q.id] || ''}</textarea>
+
+                                    <!-- The full passage rendered as coloured character spans -->
+                                    <div class="tm-passage" id="typing-passage-${q.id}">${
+                                        Array.from(passage).map((ch, i) => {
+                                            const safe = ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch;
+                                            const display = ch === ' ' ? '&nbsp;' : ch === '\n' ? '&crarr;\n' : safe;
+                                            return '<span class="tc pending" data-i="' + i + '">' + display + '</span>';
+                                        }).join('')
+                                    }</div>
+                                </div>
+
+                                <!-- Keyboard shortcut hint -->
+                                <div style="margin-top:0.5rem; font-size:0.75rem; color:#334155; text-align:right;">
+                                    <span style="background:rgba(255,255,255,0.05); padding:0.2rem 0.5rem; border-radius:0.3rem; font-family:'JetBrains Mono',monospace;">Esc</span>
+                                    to unfocus &nbsp;|&nbsp; Green = correct &nbsp;&#10007;&nbsp; Red = wrong
                                 </div>
                             </div>
                         `;
@@ -1743,11 +1811,15 @@
             }
         }
 
-        /** Called on every input event in the typing textarea */
+        /** Called on every input event in the hidden typing textarea */
         function handleTypingInput(qId, typed, navIndex, passage) {
             // Ensure timer starts
             if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
             if (!typingStats[qId].typingStartTime) typingStats[qId].typingStartTime = Date.now();
+
+            // Hide the click-to-start hint once typing starts
+            const hint = document.getElementById(`typing-hint-${qId}`);
+            if (hint && typed.length > 0) hint.style.display = 'none';
 
             // Save raw answer
             currentAnswers[qId] = typed;
@@ -1761,34 +1833,60 @@
             updateTypingDisplay(qId, passage, typed);
         }
 
+        /** Focus the hidden textarea when user clicks the passage box */
+        function focusTypingInput(qId) {
+            const input = document.getElementById(`typing-input-${qId}`);
+            if (input) {
+                input.focus();
+                // Move cursor to end of existing text
+                const len = input.value.length;
+                input.setSelectionRange(len, len);
+            }
+        }
+
+        function onTypingFocus(qId) {
+            startTypingTimer(qId);
+            const wrapper = document.getElementById(`tm-wrapper-${qId}`);
+            if (wrapper) wrapper.classList.remove('unfocused');
+        }
+
+        function onTypingBlur(qId) {
+            const wrapper = document.getElementById(`tm-wrapper-${qId}`);
+            if (wrapper) wrapper.classList.add('unfocused');
+        }
+
         /**
-         * Renders per-character colour coding on the passage spans.
-         * green = correct, red highlight = wrong, blinking cursor = next position.
+         * Renders per-character colour coding directly on the passage spans
+         * like typing.com: correct=light, wrong=red bg, cursor=blinking underline
          */
         function updatePassageHighlights(qId, passage, typed) {
             const container = document.getElementById(`typing-passage-${qId}`);
             if (!container) return;
-            const spans = container.querySelectorAll('.typing-char');
+            const spans = container.querySelectorAll('.tc');
             const typedLen = typed.length;
+            let cursorSpan = null;
 
             spans.forEach((span, i) => {
-                // Remove all state classes first
-                span.classList.remove('correct', 'wrong', 'pending', 'cursor-pos');
+                span.className = 'tc'; // reset
 
                 if (i < typedLen) {
-                    // Character has been typed
                     if (typed[i] === passage[i]) {
                         span.classList.add('correct');
                     } else {
                         span.classList.add('wrong');
                     }
                 } else if (i === typedLen) {
-                    // Cursor position (next to type)
-                    span.classList.add('pending', 'cursor-pos');
+                    span.classList.add('pending', 'cursor');
+                    cursorSpan = span;
                 } else {
                     span.classList.add('pending');
                 }
             });
+
+            // Auto-scroll: keep cursor span visible within the passage box
+            if (cursorSpan) {
+                cursorSpan.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
         }
 
         /** Computes character-level accuracy between typed and target passage */
