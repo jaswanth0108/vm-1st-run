@@ -1080,10 +1080,28 @@
             }
         }
 
-        // Fullscreen listener
+        // Fullscreen listener — fires when student exits fullscreen
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && document.getElementById('startOverlay').style.display === 'none' && document.getElementById('resultOverlay').style.display === 'none') {
-                triggerWarning();
+            if (!document.fullscreenElement
+                && document.getElementById('startOverlay').style.display === 'none'
+                && document.getElementById('resultOverlay').style.display === 'none') {
+                triggerWarning('Exited Fullscreen Mode');
+            }
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement
+                && document.getElementById('startOverlay').style.display === 'none'
+                && document.getElementById('resultOverlay').style.display === 'none') {
+                triggerWarning('Exited Fullscreen Mode');
+            }
+        });
+
+        // Tab switch / window hide — fires when student switches tabs or minimises
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden'
+                && document.getElementById('startOverlay').style.display === 'none'
+                && document.getElementById('resultOverlay').style.display === 'none') {
+                triggerWarning('Tab Switch / Window Hidden');
             }
         });
 
@@ -1091,17 +1109,26 @@
 
         // --- STRICT PROCTORING MODE ---
 
-        // 1. Active Focus Polling (Every 500ms)
+        // 1. Active Focus Polling (Every 800ms)
+        // Note: uses a short debounce so that the typing textarea blur
+        // (which temporarily shifts focus) doesn't fire a false warning.
+        let _focusLostCount = 0;
         setInterval(() => {
             if (!document.hasFocus()) {
-                // Ignore if overlay is validly open
-                const startOpen = document.getElementById('startOverlay').style.display !== 'none';
-                const resultOpen = document.getElementById('resultOverlay').style.display !== 'none';
-                const warningOpen = document.getElementById('warningOverlay').style.display !== 'none';
+                _focusLostCount++;
+                // Require 2 consecutive checks (~1.6s) to confirm real focus loss
+                if (_focusLostCount < 2) return;
 
-                if (!startOpen && !resultOpen && !warningOpen) {
-                    triggerWarning('Focus Lost (Active Polling)');
+                const startOpen  = document.getElementById('startOverlay').style.display  !== 'none';
+                const resultOpen = document.getElementById('resultOverlay').style.display !== 'none';
+                const warnOpen   = document.getElementById('warningOverlay').style.display !== 'none';
+
+                if (!startOpen && !resultOpen && !warnOpen) {
+                    _focusLostCount = 0;
+                    triggerWarning('Focus Lost — Window Switched');
                 }
+            } else {
+                _focusLostCount = 0; // reset when focus is back
             }
 
             // Anti-Tamper: Ensure Warning Overlay is top-level
