@@ -537,6 +537,38 @@
             }
         }
 
+        /* ══════════════════════════════════════════════
+           TYPING MASTER — Character Highlight Styles
+           ══════════════════════════════════════════════ */
+        .typing-char {
+            display: inline;
+            position: relative;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 2;
+            white-space: pre-wrap;
+        }
+        .typing-char.pending  { color: #64748b; }
+        .typing-char.correct  { color: #34d399; }
+        .typing-char.wrong    {
+            color: #fff;
+            background: rgba(239, 68, 68, 0.7);
+            border-radius: 3px;
+            text-decoration: underline wavy #ef4444;
+        }
+        .typing-char.cursor-pos {
+            border-left: 2px solid #a78bfa;
+            animation: tmCursor 0.8s step-end infinite;
+            margin-left: -1px;
+        }
+        @keyframes tmCursor {
+            0%,100% { border-left-color: #a78bfa; }
+            50%      { border-left-color: transparent; }
+        }
+        #typing-errors-badge {
+            transition: color 0.3s;
+        }
+
         /* ── RESPONSIVE STYLES ── */
         @media (max-width: 900px) {
             body {
@@ -1576,31 +1608,43 @@
 
                         inputHtml = `
                             <div style="margin-top:1rem;">
-                                <div style="display:flex; gap:1.5rem; margin-bottom:1rem;">
-                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:100px;">
-                                        <div style="font-size:0.7rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">WPM</div>
+                                <!-- Stats Row: WPM / Accuracy / Errors / Progress -->
+                                <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
+                                        <div style="font-size:0.65rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">WPM</div>
                                         <div id="typing-wpm-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">0</div>
                                     </div>
-                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:100px;">
-                                        <div style="font-size:0.7rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Accuracy</div>
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
+                                        <div style="font-size:0.65rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Accuracy</div>
                                         <div id="typing-acc-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">—</div>
                                     </div>
-                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:100px;">
-                                        <div style="font-size:0.7rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Progress</div>
+                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
+                                        <div style="font-size:0.65rem; color:#f87171; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Errors</div>
+                                        <div id="typing-errors-${q.id}" style="font-size:1.8rem; font-weight:800; color:#f87171; line-height:1.1;">0</div>
+                                    </div>
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; text-align:center; min-width:88px;">
+                                        <div style="font-size:0.65rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Progress</div>
                                         <div id="typing-progress-${q.id}" style="font-size:1.8rem; font-weight:800; color:#22d3ee; line-height:1.1;">0%</div>
                                     </div>
                                 </div>
+
+                                <!-- Passage with per-character spans for live highlighting -->
                                 <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:0.75rem; padding:1.25rem; margin-bottom:1rem;">
-                                    <div style="font-size:0.72rem; color:rgba(34,211,238,0.7); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.6rem;">📖 Passage to Type</div>
-                                    <p style="font-family:'JetBrains Mono',monospace; font-size:0.95rem; line-height:1.9; color:#e2e8f0; white-space:pre-wrap; margin:0;">${safePassage}</p>
+                                    <div style="font-size:0.72rem; color:rgba(34,211,238,0.7); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.6rem;">📖 Passage to Type — type below, see highlights above</div>
+                                    <div id="typing-passage-${q.id}" style="font-family:'JetBrains Mono',monospace; font-size:0.95rem; line-height:2; white-space:pre-wrap; margin:0; user-select:none;">
+                                        ${Array.from(passage).map((ch, i) => `<span class="typing-char pending" data-idx="${i}">${ch === ' ' ? '&nbsp;' : ch === '\n' ? '↵\n' : ch.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('')}
+                                    </div>
                                 </div>
+
+                                <!-- Typing textarea -->
                                 <div style="position:relative;">
                                     <textarea
                                         id="typing-input-${q.id}"
                                         class="input-field"
-                                        rows="8"
-                                        style="width:100%; font-family:'JetBrains Mono',monospace;"
-                                        placeholder="Start typing the passage here..."
+                                        rows="7"
+                                        style="width:100%; font-family:'JetBrains Mono',monospace; font-size:0.95rem;"
+                                        placeholder="Start typing here — watch the passage highlight above..."
+                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                                         oninput="handleTypingInput('${q.id}', this.value, ${index}, ${JSON.stringify(passage).replace(/"/g, '&quot;')})"
                                         onfocus="startTypingTimer('${q.id}')"
                                     >${currentAnswers[q.id] ? currentAnswers[q.id].replace(/</g,'&lt;') : ''}</textarea>
@@ -1710,21 +1754,71 @@
             const navBtn = document.getElementById(`nav-btn-${navIndex}`);
             if (navBtn && typed.length > 0) navBtn.classList.add('answered');
 
-            // Update display immediately on input
+            // Live passage highlight (Typing Master mode)
+            updatePassageHighlights(qId, passage, typed);
+
+            // Update stats display
             updateTypingDisplay(qId, passage, typed);
+        }
+
+        /**
+         * Renders per-character colour coding on the passage spans.
+         * green = correct, red highlight = wrong, blinking cursor = next position.
+         */
+        function updatePassageHighlights(qId, passage, typed) {
+            const container = document.getElementById(`typing-passage-${qId}`);
+            if (!container) return;
+            const spans = container.querySelectorAll('.typing-char');
+            const typedLen = typed.length;
+
+            spans.forEach((span, i) => {
+                // Remove all state classes first
+                span.classList.remove('correct', 'wrong', 'pending', 'cursor-pos');
+
+                if (i < typedLen) {
+                    // Character has been typed
+                    if (typed[i] === passage[i]) {
+                        span.classList.add('correct');
+                    } else {
+                        span.classList.add('wrong');
+                    }
+                } else if (i === typedLen) {
+                    // Cursor position (next to type)
+                    span.classList.add('pending', 'cursor-pos');
+                } else {
+                    span.classList.add('pending');
+                }
+            });
         }
 
         /** Computes character-level accuracy between typed and target passage */
         function computeTypingAccuracy(passage, typed) {
-            if (!typed || typed.length === 0) return 0;
+            return computeTypingAccuracyAndErrors(passage, typed).accuracy;
+        }
+
+        /**
+         * Returns { accuracy, errors } where:
+         *   errors = number of wrongly typed characters (red marks)
+         *   accuracy = % of passage characters typed correctly
+         */
+        function computeTypingAccuracyAndErrors(passage, typed) {
+            if (!typed || typed.length === 0) return { accuracy: 0, errors: 0 };
             const compareLen = Math.min(passage.length, typed.length);
             let correct = 0;
+            let errors  = 0;
             for (let i = 0; i < compareLen; i++) {
-                if (typed[i] === passage[i]) correct++;
+                if (typed[i] === passage[i]) {
+                    correct++;
+                } else {
+                    errors++;
+                }
             }
-            // Extra characters (typed more than passage) are errors
-            const totalPassageLen = passage.length;
-            return Math.round((correct / totalPassageLen) * 100);
+            // Characters typed beyond the passage length are extra errors
+            if (typed.length > passage.length) {
+                errors += typed.length - passage.length;
+            }
+            const accuracy = Math.round((correct / passage.length) * 100);
+            return { accuracy, errors };
         }
 
         /** Computes WPM = (typed chars / 5) / elapsed minutes */
@@ -1737,28 +1831,34 @@
             return Math.round(words / elapsedMinutes);
         }
 
-        /** Refreshes the live WPM, accuracy, and progress display elements */
+        /** Refreshes the live WPM, accuracy, errors, and progress display elements */
         function updateTypingDisplay(qId, passage, typed) {
-            const wpmEl = document.getElementById(`typing-wpm-${qId}`);
-            const accEl = document.getElementById(`typing-acc-${qId}`);
+            const wpmEl  = document.getElementById(`typing-wpm-${qId}`);
+            const accEl  = document.getElementById(`typing-acc-${qId}`);
+            const errEl  = document.getElementById(`typing-errors-${qId}`);
             const progEl = document.getElementById(`typing-progress-${qId}`);
             if (!wpmEl || !accEl || !progEl) return; // not rendered yet
 
             const startTime = typingStats[qId] ? typingStats[qId].typingStartTime : null;
             const wpm = computeTypingWPM(typed, startTime);
-            const accuracy = computeTypingAccuracy(passage, typed);
+            const { accuracy, errors } = computeTypingAccuracyAndErrors(passage, typed);
             const progress = passage.length > 0 ? Math.min(100, Math.round((typed.length / passage.length) * 100)) : 0;
 
             // Store latest stats
-            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, errors: 0, typingStartTime: null };
             typingStats[qId].wpm = wpm;
             typingStats[qId].accuracy = accuracy;
+            typingStats[qId].errors = errors;
 
             wpmEl.textContent = wpm;
             accEl.textContent = accuracy + '%';
             progEl.textContent = progress + '%';
+            if (errEl) {
+                errEl.textContent = errors;
+                errEl.style.color = errors === 0 ? '#34d399' : errors <= 5 ? '#f59e0b' : '#ef4444';
+            }
 
-            // Color coding for accuracy
+            // Colour-code accuracy badge
             const color = accuracy >= 90 ? '#22c55e' : accuracy >= 70 ? '#f59e0b' : '#ef4444';
             accEl.style.color = color;
         }
