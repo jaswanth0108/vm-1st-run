@@ -1658,6 +1658,9 @@
 
                 const area = document.getElementById('questionArea');
 
+                // Hoist this flag so it's accessible after innerHTML is set (line ~1819)
+                const isTypingQuestion = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
+
                 let inputHtml = '';
                 if (q.type === 'mcq') {
                     if (!q.options || !Array.isArray(q.options)) {
@@ -1693,7 +1696,6 @@
                         initMonaco(existingCode, q.id, index);
                     }, 100);
                 } else {
-                    const isTypingQuestion = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
                     if (isTypingQuestion) {
                         // ... (typing logic remains same)
                         if (typingIntervals[q.id]) {
