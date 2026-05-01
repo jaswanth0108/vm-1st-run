@@ -915,6 +915,9 @@
         let currentAnswers = {}; // { qId: answer }
         let codingResults = {}; // { qId: 'PASS' | 'FAIL' | null } - Strict Scoring
 
+        // ── PROCTOR GATE ── Only true after initExam() succeeds
+        let examActive = false;
+
         // Time Tracking State
         let questionTimeData = {}; // { qId: seconds (integer) }
         let currentQuestionStartTime = null;
@@ -998,20 +1001,20 @@
             try {
                 const elem = document.documentElement;
                 if (elem.requestFullscreen) {
-                    const promise = elem.requestFullscreen();
-                    if (promise) promise.catch(err => console.warn('Fullscreen denied:', err));
+                    await elem.requestFullscreen();
                 } else if (elem.webkitRequestFullscreen) {
-                    const promise = elem.webkitRequestFullscreen();
-                    if (promise) promise.catch(err => console.warn('Fullscreen denied:', err));
+                    elem.webkitRequestFullscreen();
                 } else if (elem.msRequestFullscreen) {
-                    const promise = elem.msRequestFullscreen();
-                    if (promise) promise.catch(err => console.warn('Fullscreen denied:', err));
+                    elem.msRequestFullscreen();
                 }
             } catch (err) {
                 console.warn('Fullscreen request failed or not supported:', err);
             }
 
-            // 2. Hide Overlay
+            // 2. ACTIVATE PROCTORING (only after fullscreen is up)
+            examActive = true;
+
+            // 3. Hide Overlay
             document.getElementById('startOverlay').style.display = 'none';
 
             // 3. Setup Timer Persistence
@@ -1080,58 +1083,59 @@
             }
         }
 
-        // Fullscreen listener — fires when student exits fullscreen
+        // ═══════════════════════════════════════════════════════════
+        //  PROCTORING EVENT LISTENERS
+        //  All guarded by `examActive` — prevents any false positives
+        //  during page load, start overlay, or result overlay.
+        // ═══════════════════════════════════════════════════════════
+
+        // 1. Fullscreen exit detection (standard + webkit)
+        let _fsJustEntered = false; // suppress the initial entry event
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement
-                && document.getElementById('startOverlay').style.display === 'none'
-                && document.getElementById('resultOverlay').style.display === 'none') {
-                triggerWarning('Exited Fullscreen Mode');
+            if (!examActive) return;
+            if (document.fullscreenElement) {
+                _fsJustEntered = true; // entering fullscreen — ignore
+                return;
             }
+            if (!isSubmitting) triggerWarning('Exited Fullscreen Mode');
         });
         document.addEventListener('webkitfullscreenchange', () => {
-            if (!document.webkitFullscreenElement
-                && document.getElementById('startOverlay').style.display === 'none'
-                && document.getElementById('resultOverlay').style.display === 'none') {
-                triggerWarning('Exited Fullscreen Mode');
-            }
+            if (!examActive) return;
+            if (document.webkitFullscreenElement) return;
+            if (!isSubmitting) triggerWarning('Exited Fullscreen Mode');
         });
 
-        // Tab switch / window hide — fires when student switches tabs or minimises
+        // 2. Tab switch / minimise (visibilitychange)
+        let _visDebounce = null;
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden'
-                && document.getElementById('startOverlay').style.display === 'none'
-                && document.getElementById('resultOverlay').style.display === 'none') {
-                triggerWarning('Tab Switch / Window Hidden');
+            if (!examActive || isSubmitting) return;
+            if (document.visibilityState === 'hidden') {
+                // small debounce to avoid page-load flicker
+                clearTimeout(_visDebounce);
+                _visDebounce = setTimeout(() => {
+                    if (!examActive || isSubmitting) return;
+                    triggerWarning('Tab Switch / Window Hidden');
+                }, 300);
             }
         });
 
-        // Initial Render (Moved to async load block)
-
-        // --- STRICT PROCTORING MODE ---
-
-        // 1. Active Focus Polling (Every 800ms)
-        // Note: uses a short debounce so that the typing textarea blur
-        // (which temporarily shifts focus) doesn't fire a false warning.
+        // 3. Active focus polling (800ms interval, 2-tick debounce)
         let _focusLostCount = 0;
         setInterval(() => {
+            if (!examActive || isSubmitting) {
+                _focusLostCount = 0;
+                return;
+            }
             if (!document.hasFocus()) {
                 _focusLostCount++;
-                // Require 2 consecutive checks (~1.6s) to confirm real focus loss
-                if (_focusLostCount < 2) return;
-
-                const startOpen  = document.getElementById('startOverlay').style.display  !== 'none';
-                const resultOpen = document.getElementById('resultOverlay').style.display !== 'none';
-                const warnOpen   = document.getElementById('warningOverlay').style.display !== 'none';
-
-                if (!startOpen && !resultOpen && !warnOpen) {
-                    _focusLostCount = 0;
-                    triggerWarning('Focus Lost — Window Switched');
-                }
+                if (_focusLostCount < 2) return; // wait for 2nd consecutive check
+                _focusLostCount = 0;
+                triggerWarning('Focus Lost — Window Switched');
             } else {
-                _focusLostCount = 0; // reset when focus is back
+                _focusLostCount = 0;
             }
 
-            // Anti-Tamper: Ensure Warning Overlay is top-level
+            // Anti-tamper: keep warning overlay at top z-index
             const warningOverlay = document.getElementById('warningOverlay');
             if (warningOverlay) {
                 warningOverlay.style.zIndex = '2147483647';
@@ -1139,7 +1143,8 @@
                     document.body.appendChild(warningOverlay);
                 }
             }
-        }, 500);
+        }, 800);
+
 
         // 2. Clipboard & Interaction Lockdown
         ['copy', 'cut', 'paste', 'dragstart', 'drop'].forEach(event => {
@@ -1197,8 +1202,8 @@
         }
 
         function triggerWarning(reason = 'Exam Violation Detected') {
-            // Ignore if exam already finished or submitting
-            if (isSubmitting || document.getElementById('resultOverlay').style.display !== 'none') return;
+            // Hard gate: only fire during active exam
+            if (!examActive || isSubmitting) return;
 
             warnings++;
             logWarningEvent(reason);
@@ -1211,25 +1216,25 @@
             }
 
             if (warnings >= MAX_WARNINGS) {
-                // 3rd warning reached — auto-submit silently, no overlay
-                console.warn(`[AutoSubmit] Triggered after ${warnings} warnings.`);
+                // 3rd (or more) warning — auto-submit immediately
+                console.warn(`[PROCTOR] Auto-submit triggered after ${warnings} warnings: "${reason}"`);
                 autoSubmitExam();
                 return;
             }
 
-            // Warnings 1 & 2: show overlay
-            document.getElementById('warningCountDisplay').innerText = warnings;
+            // Warnings 1 & 2: show warning overlay with reason
             const warningTitle = document.querySelector('#warningOverlay h2');
-            if (warningTitle) warningTitle.innerText = reason;
+            if (warningTitle) warningTitle.innerText = `⚠️ ${reason}`;
+            document.getElementById('warningCountDisplay').innerText = warnings;
             document.getElementById('warningOverlay').style.display = 'flex';
-            console.warn(`Warning ${warnings} triggered: ${reason}`);
+            console.warn(`[PROCTOR] Warning ${warnings}/${MAX_WARNINGS}: ${reason}`);
         }
 
         async function autoSubmitExam() {
             if (isSubmitting) return;
             isSubmitting = true;
+            examActive = false; // STOP all further warnings immediately
 
-            // Silent auto-submit — no confirm() dialog
             clearInterval(timerInterval);
             document.getElementById('warningOverlay').style.display = 'none';
 
@@ -1320,7 +1325,15 @@
         }
 
         function resumeExam() {
-            document.documentElement.requestFullscreen().catch(e => console.error("Fullscreen failed:", e));
+            if (isSubmitting) return;
+            // Re-enter fullscreen when student acknowledges warning
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(e => console.warn('Fullscreen failed on resume:', e));
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                }
+            } catch(e) {}
             document.getElementById('warningOverlay').style.display = 'none';
         }
 
@@ -1332,10 +1345,11 @@
 
         async function submitExam() {
             if (isSubmitting) return;
-            // Manual submit: show confirmation dialog
             if (!confirm('Are you sure you want to finish the exam?')) return;
 
             isSubmitting = true;
+            examActive = false; // Stop all proctoring warnings
+
             // Stop Timer
             clearInterval(timerInterval);
 
