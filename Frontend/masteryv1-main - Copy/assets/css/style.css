@@ -704,6 +704,52 @@ body {
 }
 
 /* =============================================
+   VIGNAN MASTERY LOGO — Animated Gradient Glow
+   ============================================= */
+.logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    /* Animated gradient text */
+    background: linear-gradient(
+        90deg,
+        #a78bfa,
+        #6c63ff,
+        #22d3ee,
+        #ec4899,
+        #a78bfa
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: logoGradientFlow 4s linear infinite;
+
+    /* Subtle outer glow */
+    filter: drop-shadow(0 0 8px rgba(108, 99, 255, 0.7))
+            drop-shadow(0 0 18px rgba(167, 139, 250, 0.4));
+    cursor: default;
+    user-select: none;
+    transition: filter 0.3s ease;
+}
+
+.logo:hover {
+    filter: drop-shadow(0 0 12px rgba(108, 99, 255, 1))
+            drop-shadow(0 0 28px rgba(34, 211, 238, 0.6))
+            drop-shadow(0 0 48px rgba(236, 72, 153, 0.35));
+    animation: logoGradientFlow 1.5s linear infinite;
+}
+
+@keyframes logoGradientFlow {
+    0%   { background-position: 0%   50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0%   50%; }
+}
+
+/* =============================================
     LOGIN MODAL GLASSMORPHISM - Enhanced
     ============================================= */
 .modal-glass-overlay {
