@@ -643,55 +643,60 @@
             const totalTimeStr = `${totalM}m ${totalS}s`;
 
             const html = `
+                <!-- ── Report Header ── -->
                 <div class="report-header">
                     <div>
                         <div class="report-title">Exam Report</div>
-                        <div style="color: #64748b;">Generated on ${date}</div>
+                        <div style="color:#64748b; font-size:0.9rem; margin-top:0.25rem;">Generated on ${date}</div>
                     </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:1.5rem; font-weight:800; color:#2563eb;">${result.score}%</div>
+                        <div style="font-size:0.8rem; color:#64748b; margin-top:0.2rem;">Overall Score</div>
+                    </div>
+                </div>
 
-                <div class="meta-grid">
-                    <div style="padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
-                        <div class="meta-group">
-                            <h3 style="font-size: 0.85rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; margin-bottom: 0.5rem; text-transform: uppercase;">STUDENT</h3>
-                            <p style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.3; max-width: 250px;">${result.studentName || 'Unknown Student'}</p>
-                            <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 0.25rem;">${result.branch || session.branch || 'Unknown'}${result.section || session.section ? ' - ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
-                            <div style="font-size: 0.95rem; color: #64748b;">Student ID: ${result.username || 'N/A'}</div>
-                        </div>
+                <!-- ── Student & Exam Meta ── -->
+                <div class="meta-grid" style="margin-bottom:2rem;">
+                    <div style="padding:1.25rem 1.5rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.5rem;">
+                        <h3 style="font-size:0.75rem; font-weight:700; color:#64748b; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.75rem;">Student</h3>
+                        <p style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:0.4rem; line-height:1.3;">${result.studentName || 'Unknown Student'}</p>
+                        <div style="font-size:0.88rem; color:#64748b; margin-bottom:0.2rem;">${(result.branch || session.branch || '')}${(result.section || session.section) ? ' – ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
+                        <div style="font-size:0.88rem; color:#64748b;">ID: <strong style="color:#1e293b;">${result.username || 'N/A'}</strong></div>
                     </div>
-                    <div style="padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
-                        <div class="meta-group">
-                            <h3>Exam Details</h3>
-                            <p>${exam.title}</p>
-                            <div style="font-size: 0.9rem; color: #64748b;">${exam.subject}</div>
-                            <div style="display:flex; gap:1rem; margin-top:0.5rem;">
-                                <div class="badge" style="background:#f1f5f9; border:1px solid #e2e8f0;">⏱ ${exam.duration} mins</div>
-                                <div class="badge" style="background:#f1f5f9; border:1px solid #e2e8f0;">📝 ${exam.questions.length} Questions</div>
-                            </div>
+                    <div style="padding:1.25rem 1.5rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.5rem;">
+                        <h3 style="font-size:0.75rem; font-weight:700; color:#64748b; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.75rem;">Exam Details</h3>
+                        <p style="font-size:1.05rem; font-weight:700; color:#1e293b; margin-bottom:0.4rem;">${exam.title}</p>
+                        <div style="font-size:0.88rem; color:#64748b; margin-bottom:0.6rem;">${exam.subject}</div>
+                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.78rem;">⏱ ${exam.duration} mins</span>
+                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.78rem;">📝 ${exam.questions.length} Questions</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="score-summary">
-                    <h3 style="color: #64748b; margin-bottom: 0.5rem;">TOTAL SCORE</h3>
+                <!-- ── Score Summary ── -->
+                <div class="score-summary" style="margin-bottom:2rem;">
+                    <h3 style="color:#64748b; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.5rem;">Total Score</h3>
                     <div class="big-score">${result.score}%</div>
-                    <div style="margin-top: 1rem; font-size: 1.1rem; font-weight: 500; color: #1e293b;">
-                        Total Time Taken: <span style="font-family:'JetBrains Mono';">${totalTimeStr}</span>
+                    <div style="margin-top:0.75rem; font-size:1rem; font-weight:500; color:#1e293b;">
+                        Time Taken: <span style="font-family:'JetBrains Mono',monospace; font-weight:700;">${totalTimeStr}</span>
                     </div>
-                    <p style="color: #64748b; margin-top: 0.5rem;">
-                        Raw Marks: <strong>${obtainedMarks}</strong> / ${totalMarks}
+                    <p style="color:#64748b; margin-top:0.4rem; font-size:0.95rem;">
+                        Raw Marks: <strong style="color:#1e293b;">${obtainedMarks}</strong> / ${totalMarks}
                     </p>
                 </div>
 
-                <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0;">Detailed Breakdown</h3>
+                <!-- ── Detailed Breakdown Table ── -->
+                <h3 style="font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid #e2e8f0;">Detailed Breakdown</h3>
                 <table>
                     <thead>
                         <tr>
-                            <th style="text-align: center;">#</th>
-                            <th>Question</th>
-                            <th>Your Answer</th>
-                            <th style="width: 25%;">Solution</th>
-                            <th style="text-align: center;">Time Taken</th>
-                            <th style="text-align: right;">Marks</th>
+                            <th style="text-align:center; width:40px;">#</th>
+                            <th style="width:28%;">Question</th>
+                            <th style="width:22%;">Your Answer</th>
+                            <th style="width:22%;">Solution</th>
+                            <th style="text-align:center; width:10%;">Time</th>
+                            <th style="text-align:right; width:10%;">Marks</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -699,11 +704,13 @@
                     </tbody>
                 </table>
 
-                <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 2rem; display: flex; justify-content: space-between; color: #64748b; font-size: 0.8rem;">
-                    <div>ExamiNation Portal</div>
+                <!-- ── Footer ── -->
+                <div style="margin-top:3rem; border-top:1px solid #e2e8f0; padding-top:1.5rem; display:flex; justify-content:space-between; color:#94a3b8; font-size:0.78rem;">
+                    <div>Vignan Mastery Portal</div>
                     <div>Page 1 of 1</div>
                 </div>
             `;
+
 
             document.getElementById('reportContent').innerHTML = html;
         }
