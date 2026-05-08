@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Report - ExamiNation</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        /* ══════════════════════════════════════════
+           GOOGLE FONTS — must be first in stylesheet
+           ══════════════════════════════════════════ */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
+        /* ══════════════════════════════════════════
+           GLOBAL RESET — suppress dark theme bleed
+           ══════════════════════════════════════════ */
+        body {
+            background: #e8edf2 !important;
+            color: #1e293b !important;
+            font-family: 'Source Sans 3', 'Inter', system-ui, sans-serif !important;
+        }
+        body::before  { display: none !important; }
+        h1,h2,h3,h4,h5,h6 { color: #1e293b; font-family: 'Source Sans 3', system-ui, sans-serif; }
+        .card:hover   { transform: none !important; }
+
+        /* ── Outer page wrapper ── */
+        .report-container {
+            max-width: 960px;
+            margin: 2.5rem auto;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.18), 0 4px 16px -4px rgba(37,99,235,0.12);
+            border: 1px solid #cbd5e1;
+        }
+
+        /* ── Header band ── */
+        .report-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #3b82f6 100%);
+            padding: 2rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .report-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f59e0b, #ef4444, #8b5cf6, #22d3ee);
+        }
+        .report-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.02em;
+            line-height: 1.1;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            margin-bottom: 0;
+        }
+        .report-header-right {
+            text-align: right;
+        }
+        .report-header-right .score-pill {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+        .report-header-right .score-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.2rem;
+        }
+        .report-header-right .gen-date {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 0.5rem;
+        }
+
+        /* ── Body padding ── */
+        .report-body {
+            padding: 2rem 2.5rem;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #2563eb;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        /* ── Meta grid ── */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+        .meta-card {
+            background: #f8faff;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            padding: 1.1rem 1.4rem;
+        }
+        .meta-card h3 {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+        .meta-card p {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+        .meta-card .sub {
+            font-size: 0.82rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.65rem;
+            margin-top: 0.4rem;
+            margin-right: 0.3rem;
+        }
+
+        /* ── Score summary ── */
+        .score-summary {
+            background: linear-gradient(90deg, #eff6ff, #dbeafe);
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            padding: 1.25rem 1.75rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .score-summary .big-score {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            line-height: 1;
+        }
+        .score-meta { color: #475569; font-size: 0.9rem; }
+        .score-meta strong { color: #0f172a; }
+
+        /* ── Status badges ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.65rem;
+            border-radius: 99px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .badge-success { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+        .badge-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+        /* ── Table ── */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 0;
+            font-size: 0.88rem;
+        }
+        thead tr {
+            background: linear-gradient(90deg, #1e3a8a, #2563eb);
+        }
+        th {
+            padding: 0.75rem 0.9rem;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #fff;
+            border: none;
+        }
+        tbody tr:nth-child(even) { background: #f8faff; }
+        tbody tr:hover { background: #eff6ff; }
+        td {
+            padding: 0.85rem 0.9rem;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+            vertical-align: top;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* Answer / solution cells */
+        .answer-content {
+            max-height: 120px;
+            border: 1px solid #e2e8f0;
+            padding: 0.4rem 0.6rem;
+            overflow-y: auto;
+            background: #fafafa;
+            position: relative;
+            margin-bottom: 0.4rem;
+            border-radius: 4px;
+            font-size: 0.83rem;
+        }
+        .solution-content {
+            max-height: 70px;
+            overflow-y: hidden;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 0.8rem;
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .view-full-btn {
+            background: none;
+            border: none;
+            color: #2563eb;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 0.2rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-family: inherit;
+        }
+        .view-full-btn:hover { text-decoration: underline; }
+
+        /* ── Footer ── */
+        .report-footer {
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+            padding: 0.85rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* ── Fixed buttons ── */
+        .print-btn {
+            position: fixed; bottom: 2rem; right: 2rem;
+            box-shadow: 0 8px 25px rgba(37,99,235,0.35); z-index: 100;
+        }
+        .back-btn {
+            position: fixed; top: 1.5rem; left: 1.5rem;
+            z-index: 100; font-size: 0.85rem;
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15,23,42,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden;
+            transition: all 0.25s ease; backdrop-filter: blur(6px);
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: white; border-radius: 12px;
+            width: 90%; max-width: 620px; max-height: 82vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.3);
+            transform: translateY(24px);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            overflow: hidden;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(90deg, #1e3a8a, #2563eb);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { color: #fff; font-size: 0.95rem; margin: 0; }
+        .modal-body {
+            padding: 1.5rem; overflow-y: auto;
+            font-size: 0.92rem; line-height: 1.65; color: #1e293b;
+        }
+        .modal-footer {
+            padding: 0.85rem 1.5rem; border-top: 1px solid #e2e8f0; text-align: right;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 780px) {
+            .report-container { border-radius: 0; }
+            .meta-grid { grid-template-columns: 1fr; }
+            .report-body { padding: 1.25rem; }
+        }
+
+        /* ── Print ── */
+        @page { size: A4 portrait; margin: 1.5cm; }
+        @media print {
+            .print-btn, .back-btn, .view-full-btn, .modal-overlay { display: none !important; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .report-container { box-shadow: none; margin: 0; max-width: 100%; border: none; border-radius: 0; }
+            .answer-content, .solution-content { max-height: none !important; overflow: visible !important; }
+            .fade-gradient { display: none !important; }
+            table { border-collapse: collapse; }
+            th, td { border: 1px solid #ccc !important; padding: 0.2cm !important; }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <button onclick="window.location.href='index.html'" class="btn btn-outline back-btn" style="color: #1e293b; border-color: #cbd5e1; background: white;">← Back to Dashboard</button>
+    <button onclick="window.print()" class="btn btn-primary print-btn">🖨 Print Report</button>
+
+    <div class="report-container" id="reportContent">
+        <!-- Content Injected Here -->
+        <p style="text-align: center;">Loading Report...</p>
+    </div>
+
+    <!-- Dynamic Answer Modal -->
+    <div id="answerModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Full Answer</h3>
+                <button onclick="closeModal()"
+                    style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:6px; font-size:1.2rem; color:#fff; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; line-height:1;">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        // Auth Check
+        const session = Auth.checkSession();
+        if (!session || (session.role !== 'student' && session.role !== 'admin')) {
+            window.location.href = '../index.html';
+        }
+
+        // Get Params
+        const params = new URLSearchParams(window.location.search);
+        const examId = params.get('id');
+        const studentId = params.get('studentId') || session.id; // Admin can view others
+
+        if (!examId) {
+            alert('Invalid Request');
+            window.location.href = 'index.html';
+        }
+
+        // Fetch Data
+        (async () => {
+            try {
+                const token = localStorage.getItem('college_exam_portal_token');
+
+                // Load exam and report in parallel
+                const [exam, reportResp] = await Promise.allSettled([
+                    ExamService.getExamById(examId),
+                    fetch(`${window.CONFIG.API_BASE_URL}/api/reports/student/${examId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                const examData = exam.status === 'fulfilled' ? exam.value : null;
+                let result = null;
+
+                // Try dedicated per-exam endpoint
+                if (reportResp.status === 'fulfilled' && reportResp.value.ok) {
+                    const data = await reportResp.value.json();
+                    result = data.data || data;
+                    // Normalize snake_case to camelCase
+                    if (result && result.exam_id) {
+                        result.examId = result.exam_id;
+                        result.studentId = result.student_id;
+                        result.score = result.percentage;
+                        result.username = result.username || 'UNASSIGNED'; // Strictly Roll No
+                        result.studentName = result.student_name || 'Student';
+                        result.timestamp = result.generated_at ? new Date(result.generated_at).getTime() : Date.now();
+                        result.answers = result.answers || {};
+                        result.questionScores = result.questionScores || {};
+                        result.questionTimeData = result.questionTimeData || {};
+                    }
+                }
+
+                // Fallback: search in full results list
+                if (!result) {
+                    const results = await ExamService.getStudentResults(String(studentId));
+                    result = results
+                        .filter(r => String(r.examId) === String(examId))
+                        .sort((a, b) => b.timestamp - a.timestamp)[0] || null;
+                }
+                
+                if (result) {
+                    result.username = result.username || 'UNASSIGNED';
+                    result.studentName = result.studentName || result.student_name || 'Student';
+                }
+
+                if (!examData || !result) {
+                    document.getElementById('reportContent').innerHTML = `
+                        <div style="text-align:center; padding: 4rem;">
+                            <h2 style="color:#64748b;">Report Not Found</h2>
+                            <p>Could not find result data for this exam.</p>
+                            <p style="color:#94a3b8; font-size:0.85rem; margin-top:1rem;">This may happen if the exam report is still being generated. Please wait a moment and refresh.</p>
+                        </div>
+                    `;
+                } else {
+                    renderReport(examData, result);
+                }
+            } catch(err) {
+                console.error('Report load error:', err);
+                document.getElementById('reportContent').innerHTML = `
+                    <div style="text-align:center; padding: 4rem;">
+                        <h2 style="color:#64748b;">Report Not Found</h2>
+                        <p>Could not find result data for this exam.</p>
+                        <p style="color:#94a3b8; font-size:0.85rem; margin-top:1rem;">Error: ${err.message}</p>
+                    </div>
+                `;
+            }
+        })();
+
+
+        function computeTypingAccuracy(passage, typed) {
+            if (!typed || typed.length === 0) return 0;
+            const compareLen = Math.min(passage.length, typed.length);
+            let correct = 0;
+            for (let i = 0; i < compareLen; i++) {
+                if (typed[i] === passage[i]) correct++;
+            }
+            const totalPassageLen = passage.length;
+            return Math.round((correct / totalPassageLen) * 100);
+        }
+
+        function computeTypingWPM(typed, totalSeconds) {
+            if (!totalSeconds || !typed || typed.length === 0) return 0;
+            const elapsedMinutes = totalSeconds / 60;
+            const words = typed.length / 5;
+            return Math.round(words / elapsedMinutes);
+        }
+
+        function renderReport(exam, result) {
+            const date = new Date(result.timestamp).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Calculate Totals
+            let totalMarks = 0;
+            let obtainedMarks = 0;
+            const qRows = exam.questions.map((q, index) => {
+                const maxScore = 10; // Assuming 10 per Q
+                const score = result.questionScores ? result.questionScores[q.id] : (
+                    // Fallback for old results
+                    (q.type === 'mcq' && result.answers[q.id] === q.correct) ? 10 : 0
+                );
+
+                const displayScore = (result.questionScores || q.type === 'mcq') ? score : 'N/A';
+
+                totalMarks += maxScore;
+                if (typeof displayScore === 'number') obtainedMarks += displayScore;
+
+                // Status Badge
+                let status = '';
+                if (displayScore === maxScore) status = '<span class="badge badge-success">Full Marks</span>';
+                else if (displayScore > 0) status = '<span class="badge badge-warning">Partial</span>';
+                else status = '<span class="badge badge-danger">0</span>';
+
+                // Format Answer
+                let studentAnswer = '-';
+                const rawAnswer = result.answers[q.id];
+
+                if (q.type === 'mcq') {
+                    if (rawAnswer !== undefined && rawAnswer !== null) {
+                        const optIndex = parseInt(rawAnswer);
+                        studentAnswer = q.options[optIndex] || '(Invalid Option)';
+                        // Mark correct/incorrect visually
+                        if (rawAnswer === q.correct) {
+                            studentAnswer = `<span style="color:#15803d; font-weight:600;">✔ ${studentAnswer}</span>`;
+                        } else {
+                            studentAnswer = `<span style="color:#b91c1c;">✖ ${studentAnswer}</span>`;
+                        }
+                    } else {
+                        studentAnswer = '<span style="color:#64748b; font-style:italic;">Not Answered</span>';
+                    }
+                } else if (q.type === 'coding') {
+                    if (rawAnswer) {
+                        studentAnswer = `<pre>${rawAnswer.replace(/</g, '&lt;')}</pre>`;
+                    } else {
+                        studentAnswer = '<span style="color:#64748b; font-style:italic;">No Code Submitted</span>';
+                    }
+                } else {
+                    // Text / Typing
+                    if (rawAnswer) {
+                        const isTyping = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
+                        let metricsHtml = '';
+                        if (isTyping) {
+                            const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                            const sec = result.questionTimeData ? result.questionTimeData[q.id] : 0;
+                            const accuracy = computeTypingAccuracy(passage, rawAnswer);
+                            const wpm = computeTypingWPM(rawAnswer, sec);
+                            metricsHtml = `
+                                <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="background: #f0fdf4; color: #15803d; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #bbf7d0;">Acc: ${accuracy}%</span>
+                                    <span style="background: #eff6ff; color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #bfdbfe;">Speed: ${wpm} WPM</span>
+                                </div>
+                            `;
+                        }
+                        studentAnswer = `
+                            <div style="white-space: pre-wrap; font-size: 0.9rem;">${rawAnswer.replace(/</g, '&lt;')}</div>
+                            ${metricsHtml}
+                        `;
+                    } else {
+                        studentAnswer = '<span style="color:#64748b; font-style:italic;">Not Answered</span>';
+                    }
+                }
+
+                // Time Tracking
+                let timeStr = '--';
+                if (result.questionTimeData && result.questionTimeData[q.id] !== undefined) {
+                    const sec = result.questionTimeData[q.id];
+                    const m = Math.floor(sec / 60);
+                    const s = sec % 60;
+                    timeStr = `${m}m ${s}s`;
+                }
+
+                // Solution Logic
+                // Solution Logic
+                let solutionContent = '<span style="color:#64748b; font-style:italic;">No detailed solution available.</span>';
+
+                if (q.solution) {
+                    solutionContent = q.solution.replace(/\n/g, '<br>');
+                } else if (q.type === 'mcq' && q.correct !== undefined && q.correct !== '') {
+                    const idx = parseInt(q.correct);
+                    if (!isNaN(idx) && q.options && q.options[idx]) {
+                        solutionContent = `<strong style="color:#15803d;">Correct Option:</strong> ${q.options[idx]}`;
+                    }
+                } else if (q.type === 'coding') {
+                    if (q.correct) {
+                        solutionContent = `<strong style="color:#15803d;">Sample Output:</strong><br><pre style="margin:4px 0 0 0; background:#f0fdf4; padding:6px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:0.82rem; border:1px solid #bbf7d0;">${q.correct}</pre>`;
+                    }
+                }
+
+                return `
+                    <tr>
+                        <td style="width: 50px; text-align: center;">${index + 1}</td>
+                        <td style="width: 30%;">
+                            <div style="font-weight: 500;">${q.text.substring(0, 150)}${q.text.length > 150 ? '...' : ''}</div>
+                            <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">Type: ${q.type.toUpperCase()}</div>
+                        </td>
+                        <td style="width: 20%;">
+                            <div class="answer-content">
+                                <div style="font-size: 0.9rem;">${studentAnswer}</div>
+                                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 40px; background: linear-gradient(transparent, #fff); pointer-events: none;"></div>
+                            </div>
+                            <button class="view-full-btn" onclick='openModal("Your Answer", ${JSON.stringify(studentAnswer)})'>
+                                <span>⤢</span> View Full Answer
+                            </button>
+                        </td>
+                        <td style="width: 25%;">
+                            <div class="solution-content" style="position: relative; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                <div style="font-size: 0.85rem; line-height: 1.4;">${solutionContent}</div>
+                                <div class="fade-gradient" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 30px; background: linear-gradient(transparent, #f8fafc); pointer-events: none;"></div>
+                            </div>
+                            <button class="view-full-btn" onclick='openModal("Solution", ${JSON.stringify(solutionContent)})'>
+                                <span>⤢</span> View Full Solution
+                            </button>
+                        </td>
+                        <td style="text-align: center; white-space: nowrap; color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+                            ${timeStr}
+                        </td>
+                        <td style="width: 100px; text-align: right;">
+                            <span style="font-weight: 700;">${displayScore}</span> / ${maxScore}
+                            <br>
+                            ${status}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+
+
+            // Calculate Total Time
+            let totalSeconds = 0;
+            if (result.questionTimeData) {
+                totalSeconds = Object.values(result.questionTimeData).reduce((a, b) => a + b, 0);
+            }
+            const totalM = Math.floor(totalSeconds / 60);
+            const totalS = totalSeconds % 60;
+            const totalTimeStr = `${totalM}m ${totalS}s`;
+
+            const html = `
+                <!-- ══ Header Band ══ -->
+                <div class="report-header">
+                    <div>
+                        <div class="report-title">Exam Report</div>
+                        <div style="font-size:0.78rem; color:rgba(255,255,255,0.65); margin-top:0.35rem;">Vignan Mastery Portal</div>
+                    </div>
+                    <div class="report-header-right">
+                        <div class="score-pill">${result.score}%</div>
+                        <div class="score-label">Overall Score</div>
+                        <div class="gen-date">Generated: ${date}</div>
+                    </div>
+                </div>
+
+                <!-- ══ Body ══ -->
+                <div class="report-body">
+
+                    <!-- Student & Exam Meta -->
+                    <p class="section-label">Student & Exam Information</p>
+                    <div class="meta-grid">
+                        <div class="meta-card">
+                            <h3>Student</h3>
+                            <p>${result.studentName || 'Unknown Student'}</p>
+                            <div class="sub">${(result.branch || session.branch || '')}${(result.section || session.section) ? ' – ' + (result.section || session.section) : ''} ${result.batch || session.batch || ''}</div>
+                            <div class="sub" style="margin-top:0.2rem;">ID: <strong style="color:#0f172a;">${result.username || 'N/A'}</strong></div>
+                        </div>
+                        <div class="meta-card">
+                            <h3>Exam Details</h3>
+                            <p>${exam.title}</p>
+                            <div class="sub">${exam.subject}</div>
+                            <div style="margin-top:0.5rem;">
+                                <span class="meta-pill">⏱ ${exam.duration} mins</span>
+                                <span class="meta-pill">📝 ${exam.questions.length} Questions</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Score Summary -->
+                    <p class="section-label">Result Summary</p>
+                    <div class="score-summary">
+                        <div>
+                            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin-bottom:0.4rem;">Total Score</div>
+                            <div class="big-score">${result.score}%</div>
+                        </div>
+                        <div class="score-meta" style="text-align:right;">
+                            <div>Time Taken: <strong style="font-family:'JetBrains Mono',monospace;">${totalTimeStr}</strong></div>
+                            <div style="margin-top:0.4rem;">Raw Marks: <strong>${obtainedMarks}</strong> / ${totalMarks}</div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Breakdown -->
+                    <p class="section-label">Detailed Breakdown</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align:center; width:40px;">#</th>
+                                <th style="width:28%;">Question</th>
+                                <th style="width:22%;">Your Answer</th>
+                                <th style="width:22%;">Solution</th>
+                                <th style="text-align:center; width:10%;">Time</th>
+                                <th style="text-align:right; width:10%;">Marks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${qRows}
+                        </tbody>
+                    </table>
+
+                </div><!-- /.report-body -->
+
+                <!-- Footer strip -->
+                <div class="report-footer">
+                    <div>Vignan Mastery — Vignan's Institute of Information Technology</div>
+                    <div>Page 1 of 1</div>
+                </div>
+            `;
+
+
+
+            document.getElementById('reportContent').innerHTML = html;
+        }
+        // Modal Functions
+        window.openModal = function (title, content) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('answerModal').classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+        };
+
+        window.closeModal = function (e) {
+            if (e) e.stopPropagation();
+            document.getElementById('answerModal').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // Close on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') window.closeModal();
+        });
+    </script>
+</body>
+
+</html>

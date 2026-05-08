@@ -1,0 +1,112 @@
+{
+  "25L31A05W8": {
+    "id": "25L31A05W8",
+    "password": "25L31A05W8",
+    "name": "M Sai Kumar",
+    "branch": "CSE",
+    "year": "1",
+    "section": "3",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z5": {
+    "id": "25L31A05Z5",
+    "password": "25L31A05Z5",
+    "name": "Nanepalli Venkata Sai Jaswanth",
+    "branch": "CSE",
+    "year": "1",
+    "section": "1",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05X7": {
+    "id": "25L31A05X7",
+    "password": "25L31A05X7",
+    "name": "M Hriday",
+    "branch": "CSE",
+    "year": "1",
+    "section": "2",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05V5": {
+    "id": "25L31A05V5",
+    "password": "25L31A05V5",
+    "name": "Dhatri",
+    "branch": "CSE",
+    "year": "1",
+    "section": "4",
+    "batch": "2024-2028",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z0": {
+    "id": "25L31A05Z0",
+    "password": "25L31A05Z0",
+    "name": "Govardhan",
+    "branch": "ECE",
+    "year": "1",
+    "section": "1",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z1": {
+    "id": "25L31A05Z1",
+    "password": "25L31A05Z1",
+    "name": "Yogi",
+    "branch": "EEE",
+    "year": "1",
+    "section": "4",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z2": {
+    "id": "25L31A05Z2",
+    "password": "25L31A05Z2",
+    "name": "Murili",
+    "branch": "IT",
+    "year": "1",
+    "section": "1",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z3": {
+    "id": "25L31A05Z3",
+    "password": "25L31A05Z3",
+    "name": "Keerthana",
+    "branch": "CIVIL",
+    "year": "1",
+    "section": "2",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z4": {
+    "id": "25L31A05Z4",
+    "password": "25L31A05Z4",
+    "name": "Sathiya",
+    "branch": "MECH",
+    "year": "1",
+    "section": "1",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05Z6": {
+    "id": "25L31A05Z6",
+    "password": "25L31A05Z6",
+    "name": "Pranay",
+    "branch": "AI",
+    "year": "1",
+    "section": "1",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  },
+  "25L31A05X6": {
+    "id": "25L31A05X6",
+    "password": "25L31A05X6",
+    "name": "M.Nikila saathwika",
+    "branch": "CSE",
+    "year": "1",
+    "section": "5",
+    "batch": "2025-2029",
+    "addedAt": 1772467456001
+  }
+}
