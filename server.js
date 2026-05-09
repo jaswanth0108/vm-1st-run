@@ -48,8 +48,30 @@ async function initDB() {
                 data JSONB NOT NULL
             );
             CREATE TABLE IF NOT EXISTS exams (
-                id   TEXT PRIMARY KEY,
-                data JSONB NOT NULL
+                id         TEXT PRIMARY KEY,
+                title      TEXT,
+                subject    TEXT,
+                year       TEXT,
+                branch     TEXT,
+                batch      TEXT,
+                duration   INTEGER,
+                status     TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                data       JSONB NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS questions (
+                id          TEXT PRIMARY KEY,
+                exam_id     TEXT REFERENCES exams(id) ON DELETE CASCADE,
+                type        TEXT,
+                text        TEXT,
+                correct_ans TEXT,
+                order_num   INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS options (
+                id           SERIAL PRIMARY KEY,
+                question_id  TEXT REFERENCES questions(id) ON DELETE CASCADE,
+                option_index INTEGER,
+                option_text  TEXT
             );
             CREATE TABLE IF NOT EXISTS results (
                 id         SERIAL PRIMARY KEY,
@@ -57,11 +79,73 @@ async function initDB() {
                 student_id TEXT,
                 data       JSONB NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS submissions (
+                id           SERIAL PRIMARY KEY,
+                exam_id      TEXT REFERENCES exams(id),
+                student_id   TEXT REFERENCES users(id),
+                score        INTEGER DEFAULT 0,
+                warnings     INTEGER DEFAULT 0,
+                submitted_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS answers (
+                id            SERIAL PRIMARY KEY,
+                submission_id INTEGER REFERENCES submissions(id) ON DELETE CASCADE,
+                question_id   TEXT REFERENCES questions(id),
+                student_ans   TEXT,
+                marks_awarded INTEGER DEFAULT 0
+            );
         `);
-        console.log('[DB] Tables ready');
+        console.log('[DB] All 6 tables ready (exams, questions, options, users, results, submissions, answers)');
         await migrateJSON();
     } catch (e) {
         console.error('[DB] Init error:', e.message);
+    }
+}
+
+// Sync normalized questions+options from an exam object
+async function syncExamTables(exam) {
+    if (!USE_PG || !exam.questions) return;
+    // Upsert exam metadata columns
+    await pool.query(`
+        UPDATE exams SET title=$2, subject=$3, year=$4, branch=$5, batch=$6,
+               duration=$7, status=$8 WHERE id=$1`,
+        [exam.id, exam.title||'', exam.subject||'', exam.year||'',
+         exam.branch||'', exam.batch||'', exam.duration||60, exam.status||'draft']);
+    // Delete old questions (cascade deletes options)
+    await pool.query('DELETE FROM questions WHERE exam_id=$1', [exam.id]);
+    for (let i = 0; i < exam.questions.length; i++) {
+        const q = exam.questions[i];
+        await pool.query(
+            'INSERT INTO questions(id,exam_id,type,text,correct_ans,order_num) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO UPDATE SET type=$3,text=$4,correct_ans=$5,order_num=$6',
+            [q.id, exam.id, q.type||'mcq', q.text||'', String(q.correct??''), i]
+        );
+        if (q.options && Array.isArray(q.options)) {
+            for (let j = 0; j < q.options.length; j++) {
+                await pool.query(
+                    'INSERT INTO options(question_id,option_index,option_text) VALUES($1,$2,$3)',
+                    [q.id, j, String(q.options[j])]
+                );
+            }
+        }
+    }
+}
+
+// Sync normalized submissions+answers from a result object
+async function syncResultTables(result) {
+    if (!USE_PG) return;
+    const sr = await pool.query(
+        'INSERT INTO submissions(exam_id,student_id,score,warnings,submitted_at) VALUES($1,$2,$3,$4,$5) RETURNING id',
+        [result.examId, result.studentId, result.score||0, result.warnings||0,
+         result.timestamp ? new Date(result.timestamp) : new Date()]
+    );
+    const subId = sr.rows[0].id;
+    const ans = result.answers || {};
+    const scores = result.questionScores || {};
+    for (const [qId, studentAns] of Object.entries(ans)) {
+        await pool.query(
+            'INSERT INTO answers(submission_id,question_id,student_ans,marks_awarded) VALUES($1,$2,$3,$4)',
+            [subId, qId, String(studentAns), scores[qId]||0]
+        );
     }
 }
 
@@ -239,6 +323,7 @@ app.post('/api/exams', async (req, res) => {
                 'INSERT INTO exams (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = $2',
                 [exam.id, JSON.stringify(exam)]
             );
+            await syncExamTables(exam).catch(e => console.error('[DB] syncExamTables:', e.message));
             return res.json({ success: true, exam });
         }
         ensureFile(EXAMS_FILE, '[]');
@@ -290,6 +375,7 @@ app.post('/api/results', async (req, res) => {
                 'INSERT INTO results (exam_id, student_id, data) VALUES ($1, $2, $3)',
                 [result.examId, result.studentId, JSON.stringify(result)]
             );
+            await syncResultTables(result).catch(e => console.error('[DB] syncResultTables:', e.message));
             return res.json({ success: true });
         }
         ensureFile(RESULTS_FILE, '[]');
