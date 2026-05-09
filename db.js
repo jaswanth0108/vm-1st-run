@@ -97,6 +97,13 @@ async function initDB() {
     // Add new columns if upgrading from older schema (safe on existing installs)
     await pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_input  TEXT DEFAULT ''`).catch(()=>{});
     await pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_output TEXT DEFAULT ''`).catch(()=>{});
+    
+    // Fix foreign key constraints for safe updates
+    try {
+        await pool.query('ALTER TABLE answers DROP CONSTRAINT IF EXISTS answers_question_id_fkey');
+        await pool.query('ALTER TABLE answers ADD CONSTRAINT answers_question_id_fkey FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE');
+    } catch(e) {}
+    
     console.log('[DB] Schema ready: users, exams, questions, options, hidden_cases, question_constraints, results, answers');
     await migrateFromJSON();
 }
@@ -189,6 +196,13 @@ async function bulkSaveUsers(usersObj) {
 }
 
 async function deleteUser(id) {
+    // Delete dependent results and answers first
+    const { rows: rRows } = await pool.query('SELECT id FROM results WHERE student_id=$1', [id]);
+    for (const r of rRows) {
+        await pool.query('DELETE FROM answers WHERE result_id=$1', [r.id]);
+    }
+    await pool.query('DELETE FROM results WHERE student_id=$1', [id]);
+    
     const r = await pool.query('DELETE FROM users WHERE id=$1', [id]);
     return r.rowCount > 0;
 }
@@ -305,6 +319,13 @@ async function saveExam(exam) {
 }
 
 async function deleteExam(id) {
+    // Delete dependent results first
+    const { rows: rRows } = await pool.query('SELECT id FROM results WHERE exam_id=$1', [id]);
+    for (const r of rRows) {
+        await pool.query('DELETE FROM answers WHERE result_id=$1', [r.id]);
+    }
+    await pool.query('DELETE FROM results WHERE exam_id=$1', [id]);
+    
     const r = await pool.query('DELETE FROM exams WHERE id=$1', [id]);
     return r.rowCount > 0;
 }
