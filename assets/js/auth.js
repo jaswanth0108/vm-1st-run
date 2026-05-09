@@ -14,11 +14,19 @@ class Auth {
         body: JSON.stringify({ username, password, role })
       });
 
+      // Guard: if server returns HTML (error page) instead of JSON, handle gracefully
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        console.error('Non-JSON response from server. Status:', response.status);
+        return {
+          success: false,
+          message: `Server is unavailable (status ${response.status}). The server may be starting up — please wait 30 seconds and try again.`
+        };
+      }
+
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Server returns: { success: true, session: { id, name, role, ... } }
-        // Support multiple response shapes for forward compatibility
         const userObj = data.session || data.user || (data.data ? data.data.user : null);
         const tokenStr = data.token || (data.data ? data.data.token : null);
 
@@ -26,8 +34,6 @@ class Auth {
           return { success: false, message: 'Login succeeded but no session data was returned. Please contact administrator.' };
         }
 
-        // Merge: backend user data takes priority over form metadata
-        // Only keep metadata fields that the backend didn't provide
         const session = { ...metadata, ...userObj };
         localStorage.setItem(AUTH_KEY, JSON.stringify(session));
         if (tokenStr) {
@@ -35,23 +41,23 @@ class Auth {
         }
         return { success: true };
       } else {
-        // Parse a clean message from the backend response
-        let errMsg = 'Login failed. Please try again.';
-        if (data.message && typeof data.message === 'string') {
-          errMsg = data.message;
-        } else if (data.error && typeof data.error === 'string') {
-          errMsg = data.error;
-        } else if (data.error && data.error.message) {
-          errMsg = data.error.message;
-        }
+        let errMsg = 'Login failed. Please check your credentials.';
+        if (data.message && typeof data.message === 'string') errMsg = data.message;
+        else if (data.error && typeof data.error === 'string') errMsg = data.error;
+        else if (data.error && data.error.message) errMsg = data.error.message;
         return { success: false, message: errMsg };
       }
     } catch (error) {
       console.error('Login error:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        return { success: false, message: 'Cannot connect to backend server. The server may be sleeping. Please try again after a few seconds or contact administrator.' };
+      // Network failure — server completely unreachable
+      if (error instanceof TypeError) {
+        return { success: false, message: 'Cannot connect to the server. Please check your internet connection and try again.' };
       }
-      return { success: false, message: 'Server error during login. Please try again later.' };
+      // JSON parse error — server returned non-JSON (e.g. startup HTML page)
+      if (error instanceof SyntaxError) {
+        return { success: false, message: 'Server is starting up. Please wait 30–60 seconds and try again.' };
+      }
+      return { success: false, message: `Login error: ${error.message}. Please try again.` };
     }
   }
 
