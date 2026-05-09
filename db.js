@@ -50,13 +50,28 @@ async function initDB() {
             text        TEXT    NOT NULL DEFAULT '',
             correct_ans TEXT    DEFAULT '',
             marks       INTEGER DEFAULT 1,
-            order_num   INTEGER DEFAULT 0
+            order_num   INTEGER DEFAULT 0,
+            sample_input  TEXT  DEFAULT '',
+            sample_output TEXT  DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS options (
             id           SERIAL  PRIMARY KEY,
             question_id  TEXT    NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
             option_index INTEGER NOT NULL,
             option_text  TEXT    NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS hidden_cases (
+            id           SERIAL  PRIMARY KEY,
+            question_id  TEXT    NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+            case_index   INTEGER NOT NULL,
+            input        TEXT    DEFAULT '',
+            output       TEXT    DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS question_constraints (
+            id           SERIAL  PRIMARY KEY,
+            question_id  TEXT    NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+            constraint_text TEXT DEFAULT '',
+            order_num    INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS results (
             id           SERIAL        PRIMARY KEY,
@@ -79,7 +94,10 @@ async function initDB() {
     `);
     // Remove legacy submissions table if it still exists from old schema
     await pool.query('DROP TABLE IF EXISTS submissions CASCADE').catch(() => {});
-    console.log('[DB] Schema ready: users, exams, questions, options, results, answers');
+    // Add new columns if upgrading from older schema (safe on existing installs)
+    await pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_input  TEXT DEFAULT ''`).catch(()=>{});
+    await pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS sample_output TEXT DEFAULT ''`).catch(()=>{});
+    console.log('[DB] Schema ready: users, exams, questions, options, hidden_cases, question_constraints, results, answers');
     await migrateFromJSON();
 }
 
@@ -168,22 +186,42 @@ async function getExams() {
     const { rows: eRows } = await pool.query('SELECT * FROM exams ORDER BY created_at DESC');
     const { rows: qRows } = await pool.query('SELECT * FROM questions ORDER BY exam_id, order_num');
     const { rows: oRows } = await pool.query('SELECT * FROM options ORDER BY question_id, option_index');
+    const { rows: hRows } = await pool.query('SELECT * FROM hidden_cases ORDER BY question_id, case_index');
+    const { rows: cRows } = await pool.query('SELECT * FROM question_constraints ORDER BY question_id, order_num');
 
-    // Build options lookup: question_id → [text, text, ...]
+    // Build options lookup
     const optsByQ = {};
     for (const o of oRows) {
         if (!optsByQ[o.question_id]) optsByQ[o.question_id] = [];
         optsByQ[o.question_id][o.option_index] = o.option_text;
     }
 
-    // Build questions lookup: exam_id → [{...}, ...]
+    // Build hidden cases lookup
+    const hiddenByQ = {};
+    for (const h of hRows) {
+        if (!hiddenByQ[h.question_id]) hiddenByQ[h.question_id] = [];
+        hiddenByQ[h.question_id][h.case_index] = { input: h.input, output: h.output };
+    }
+
+    // Build constraints lookup
+    const constraintsByQ = {};
+    for (const c of cRows) {
+        if (!constraintsByQ[c.question_id]) constraintsByQ[c.question_id] = [];
+        constraintsByQ[c.question_id].push(c.constraint_text);
+    }
+
+    // Build questions lookup
     const qByExam = {};
     for (const q of qRows) {
         if (!qByExam[q.exam_id]) qByExam[q.exam_id] = [];
         qByExam[q.exam_id].push({
             id: q.id, type: q.type, text: q.text,
             correct: q.correct_ans, marks: q.marks,
-            options: optsByQ[q.id] || []
+            options:      optsByQ[q.id]      || [],
+            testIn:       q.sample_input     || '',
+            testOut:      q.sample_output    || '',
+            hiddenCases:  hiddenByQ[q.id]   || [],
+            constraints:  constraintsByQ[q.id] || []
         });
     }
 
@@ -208,21 +246,39 @@ async function saveExam(exam) {
          exam.branch||'', exam.batch||'', exam.duration||60,
          exam.attemptLimit||1, exam.passingScore||0, exam.status||'draft']
     );
-    // Rebuild questions (cascade deletes old options)
+    // Rebuild all questions (cascade deletes options, hidden_cases, constraints)
     await pool.query('DELETE FROM questions WHERE exam_id=$1', [exam.id]);
     for (let i = 0; i < (exam.questions||[]).length; i++) {
         const q = exam.questions[i];
         await pool.query(
-            `INSERT INTO questions(id,exam_id,type,text,correct_ans,marks,order_num)
-             VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET
-             type=$3,text=$4,correct_ans=$5,marks=$6,order_num=$7`,
+            `INSERT INTO questions(id,exam_id,type,text,correct_ans,marks,order_num,sample_input,sample_output)
+             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             ON CONFLICT(id) DO UPDATE SET
+             type=$3,text=$4,correct_ans=$5,marks=$6,order_num=$7,sample_input=$8,sample_output=$9`,
             [q.id, exam.id, q.type||'mcq', q.text||'',
-             String(q.correct??''), q.marks||1, i]
+             String(q.correct??''), q.marks||1, i,
+             q.testIn||'', q.testOut||'']
         );
+        // MCQ options
         for (let j = 0; j < (q.options||[]).length; j++) {
             await pool.query(
                 'INSERT INTO options(question_id,option_index,option_text) VALUES($1,$2,$3)',
                 [q.id, j, String(q.options[j])]
+            );
+        }
+        // Hidden test cases
+        for (let k = 0; k < (q.hiddenCases||[]).length; k++) {
+            const hc = q.hiddenCases[k];
+            await pool.query(
+                'INSERT INTO hidden_cases(question_id,case_index,input,output) VALUES($1,$2,$3,$4)',
+                [q.id, k, hc.input||'', hc.output||'']
+            );
+        }
+        // Constraints
+        for (let m = 0; m < (q.constraints||[]).length; m++) {
+            await pool.query(
+                'INSERT INTO question_constraints(question_id,constraint_text,order_num) VALUES($1,$2,$3)',
+                [q.id, q.constraints[m]||'', m]
             );
         }
     }
