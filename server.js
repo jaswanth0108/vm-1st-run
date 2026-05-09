@@ -261,6 +261,48 @@ app.post('/api/login', async (req,res) => {
     } catch(e){ res.status(500).json({error:'Login error: '+e.message}); }
 });
 
+// ─── GET /api/db-status (diagnostics) ────────────────────────────────────────
+app.get('/api/db-status', async (req, res) => {
+    try {
+        const status = {
+            mode: USE_PG ? 'PostgreSQL' : 'JSON files',
+            DATABASE_URL_set: !!process.env.DATABASE_URL,
+            tables: {},
+            json_files: {}
+        };
+        ['users.json','exams.json','results.json'].forEach(f => {
+            const fp = path.join(__dirname, f);
+            if (fs.existsSync(fp)) {
+                const d = JSON.parse(fs.readFileSync(fp, 'utf8'));
+                status.json_files[f] = Array.isArray(d) ? d.length : Object.keys(d).length;
+            } else {
+                status.json_files[f] = 'NOT FOUND';
+            }
+        });
+        if (USE_PG) {
+            const { Pool } = require('pg');
+            const p = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+            for (const t of ['users','exams','questions','options','hidden_cases','question_constraints','results','answers']) {
+                try {
+                    const r = await p.query(`SELECT COUNT(*) FROM ${t}`);
+                    status.tables[t] = parseInt(r.rows[0].count);
+                } catch(e) { status.tables[t] = 'ERROR: ' + e.message; }
+            }
+            await p.end();
+        }
+        res.json(status);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── POST /api/db-force-migrate ───────────────────────────────────────────────
+app.post('/api/db-force-migrate', async (req, res) => {
+    if (!USE_PG) return res.json({ message: 'Not in PostgreSQL mode' });
+    try {
+        await DB.initDB();
+        res.json({ success: true, message: 'Migration triggered — check Render logs' });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(port, async () => {
     console.log(`\n✅ Backend server running at http://localhost:${port}`);

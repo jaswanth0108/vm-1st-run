@@ -107,36 +107,56 @@ async function migrateFromJSON() {
     const examsFile   = path.join(__dirname, 'exams.json');
     const resultsFile = path.join(__dirname, 'results.json');
 
-    // Users
-    if (fs.existsSync(usersFile)) {
+    // Users — only migrate if table is empty
+    const { rows: uc } = await pool.query('SELECT COUNT(*) FROM users');
+    if (parseInt(uc[0].count) === 0 && fs.existsSync(usersFile)) {
         const raw = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+        let ok = 0;
         for (const [id, u] of Object.entries(raw)) {
-            await pool.query(
-                `INSERT INTO users(id,name,password,branch,year,batch,section,email)
-                 VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`,
-                [id, u.name||'', u.password||'', u.branch||'', u.year||'',
-                 u.batch||'', u.section||'', u.email||'']
-            ).catch(()=>{});
+            try {
+                await pool.query(
+                    `INSERT INTO users(id,name,password,branch,year,batch,section,email)
+                     VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`,
+                    [id, u.name||'', u.password||'', u.branch||'', u.year||'',
+                     u.batch||'', u.section||u.Section||'', u.email||'']
+                );
+                ok++;
+            } catch(e) { console.error('[DB] User insert failed for', id, e.message); }
         }
-        console.log(`[DB] Migrated ${Object.keys(raw).length} users`);
+        console.log(`[DB] Migrated ${ok}/${Object.keys(raw).length} users from JSON`);
+    } else {
+        const { rows: cnt } = await pool.query('SELECT COUNT(*) FROM users');
+        console.log(`[DB] Users table already has ${cnt[0].count} rows — skipping migration`);
     }
 
-    // Exams + questions + options
-    if (fs.existsSync(examsFile)) {
+    // Exams — only migrate if table is empty
+    const { rows: ec } = await pool.query('SELECT COUNT(*) FROM exams');
+    if (parseInt(ec[0].count) === 0 && fs.existsSync(examsFile)) {
         const exams = JSON.parse(fs.readFileSync(examsFile, 'utf8'));
+        let ok = 0;
         for (const e of exams) {
-            await saveExam(e).catch(()=>{});
+            try { await saveExam(e); ok++; }
+            catch(err) { console.error('[DB] Exam insert failed for', e.id, err.message); }
         }
-        console.log(`[DB] Migrated ${exams.length} exams`);
+        console.log(`[DB] Migrated ${ok}/${exams.length} exams from JSON`);
+    } else {
+        const { rows: cnt } = await pool.query('SELECT COUNT(*) FROM exams');
+        console.log(`[DB] Exams table already has ${cnt[0].count} rows — skipping migration`);
     }
 
-    // Results + answers
-    if (fs.existsSync(resultsFile)) {
+    // Results — only migrate if table is empty
+    const { rows: rc } = await pool.query('SELECT COUNT(*) FROM results');
+    if (parseInt(rc[0].count) === 0 && fs.existsSync(resultsFile)) {
         const results = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
+        let ok = 0;
         for (const r of results) {
-            await saveResult(r).catch(()=>{});
+            try { await saveResult(r); ok++; }
+            catch(err) { console.error('[DB] Result insert failed:', err.message); }
         }
-        console.log(`[DB] Migrated ${results.length} results`);
+        console.log(`[DB] Migrated ${ok}/${results.length} results from JSON`);
+    } else {
+        const { rows: cnt } = await pool.query('SELECT COUNT(*) FROM results');
+        console.log(`[DB] Results table already has ${cnt[0].count} rows — skipping migration`);
     }
 }
 
