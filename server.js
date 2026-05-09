@@ -6,27 +6,107 @@ const https = require('https');
 const { executeCode } = require('./executor');
 
 const app = express();
-const port = process.env.PORT || 3000;  // Render sets PORT env var
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(__dirname));
 
+// ─── JSON file paths (fallback for local dev without DATABASE_URL) ─────────────
 const EXAMS_FILE   = path.join(__dirname, 'exams.json');
 const RESULTS_FILE = path.join(__dirname, 'results.json');
 const USERS_FILE   = path.join(__dirname, 'users.json');
 
-function ensureFile(filePath, defaultContent) {
-    if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, defaultContent);
+function ensureFile(filePath, def) {
+    if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, def);
+}
+
+// ─── PostgreSQL Setup ─────────────────────────────────────────────────────────
+const USE_PG = !!process.env.DATABASE_URL;
+let pool = null;
+
+if (USE_PG) {
+    const { Pool } = require('pg');
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }, // Required for Render-hosted PostgreSQL
+        max: 10,
+        idleTimeoutMillis: 30000,
+    });
+    console.log('[DB] PostgreSQL mode enabled');
+} else {
+    console.log('[DB] No DATABASE_URL — using JSON flat-files (local dev mode)');
+}
+
+// ─── DB Initialisation: create tables + migrate JSON data ────────────────────
+async function initDB() {
+    if (!USE_PG) return;
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id   TEXT PRIMARY KEY,
+                data JSONB NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS exams (
+                id   TEXT PRIMARY KEY,
+                data JSONB NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS results (
+                id         SERIAL PRIMARY KEY,
+                exam_id    TEXT,
+                student_id TEXT,
+                data       JSONB NOT NULL
+            );
+        `);
+        console.log('[DB] Tables ready');
+        await migrateJSON();
+    } catch (e) {
+        console.error('[DB] Init error:', e.message);
+    }
+}
+
+async function migrateJSON() {
+    // Migrate users
+    const uc = await pool.query('SELECT COUNT(*) FROM users');
+    if (parseInt(uc.rows[0].count) === 0 && fs.existsSync(USERS_FILE)) {
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        for (const [id, data] of Object.entries(users)) {
+            await pool.query(
+                'INSERT INTO users (id, data) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+                [id, JSON.stringify(data)]
+            );
+        }
+        console.log(`[DB] Migrated ${Object.keys(users).length} users from JSON`);
+    }
+
+    // Migrate exams
+    const ec = await pool.query('SELECT COUNT(*) FROM exams');
+    if (parseInt(ec.rows[0].count) === 0 && fs.existsSync(EXAMS_FILE)) {
+        const exams = JSON.parse(fs.readFileSync(EXAMS_FILE, 'utf8'));
+        for (const exam of exams) {
+            await pool.query(
+                'INSERT INTO exams (id, data) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+                [exam.id, JSON.stringify(exam)]
+            );
+        }
+        console.log(`[DB] Migrated ${exams.length} exams from JSON`);
+    }
+
+    // Migrate results
+    const rc = await pool.query('SELECT COUNT(*) FROM results');
+    if (parseInt(rc.rows[0].count) === 0 && fs.existsSync(RESULTS_FILE)) {
+        const results = JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8'));
+        for (const r of results) {
+            await pool.query(
+                'INSERT INTO results (exam_id, student_id, data) VALUES ($1, $2, $3)',
+                [r.examId, r.studentId, JSON.stringify(r)]
+            );
+        }
+        console.log(`[DB] Migrated ${results.length} results from JSON`);
+    }
 }
 
 // ─── Wandbox Cloud Compiler ───────────────────────────────────────────────────
-// Wandbox (wandbox.org) is a free, open code execution engine — no API key needed.
-// Docs: https://github.com/melpon/wandbox/blob/master/kennel2/API.rst
-//
-// Compiler names use "-head" (latest available version) for maximum compatibility.
-// All 18 dropdown languages are mapped below.
-
 const WANDBOX_COMPILER_MAP = {
     c:          { compiler: 'gcc-head',            options: '-lm' },
     cpp:        { compiler: 'gcc-head',            options: '-x c++ -std=c++17 -lm' },
@@ -38,202 +118,145 @@ const WANDBOX_COMPILER_MAP = {
     rust:       { compiler: 'rust-1.82.0',         options: '' },
     ruby:       { compiler: 'ruby-3.4.9',          options: '' },
     php:        { compiler: 'php-8.3.12',          options: '' },
-    kotlin:     { compiler: 'groovy-4.0.23',       options: '' },  // closest JVM lang; Kotlin not on Wandbox
+    kotlin:     { compiler: 'groovy-4.0.23',       options: '' },
     swift:      { compiler: 'swift-6.0.1',         options: '' },
     scala:      { compiler: 'scala-3.5.1',         options: '' },
     perl:       { compiler: 'perl-5.42.0',         options: '' },
     csharp:     { compiler: 'dotnetcore-8.0.402',  options: '' },
     r:          { compiler: 'r-4.4.1',             options: '' },
-    sql:        { compiler: 'dotnetcore-8.0.402',  options: '' },  // SQLite not directly; use dotnet
+    sql:        { compiler: 'dotnetcore-8.0.402',  options: '' },
     other:      { compiler: 'cpython-3.13.8',      options: '' },
 };
 
-// Languages installed directly in the Docker container (fast, offline, no external API):
-//   javascript → node (built into Node.js base image)
-//   python     → python3 (installed via apt in Dockerfile)
-//   c          → gcc    (installed via apt in Dockerfile)
-//   cpp        → g++    (installed via apt in Dockerfile)
-//   java       → javac/java (installed via apt in Dockerfile)
-// All other languages route to Wandbox cloud as fallback.
-const LOCAL_LANGS = new Set(['javascript', 'python', 'c', 'cpp', 'java']);
+const LOCAL_LANGS  = new Set(['javascript', 'python', 'c', 'cpp', 'java']);
+const SLOW_LANGS   = new Set(['c', 'cpp', 'java', 'go', 'rust', 'kotlin', 'swift', 'scala', 'csharp', 'typescript']);
 
-// Compiled languages need longer timeouts (compile + run = ~15-30s on Wandbox)
-const SLOW_LANGS = new Set(['c', 'cpp', 'java', 'go', 'rust', 'kotlin', 'swift', 'scala', 'csharp', 'typescript']);
-
-/**
- * Wandbox always saves Java code as "prog.java", so the public class MUST be
- * named "prog". This renames the public class (and any matching constructor)
- * so the student's code compiles without changing its logic.
- */
 function normalizeJavaCode(code) {
-    // Find the public class name
-    const match = code.match(/public\s+class\s+(\w+)/);
-    if (!match || match[1] === 'prog') return code;
-    const origName = match[1];
-    // Replace class declaration and constructor references
+    const m = code.match(/public\s+class\s+(\w+)/);
+    if (!m || m[1] === 'prog') return code;
     return code
-        .replace(new RegExp(`\\bpublic\\s+class\\s+${origName}\\b`, 'g'), 'public class prog')
-        .replace(new RegExp(`\\b${origName}\\s*\\(`, 'g'), 'prog(');
+        .replace(new RegExp(`\\bpublic\\s+class\\s+${m[1]}\\b`, 'g'), 'public class prog')
+        .replace(new RegExp(`\\b${m[1]}\\s*\\(`, 'g'), 'prog(');
 }
 
 function runViaWandbox(langKey, code, stdin, timeoutMs) {
     return new Promise((resolve) => {
         const cfg = WANDBOX_COMPILER_MAP[langKey] || WANDBOX_COMPILER_MAP['other'];
         const startTime = Date.now();
-
-        // Java: rename public class to 'prog' to match Wandbox's fixed filename
         const finalCode = langKey === 'java' ? normalizeJavaCode(code) : code;
-
-        // Compiled languages need more time (compile + run)
         const networkTimeout = SLOW_LANGS.has(langKey) ? 35000 : 20000;
 
         const body = JSON.stringify({
-            compiler: cfg.compiler,
-            code: finalCode,
-            stdin:   stdin || '',
-            options: cfg.options || '',
+            compiler: cfg.compiler, code: finalCode,
+            stdin: stdin || '', options: cfg.options || '',
             'runtime-option-raw': '',
         });
 
         const req = https.request(
-            {
-                hostname: 'wandbox.org',
-                path:     '/api/compile.json',
-                method:   'POST',
-                headers: {
-                    'Content-Type':   'application/json',
-                    'Content-Length': Buffer.byteLength(body),
-                },
-                timeout: networkTimeout,
-            },
+            { hostname: 'wandbox.org', path: '/api/compile.json', method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+              timeout: networkTimeout },
             (res) => {
                 let data = '';
-                res.on('data', chunk => (data += chunk));
+                res.on('data', c => (data += c));
                 res.on('end', () => {
                     try {
                         const r = JSON.parse(data);
-
-                        // Wandbox API error (unknown compiler, rate limit, etc.)
                         if (!r.status && !r.program_output && !r.compiler_output) {
-                            const errMsg = r.error || r.message || JSON.stringify(r).substring(0, 150);
-                            return resolve({
-                                success: false, output: '',
-                                error: `Cloud compiler error: ${errMsg}`,
-                                executionTime: Date.now() - startTime,
-                            });
+                            return resolve({ success: false, output: '',
+                                error: `Cloud compiler error: ${r.error || r.message || JSON.stringify(r).substring(0, 150)}`,
+                                executionTime: Date.now() - startTime });
                         }
-
                         const compileErr = (r.compiler_error || '').trim();
-                        const compileOut = (r.compiler_output || '').trim();
-                        const progOut   = (r.program_output  || '').trim();
-                        const progErr   = (r.program_error   || '').trim();
-                        const exitCode  = parseInt(r.status || '0', 10);
-                        const success   = exitCode === 0 && !compileErr;
-
-                        resolve({
-                            success,
-                            output:        progOut,
-                            error:         compileErr || progErr || '',
-                            executionTime: Date.now() - startTime,
-                            timedOut:      false,
-                        });
+                        const success = parseInt(r.status || '0', 10) === 0 && !compileErr;
+                        resolve({ success, output: (r.program_output || '').trim(),
+                            error: compileErr || (r.program_error || '').trim() || '',
+                            executionTime: Date.now() - startTime, timedOut: false });
                     } catch (e) {
-                        resolve({
-                            success: false, output: '',
+                        resolve({ success: false, output: '',
                             error: 'Invalid response from Wandbox. Please try again.',
-                            executionTime: Date.now() - startTime,
-                        });
+                            executionTime: Date.now() - startTime });
                     }
                 });
             }
         );
-
-        req.on('error', err => resolve({
-            success: false, output: '',
-            error: `Cloud compiler unavailable: ${err.message}. Check internet connection.`,
-            executionTime: Date.now() - startTime,
-        }));
-
-        req.on('timeout', () => {
-            req.destroy();
-            resolve({
-                success: false, output: '',
-                error: 'Cloud compiler timed out. Try again or simplify your code.',
-                executionTime: Date.now() - startTime,
-            });
-        });
-
-        req.write(body);
-        req.end();
+        req.on('error', err => resolve({ success: false, output: '',
+            error: `Cloud compiler unavailable: ${err.message}`, executionTime: Date.now() - startTime }));
+        req.on('timeout', () => { req.destroy(); resolve({ success: false, output: '',
+            error: 'Cloud compiler timed out. Try again.', executionTime: Date.now() - startTime }); });
+        req.write(body); req.end();
     });
 }
 
-// ─── POST /api/compile ───────────────────────────────────────────────────────
+// ─── POST /api/compile ────────────────────────────────────────────────────────
 app.post('/api/compile', async (req, res) => {
     const startTime = Date.now();
     try {
         const { language, code, input, timeout } = req.body;
+        if (!language) return res.status(400).json({ success: false, output: '', error: 'Missing field: language', executionTime: 0 });
+        if (!code || !code.trim()) return res.status(400).json({ success: false, output: '', error: 'Missing field: code', executionTime: 0 });
 
-        if (!language) return res.status(400).json({ success: false, output: '', error: 'Missing field: "language"', executionTime: 0 });
-        if (!code || !code.trim()) return res.status(400).json({ success: false, output: '', error: 'Missing field: "code"', executionTime: 0 });
-
-        // Normalise language key from dropdown value
-        const langKey = language.toLowerCase()
-            .replace(/\s+/g, '')
-            .replace('c++', 'cpp')
-            .replace('c#', 'csharp')
-            .replace(/[^a-z0-9]/g, '');
+        const langKey = language.toLowerCase().replace(/\s+/g, '').replace('c++', 'cpp').replace('c#', 'csharp').replace(/[^a-z0-9]/g, '');
 
         let result;
         if (LOCAL_LANGS.has(langKey)) {
             result = await executeCode(langKey, code, input || '', timeout || 5000);
             if (!result.success && result.error && result.error.includes('not installed')) {
-                console.log(`[Compile] Local unavailable for "${langKey}", using Wandbox...`);
                 result = await runViaWandbox(langKey, code, input || '', timeout || 5000);
             }
         } else {
-            console.log(`[Compile] "${langKey}" → Wandbox cloud`);
             result = await runViaWandbox(langKey, code, input || '', timeout || 5000);
         }
 
-        return res.json({
-            success:       result.success,
-            output:        result.output        || '',
-            error:         result.error         || '',
-            executionTime: result.executionTime || (Date.now() - startTime),
-            timedOut:      result.timedOut      || false,
-            language:      langKey,
-        });
+        return res.json({ success: result.success, output: result.output || '',
+            error: result.error || '', executionTime: result.executionTime || (Date.now() - startTime),
+            timedOut: result.timedOut || false, language: langKey });
     } catch (err) {
-        console.error('[Compile] Route error:', err);
+        console.error('[Compile] Error:', err);
         res.status(500).json({ success: false, output: '', error: 'Internal Server Error: ' + err.message });
     }
 });
 
-// ─── Exams API ───────────────────────────────────────────────────────────────
-
-app.get('/api/exams', (req, res) => {
+// ─── Exams API ────────────────────────────────────────────────────────────────
+app.get('/api/exams', async (req, res) => {
     try {
+        if (USE_PG) {
+            const { rows } = await pool.query('SELECT data FROM exams');
+            return res.json(rows.map(r => r.data));
+        }
         ensureFile(EXAMS_FILE, '[]');
         res.json(JSON.parse(fs.readFileSync(EXAMS_FILE, 'utf8')));
-    } catch (e) { res.status(500).json({ error: 'Failed to read exams' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to read exams: ' + e.message }); }
 });
 
-app.post('/api/exams', (req, res) => {
+app.post('/api/exams', async (req, res) => {
     try {
-        ensureFile(EXAMS_FILE, '[]');
         const exam = req.body;
         if (!exam || !exam.id) return res.status(400).json({ error: 'ID required' });
+
+        if (USE_PG) {
+            await pool.query(
+                'INSERT INTO exams (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = $2',
+                [exam.id, JSON.stringify(exam)]
+            );
+            return res.json({ success: true, exam });
+        }
+        ensureFile(EXAMS_FILE, '[]');
         let exams = JSON.parse(fs.readFileSync(EXAMS_FILE, 'utf8'));
         const idx = exams.findIndex(e => e.id === exam.id);
         if (idx > -1) exams[idx] = exam; else exams.push(exam);
         fs.writeFileSync(EXAMS_FILE, JSON.stringify(exams, null, 2));
         res.json({ success: true, exam });
-    } catch (e) { res.status(500).json({ error: 'Failed to save exam' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to save exam: ' + e.message }); }
 });
 
-app.delete('/api/exams/:id', (req, res) => {
+app.delete('/api/exams/:id', async (req, res) => {
     try {
+        if (USE_PG) {
+            const r = await pool.query('DELETE FROM exams WHERE id = $1', [req.params.id]);
+            if (r.rowCount === 0) return res.status(404).json({ error: 'Exam not found' });
+            return res.json({ success: true });
+        }
         ensureFile(EXAMS_FILE, '[]');
         let exams = JSON.parse(fs.readFileSync(EXAMS_FILE, 'utf8'));
         const len = exams.length;
@@ -241,124 +264,168 @@ app.delete('/api/exams/:id', (req, res) => {
         if (exams.length === len) return res.status(404).json({ error: 'Exam not found' });
         fs.writeFileSync(EXAMS_FILE, JSON.stringify(exams, null, 2));
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: 'Failed to delete exam' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to delete exam: ' + e.message }); }
 });
 
 // ─── Results API ──────────────────────────────────────────────────────────────
-
-app.get('/api/results', (req, res) => {
+app.get('/api/results', async (req, res) => {
     try {
+        if (USE_PG) {
+            const { rows } = await pool.query('SELECT data FROM results ORDER BY id');
+            return res.json(rows.map(r => r.data));
+        }
         ensureFile(RESULTS_FILE, '[]');
         res.json(JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8')));
-    } catch (e) { res.status(500).json({ error: 'Failed to read results' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to read results: ' + e.message }); }
 });
 
-app.post('/api/results', (req, res) => {
+app.post('/api/results', async (req, res) => {
     try {
-        ensureFile(RESULTS_FILE, '[]');
         const result = req.body;
         if (!result || !result.examId || !result.studentId)
             return res.status(400).json({ error: 'examId and studentId required' });
+
+        if (USE_PG) {
+            await pool.query(
+                'INSERT INTO results (exam_id, student_id, data) VALUES ($1, $2, $3)',
+                [result.examId, result.studentId, JSON.stringify(result)]
+            );
+            return res.json({ success: true });
+        }
+        ensureFile(RESULTS_FILE, '[]');
         let results = JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8'));
         results.push(result);
         fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: 'Failed to save result' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to save result: ' + e.message }); }
 });
 
-// ─── Users API ───────────────────────────────────────────────────────────────
-
-app.get('/api/users', (req, res) => {
+// ─── Users API ────────────────────────────────────────────────────────────────
+app.get('/api/users', async (req, res) => {
     try {
+        if (USE_PG) {
+            const { rows } = await pool.query('SELECT id, data FROM users');
+            const out = {};
+            rows.forEach(r => { out[r.id] = r.data; });
+            return res.json(out);
+        }
         ensureFile(USERS_FILE, '{}');
         res.json(JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')));
-    } catch (e) { res.status(500).json({ error: 'Failed to read users' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to read users: ' + e.message }); }
 });
 
-app.post('/api/users', (req, res) => {
+app.post('/api/users', async (req, res) => {
     try {
-        ensureFile(USERS_FILE, '{}');
         const user = req.body;
         if (!user || !user.id) return res.status(400).json({ error: 'ID required' });
+
+        if (USE_PG) {
+            await pool.query(
+                'INSERT INTO users (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = $2',
+                [user.id, JSON.stringify(user)]
+            );
+            return res.json({ success: true, user });
+        }
+        ensureFile(USERS_FILE, '{}');
         let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
         users[user.id] = user;
         fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
         res.json({ success: true, user });
-    } catch (e) { res.status(500).json({ error: 'Failed to save user' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to save user: ' + e.message }); }
 });
 
-app.post('/api/users/bulk', (req, res) => {
+app.post('/api/users/bulk', async (req, res) => {
     try {
-        ensureFile(USERS_FILE, '{}');
         const newUsers = req.body;
         if (!newUsers || typeof newUsers !== 'object')
             return res.status(400).json({ error: 'Expected object dictionary' });
+
+        if (USE_PG) {
+            for (const [id, data] of Object.entries(newUsers)) {
+                await pool.query(
+                    'INSERT INTO users (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = $2',
+                    [id, JSON.stringify(data)]
+                );
+            }
+            return res.json({ success: true, count: Object.keys(newUsers).length });
+        }
+        ensureFile(USERS_FILE, '{}');
         let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
         users = { ...users, ...newUsers };
         fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
         res.json({ success: true, count: Object.keys(newUsers).length });
-    } catch (e) { res.status(500).json({ error: 'Failed to bulk save users' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to bulk save: ' + e.message }); }
 });
 
-app.delete('/api/users/:id', (req, res) => {
+app.delete('/api/users/:id', async (req, res) => {
     try {
+        if (USE_PG) {
+            const r = await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+            if (r.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+            return res.json({ success: true });
+        }
         ensureFile(USERS_FILE, '{}');
         let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
         if (!users[req.params.id]) return res.status(404).json({ error: 'User not found' });
         delete users[req.params.id];
         fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: 'Failed to delete user' }); }
+    } catch (e) { res.status(500).json({ error: 'Failed to delete user: ' + e.message }); }
 });
 
-// ─── Auth API ────────────────────────────────────────────────────────────────
-
-app.post('/api/login', (req, res) => {
+// ─── Auth API ─────────────────────────────────────────────────────────────────
+app.post('/api/login', async (req, res) => {
     try {
         const { username, password, role } = req.body;
         if (!username || !password || !role)
             return res.status(400).json({ error: 'username, password and role are required' });
 
         if (role === 'admin') {
-            if (username === 'admin' && password === 'Vm@cse5') {
+            if (username === 'admin' && password === 'Vm@cse5')
                 return res.json({ success: true, session: { id: 'admin_01', name: 'Administrator', role: 'admin', timestamp: Date.now() } });
-            }
             return res.status(401).json({ error: 'Invalid admin credentials' });
         }
 
         if (role === 'student') {
-            if (username === 'admin' && password === 'Vm@cse5') {
+            // Allow admin to use student portal
+            if (username === 'admin' && password === 'Vm@cse5')
                 return res.json({ success: true, session: { id: 'admin_01', name: 'Administrator', role: 'admin', timestamp: Date.now() } });
+
+            const studentIdNorm = String(username).trim().toUpperCase();
+
+            let student = null;
+            if (USE_PG) {
+                const { rows } = await pool.query('SELECT data FROM users WHERE id = $1', [studentIdNorm]);
+                if (rows.length > 0) student = rows[0].data;
+            } else {
+                ensureFile(USERS_FILE, '{}');
+                const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+                student = users[studentIdNorm];
             }
-            ensureFile(USERS_FILE, '{}');
-            const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-            const student = users[String(username).trim().toUpperCase()];
+
             if (!student) return res.status(404).json({ error: 'Student ID not found. Contact Admin.' });
             if (String(student.password) !== String(password)) return res.status(401).json({ error: 'Invalid password' });
+
             return res.json({
                 success: true,
-                session: {
-                    id:        student.id,
-                    name:      student.name,
-                    role:      'student',
-                    branch:    student.branch || 'General',
-                    year:      student.year   || '1',
-                    batch:     student.batch  || '',
-                    timestamp: Date.now()
-                }
+                session: { id: student.id, name: student.name, role: 'student',
+                    branch: student.branch || 'General', year: student.year || '1',
+                    batch: student.batch || '', timestamp: Date.now() }
             });
         }
 
         return res.status(400).json({ error: 'Invalid role' });
     } catch (e) {
         console.error('[Login] Error:', e);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error during login' });
     }
 });
 
-// ─── Start ───────────────────────────────────────────────────────────────────
-app.listen(port, () => {
+// ─── Start ────────────────────────────────────────────────────────────────────
+app.listen(port, async () => {
     console.log(`\n✅ Backend server running at http://localhost:${port}`);
+    console.log(`   Storage: ${USE_PG ? 'PostgreSQL (persistent)' : 'JSON files (local dev)'}`);
     console.log(`   JavaScript → Local Node.js (fast, offline)`);
     console.log(`   C, C++, Java, Python, Go, Rust and 12 others → Wandbox cloud (wandbox.org)\n`);
+    await initDB();
 });
