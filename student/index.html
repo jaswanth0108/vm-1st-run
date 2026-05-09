@@ -784,11 +784,10 @@
                         const studentBatch = String(session.batch || '').toUpperCase().trim();
                         const studentBranch = String(session.branch || '').toUpperCase().trim();
 
-                        // Helper: parse branch/batch from exam (handles JSONB arrays or comma-string)
+                        // Helper: parse branch/batch from exam (handles JSONB arrays, comma-string, or PostgreSQL {array} syntax)
                         const parseExamField = (field) => {
                             if (!field) return [];
                             if (Array.isArray(field)) {
-                                // Handles nested array strings if they occur
                                 return field.flatMap(b => {
                                     if (typeof b === 'string' && b.trim().startsWith('[')) {
                                         try { 
@@ -800,14 +799,19 @@
                                 });
                             }
                             if (typeof field === 'string') {
-                                const fTrim = field.trim();
+                                let fTrim = field.trim();
+                                // Clean up PostgreSQL array syntax: {"All","CS"} -> ["All","CS"]
+                                if (fTrim.startsWith('{') && fTrim.endsWith('}')) {
+                                    fTrim = fTrim.replace(/^{|}$/g, '').replace(/"/g, '');
+                                    return fTrim.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
+                                }
                                 if (fTrim.startsWith('[')) {
                                     try { 
                                         const p = JSON.parse(fTrim);
                                         return Array.isArray(p) ? p.map(b => String(b).toUpperCase().trim()) : [String(p).toUpperCase().trim()];
                                     } catch(e) {}
                                 }
-                                return field.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
+                                return fTrim.split(',').map(b => String(b).toUpperCase().trim()).filter(Boolean);
                             }
                             return [];
                         };

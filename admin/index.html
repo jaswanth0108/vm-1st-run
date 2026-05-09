@@ -2564,8 +2564,15 @@
                 });
                 if (resp.ok) {
                     const result = await resp.json();
-                    const arr = Array.isArray(result) ? result : (result.data || []);
-                    students = arr.filter(u => u.role === 'Student' || u.role === 'student');
+                    let arr = [];
+                    if (Array.isArray(result)) {
+                        arr = result;
+                    } else if (result && result.data && Array.isArray(result.data)) {
+                        arr = result.data;
+                    } else if (result && typeof result === 'object') {
+                        arr = Object.values(result);
+                    }
+                    students = arr.filter(u => u.role === 'Student' || u.role === 'student' || !u.role); // Backend sometimes doesn't store role explicitly, they are just in users table.
                 }
             } catch(e) {
                 console.error('Failed to fetch students:', e);
