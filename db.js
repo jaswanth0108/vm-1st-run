@@ -17,47 +17,34 @@ const pool = new Pool({
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 async function initDB() {
+    // IMPORTANT: CREATE IF NOT EXISTS — never DROP (would wipe real student data)
     await pool.query(`
-        -- Drop old tables that used JSONB blobs (safe on first run)
-        DROP TABLE IF EXISTS answers    CASCADE;
-        DROP TABLE IF EXISTS submissions CASCADE;
-        DROP TABLE IF EXISTS results    CASCADE;
-        DROP TABLE IF EXISTS options    CASCADE;
-        DROP TABLE IF EXISTS questions  CASCADE;
-        DROP TABLE IF EXISTS exams      CASCADE;
-        DROP TABLE IF EXISTS users      CASCADE;
-
-        -- USERS: one column per field
-        CREATE TABLE users (
-            id         TEXT PRIMARY KEY,
-            name       TEXT    NOT NULL DEFAULT '',
-            password   TEXT    NOT NULL DEFAULT '',
-            branch     TEXT    DEFAULT '',
-            year       TEXT    DEFAULT '',
-            batch      TEXT    DEFAULT '',
-            section    TEXT    DEFAULT '',
-            email      TEXT    DEFAULT '',
-            created_at TIMESTAMPTZ DEFAULT NOW()
+        CREATE TABLE IF NOT EXISTS users (
+            id         TEXT         PRIMARY KEY,
+            name       TEXT         NOT NULL DEFAULT '',
+            password   TEXT         NOT NULL DEFAULT '',
+            branch     TEXT         DEFAULT '',
+            year       TEXT         DEFAULT '',
+            batch      TEXT         DEFAULT '',
+            section    TEXT         DEFAULT '',
+            email      TEXT         DEFAULT '',
+            created_at TIMESTAMPTZ  DEFAULT NOW()
         );
-
-        -- EXAMS: one column per field
-        CREATE TABLE exams (
-            id            TEXT PRIMARY KEY,
-            title         TEXT    NOT NULL DEFAULT '',
-            subject       TEXT    DEFAULT '',
-            year          TEXT    DEFAULT '',
-            branch        TEXT    DEFAULT '',
-            batch         TEXT    DEFAULT '',
-            duration      INTEGER DEFAULT 60,
-            attempt_limit INTEGER DEFAULT 1,
-            passing_score INTEGER DEFAULT 0,
-            status        TEXT    DEFAULT 'draft',
-            created_at    TIMESTAMPTZ DEFAULT NOW()
+        CREATE TABLE IF NOT EXISTS exams (
+            id            TEXT         PRIMARY KEY,
+            title         TEXT         NOT NULL DEFAULT '',
+            subject       TEXT         DEFAULT '',
+            year          TEXT         DEFAULT '',
+            branch        TEXT         DEFAULT '',
+            batch         TEXT         DEFAULT '',
+            duration      INTEGER      DEFAULT 60,
+            attempt_limit INTEGER      DEFAULT 1,
+            passing_score INTEGER      DEFAULT 0,
+            status        TEXT         DEFAULT 'draft',
+            created_at    TIMESTAMPTZ  DEFAULT NOW()
         );
-
-        -- QUESTIONS: one row per question
-        CREATE TABLE questions (
-            id          TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS questions (
+            id          TEXT    PRIMARY KEY,
             exam_id     TEXT    NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
             type        TEXT    NOT NULL DEFAULT 'mcq',
             text        TEXT    NOT NULL DEFAULT '',
@@ -65,29 +52,23 @@ async function initDB() {
             marks       INTEGER DEFAULT 1,
             order_num   INTEGER DEFAULT 0
         );
-
-        -- OPTIONS: one row per MCQ choice
-        CREATE TABLE options (
+        CREATE TABLE IF NOT EXISTS options (
             id           SERIAL  PRIMARY KEY,
             question_id  TEXT    NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
             option_index INTEGER NOT NULL,
             option_text  TEXT    NOT NULL DEFAULT ''
         );
-
-        -- RESULTS: one row per student submission
-        CREATE TABLE results (
-            id           SERIAL PRIMARY KEY,
-            exam_id      TEXT REFERENCES exams(id),
-            student_id   TEXT REFERENCES users(id),
+        CREATE TABLE IF NOT EXISTS results (
+            id           SERIAL        PRIMARY KEY,
+            exam_id      TEXT          REFERENCES exams(id),
+            student_id   TEXT          REFERENCES users(id),
             score        INTEGER       DEFAULT 0,
             total_marks  INTEGER       DEFAULT 0,
             percentage   DECIMAL(5,2)  DEFAULT 0,
             warnings     INTEGER       DEFAULT 0,
             submitted_at TIMESTAMPTZ   DEFAULT NOW()
         );
-
-        -- ANSWERS: one row per question answered
-        CREATE TABLE answers (
+        CREATE TABLE IF NOT EXISTS answers (
             id            SERIAL  PRIMARY KEY,
             result_id     INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
             question_id   TEXT    REFERENCES questions(id),
@@ -96,7 +77,9 @@ async function initDB() {
             is_correct    BOOLEAN DEFAULT FALSE
         );
     `);
-    console.log('[DB] All 6 tables created with normalized columns');
+    // Remove legacy submissions table if it still exists from old schema
+    await pool.query('DROP TABLE IF EXISTS submissions CASCADE').catch(() => {});
+    console.log('[DB] Schema ready: users, exams, questions, options, results, answers');
     await migrateFromJSON();
 }
 
