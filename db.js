@@ -280,8 +280,14 @@ async function saveExam(exam) {
          exam.branch||'', exam.batch||'', exam.duration||60,
          exam.attemptLimit||1, exam.passingScore||0, exam.status||'draft']
     );
-    // Rebuild all questions (cascade deletes options, hidden_cases, constraints)
-    await pool.query('DELETE FROM questions WHERE exam_id=$1', [exam.id]);
+    // Smart update: delete only questions that were removed from the exam
+    const incomingQIds = (exam.questions||[]).map(q => q.id).filter(Boolean);
+    if (incomingQIds.length > 0) {
+        const placeholders = incomingQIds.map((_, i) => '$' + (i + 2)).join(',');
+        await pool.query(`DELETE FROM questions WHERE exam_id=$1 AND id NOT IN (${placeholders})`, [exam.id, ...incomingQIds]);
+    } else {
+        await pool.query('DELETE FROM questions WHERE exam_id=$1', [exam.id]);
+    }
     for (let i = 0; i < (exam.questions||[]).length; i++) {
         const q = exam.questions[i];
         await pool.query(
@@ -293,6 +299,12 @@ async function saveExam(exam) {
              String(q.correct??''), q.marks||1, i,
              q.testIn||'', q.testOut||'']
         );
+        
+        // Clean out sub-tables for this specific question before inserting new data
+        await pool.query('DELETE FROM options WHERE question_id=$1', [q.id]);
+        await pool.query('DELETE FROM hidden_cases WHERE question_id=$1', [q.id]);
+        await pool.query('DELETE FROM question_constraints WHERE question_id=$1', [q.id]);
+
         // MCQ options
         for (let j = 0; j < (q.options||[]).length; j++) {
             await pool.query(
