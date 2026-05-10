@@ -18,36 +18,31 @@ class ExamService {
         });
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(`${response.status}: ${errData.message || 'Failed to fetch exams'}`);
+            throw new Error(`${response.status}: ${errData.message || errData.error || 'Failed to fetch exams'}`);
         }
         const data = await response.json();
-        return data.data || data;
+        // Server returns an array directly
+        return Array.isArray(data) ? data : (data.data || []);
     }
 
     static async getExamById(id) {
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}`, {
-            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-        if (!response.ok) throw new Error('Failed to fetch exam details');
-        const data = await response.json();
-        return data.data || data;
+        // Server has no individual exam GET endpoint — fetch all and filter client-side
+        const exams = await this.getExams();
+        const exam = exams.find(e => String(e.id) === String(id));
+        if (!exam) throw new Error(`Exam with ID "${id}" not found`);
+        return exam;
     }
 
     static async saveExam(exam) {
+        // Server uses POST /api/exams for both create and update (upsert by ID)
         const payload = {
             ...exam,
             start_time: exam.startTime || new Date().toISOString(),
             end_time: exam.endTime || new Date(Date.now() + (exam.duration || 60) * 60000).toISOString()
         };
 
-        const isUpdate = !!exam.id && !String(exam.id).startsWith('exam_');
-        const url = isUpdate
-            ? `${window.CONFIG.API_BASE_URL}/api/exams/${exam.id}`
-            : `${window.CONFIG.API_BASE_URL}/api/exams`;
-        const method = isUpdate ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-            method,
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getAuthToken()}`
@@ -57,10 +52,10 @@ class ExamService {
 
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.message || data.error?.message || 'Failed to sync exam to server');
+            throw new Error(data.message || data.error || 'Failed to sync exam to server');
         }
 
-        return data.data || data;
+        return data.exam || data.data || data;
     }
 
     static async deleteExam(id) {
@@ -72,27 +67,18 @@ class ExamService {
         return true;
     }
 
+    // updateExamStatus — server has no PATCH /status endpoint,
+    // so we fetch the exam, update status, and save it back via POST
     static async updateExamStatus(id, status) {
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${id}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getAuthToken()}`
-            },
-            body: JSON.stringify({ status })
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || data.error?.message || 'Failed to update exam status');
-        }
-        return data.data || data;
+        const exam = await this.getExamById(id);
+        exam.status = status;
+        return await this.saveExam(exam);
     }
 
     // --- Results ---
     static async submitResult(result) {
-        const examId = result.examId || result.id;
-
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/exams/${examId}/submit`, {
+        // Server endpoint: POST /api/results
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/results`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -103,20 +89,21 @@ class ExamService {
 
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.message || data.error?.message || 'Failed to submit exam');
+            throw new Error(data.message || data.error || 'Failed to submit exam');
         }
 
         return data;
     }
 
     static async getResults() {
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/reports`, {
+        // Server endpoint: GET /api/results
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/results`, {
             headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         if (!response.ok) throw new Error('Failed to fetch results');
         const data = await response.json();
-        const results = data.data || data;
-        return Array.isArray(results) ? results : [];
+        // Server returns an array directly
+        return Array.isArray(data) ? data : (data.data || []);
     }
 
     static async getStudentResults(studentId) {
@@ -141,12 +128,18 @@ class UserService {
         if (!response.ok) throw new Error('Failed to fetch users');
         const result = await response.json();
 
-        // Backend returns: { success: true, data: [...] } or an array directly
-        const dbArray = Array.isArray(result) ? result : (result.data || []);
+        let arr = [];
+        if (Array.isArray(result)) {
+            arr = result;
+        } else if (result && result.data && Array.isArray(result.data)) {
+            arr = result.data;
+        } else if (result && typeof result === 'object') {
+            // Fallback if it's already a keyed object (legacy format)
+            arr = Object.values(result);
+        }
 
-        // Convert array to keyed object for compatibility with admin UI
         const dbUsers = {};
-        dbArray.forEach(u => {
+        arr.forEach(u => {
             const key = (u.username || u.id || '').toUpperCase();
             if (key) dbUsers[key] = { ...u, id: key };
         });
@@ -154,25 +147,19 @@ class UserService {
     }
 
     static async saveUser(user, isUpdate = false) {
+        // Server endpoint: POST /api/users (for both create and update — it upserts by ID)
         const payload = {
+            id: (user.username || user.id || '').toUpperCase(),
             name: user.name || 'Student',
-            username: user.username || user.id, // Prioritize provided Roll No string over any internal ID field
             password: user.password,
-            role: 'Student',
             branch: user.branch,
             year: user.year,
             section: user.section,
             batch: user.batch
         };
 
-        const url = isUpdate 
-            ? `${window.CONFIG.API_BASE_URL}/api/users/${payload.username}`
-            : `${window.CONFIG.API_BASE_URL}/api/auth/register`;
-        
-        const method = isUpdate ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-            method: method,
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getAuthToken()}`
@@ -182,35 +169,41 @@ class UserService {
 
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.message || data.error?.message || 'Failed to save user');
+            throw new Error(data.message || data.error || 'Failed to save user');
         }
         return true;
     }
 
     static async saveUsersBulk(newUsers) {
-        const usersArray = Object.values(newUsers).map(u => ({
-            name: u.name,
-            username: u.id,
-            password: u.password,
-            role: 'Student',
-            branch: u.branch,
-            year: u.year,
-            section: u.section,
-            batch: u.batch
-        }));
+        // Server endpoint: POST /api/users/bulk — expects a keyed object { id: userObj, ... }
+        const payload = {};
+        Object.values(newUsers).forEach(u => {
+            const key = (u.id || u.username || '').toUpperCase();
+            if (key) {
+                payload[key] = {
+                    id: key,
+                    name: u.name,
+                    password: u.password,
+                    branch: u.branch,
+                    year: u.year,
+                    section: u.section,
+                    batch: u.batch
+                };
+            }
+        });
 
-        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/auth/bulk-register`, {
+        const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/users/bulk`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getAuthToken()}`
             },
-            body: JSON.stringify({ users: usersArray })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.message || data.error?.message || 'Failed to bulk save users');
+            throw new Error(data.message || data.error || 'Failed to bulk save users');
         }
         return true;
     }

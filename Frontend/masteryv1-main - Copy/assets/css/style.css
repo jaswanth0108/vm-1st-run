@@ -50,6 +50,7 @@ body {
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
+    animation: pageFadeIn 0.5s ease-out;
 }
 
 body::before {
@@ -241,6 +242,21 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(0);
 }
 
+.btn-success {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    color: white;
+    box-shadow: 0 4px 20px -4px rgba(52, 211, 153, 0.5);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 30px -4px rgba(52, 211, 153, 0.6);
+}
+
+.btn-success:active {
+    transform: translateY(0) scale(0.98);
+}
+
 /* =============================================
    FORMS - PREMIUM
    ============================================= */
@@ -321,15 +337,6 @@ select.input-field option {
     outline-offset: 2px;
 }
 
-/* Page Load Fade Animation */
-@keyframes pageFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-body {
-    animation: pageFadeIn 0.5s ease-out;
-}
 
 /* Floating Geometric Shapes */
 .floating-shape {

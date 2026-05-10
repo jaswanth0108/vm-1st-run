@@ -1,332 +1,311 @@
 const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const cors    = require('cors');
+const fs      = require('fs');
+const path    = require('path');
+const https   = require('https');
 const { executeCode } = require('./executor');
 
-const app = express();
-const port = 3000;
-
+const app  = express();
+const port = process.env.PORT || 3000;
 app.use(cors());
-app.use(express.json());
-
-// Serve all static HTML/CSS/JS files from the current directory
+app.use(express.json({ limit: '2mb' }));
 app.use(express.static(__dirname));
 
-// Path to exams data file
-const EXAMS_FILE = path.join(__dirname, 'exams.json');
+// ─── Storage backend: PostgreSQL (cloud) or JSON files (local dev) ────────────
+const USE_PG = !!process.env.DATABASE_URL;
+let DB = null;
 
-// Helper to ensure data file exists
-function ensureExamsFile() {
-    if (!fs.existsSync(EXAMS_FILE)) {
-        fs.writeFileSync(EXAMS_FILE, JSON.stringify([]));
-    }
+if (USE_PG) {
+    DB = require('./db');
+    console.log('[DB] PostgreSQL mode — normalized columns');
+} else {
+    console.log('[DB] JSON file mode — local development');
 }
 
-app.post('/api/compile', async (req, res) => {
-    const startTime = Date.now();
+// JSON file paths (local fallback)
+const EXAMS_FILE   = path.join(__dirname, 'exams.json');
+const RESULTS_FILE = path.join(__dirname, 'results.json');
+const USERS_FILE   = path.join(__dirname, 'users.json');
+function ensureFile(f, d) { if (!fs.existsSync(f)) fs.writeFileSync(f, d); }
+
+// JSON helpers
+function readJSON(f, def) { ensureFile(f, def); return JSON.parse(fs.readFileSync(f, 'utf8')); }
+function writeJSON(f, d) { fs.writeFileSync(f, JSON.stringify(d, null, 2)); }
+
+// ─── Wandbox Cloud Compiler ───────────────────────────────────────────────────
+const WANDBOX = {
+    c:'{compiler:"gcc-head",options:"-lm"}', // parsed below
+};
+const WANDBOX_MAP = {
+    c:          { compiler:'gcc-head',           options:'-lm' },
+    cpp:        { compiler:'gcc-head',           options:'-x c++ -std=c++17 -lm' },
+    java:       { compiler:'openjdk-jdk-22+36',  options:'' },
+    python:     { compiler:'cpython-3.13.8',     options:'' },
+    javascript: { compiler:'nodejs-20.17.0',     options:'' },
+    typescript: { compiler:'typescript-5.6.2',   options:'' },
+    go:         { compiler:'go-1.23.2',          options:'' },
+    rust:       { compiler:'rust-1.82.0',        options:'' },
+    ruby:       { compiler:'ruby-3.4.9',         options:'' },
+    php:        { compiler:'php-8.3.12',         options:'' },
+    kotlin:     { compiler:'groovy-4.0.23',      options:'' },
+    swift:      { compiler:'swift-6.0.1',        options:'' },
+    scala:      { compiler:'scala-3.5.1',        options:'' },
+    perl:       { compiler:'perl-5.42.0',        options:'' },
+    csharp:     { compiler:'dotnetcore-8.0.402', options:'' },
+    r:          { compiler:'r-4.4.1',            options:'' },
+    sql:        { compiler:'dotnetcore-8.0.402', options:'' },
+    other:      { compiler:'cpython-3.13.8',     options:'' },
+};
+const LOCAL_LANGS = new Set(['javascript','python','c','cpp','java']);
+const SLOW_LANGS  = new Set(['c','cpp','java','go','rust','kotlin','swift','scala','csharp','typescript']);
+
+function normalizeJava(code) {
+    const m = code.match(/public\s+class\s+(\w+)/);
+    if (!m || m[1]==='prog') return code;
+    return code.replace(new RegExp(`\\bpublic\\s+class\\s+${m[1]}\\b`,'g'),'public class prog')
+               .replace(new RegExp(`\\b${m[1]}\\s*\\(`,'g'),'prog(');
+}
+
+function runWandbox(langKey, code, stdin) {
+    return new Promise(resolve => {
+        const cfg = WANDBOX_MAP[langKey] || WANDBOX_MAP.other;
+        const t0  = Date.now();
+        const src = langKey==='java' ? normalizeJava(code) : code;
+        const body = JSON.stringify({ compiler:cfg.compiler, code:src,
+            stdin:stdin||'', options:cfg.options||'', 'runtime-option-raw':'' });
+        const to = SLOW_LANGS.has(langKey) ? 35000 : 20000;
+        const req = https.request(
+            { hostname:'wandbox.org', path:'/api/compile.json', method:'POST',
+              headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)},
+              timeout:to },
+            res => { let d=''; res.on('data',c=>d+=c); res.on('end',()=>{
+                try {
+                    const r=JSON.parse(d);
+                    if (!r.status && !r.program_output && !r.compiler_output)
+                        return resolve({success:false,output:'',error:r.error||'Cloud compiler error',executionTime:Date.now()-t0});
+                    const ok=parseInt(r.status||'0')===0 && !(r.compiler_error||'').trim();
+                    resolve({success:ok,output:(r.program_output||'').trim(),
+                        error:(r.compiler_error||r.program_error||'').trim(),executionTime:Date.now()-t0});
+                } catch(e){ resolve({success:false,output:'',error:'Invalid Wandbox response',executionTime:Date.now()-t0}); }
+            }); }
+        );
+        req.on('error',e=>resolve({success:false,output:'',error:'Cloud unavailable: '+e.message,executionTime:Date.now()-t0}));
+        req.on('timeout',()=>{req.destroy();resolve({success:false,output:'',error:'Cloud timed out',executionTime:Date.now()-t0});});
+        req.write(body); req.end();
+    });
+}
+
+// ─── POST /api/compile ────────────────────────────────────────────────────────
+app.post('/api/compile', async (req,res) => {
+    const t0 = Date.now();
     try {
         const { language, code, input, timeout } = req.body;
-
-        if (!language) {
-            return res.status(400).json({
-                success: false, output: '', error: 'Missing required field: "language"', executionTime: 0
-            });
-        }
-        if (!code || code.trim() === '') {
-            return res.status(400).json({
-                success: false, output: '', error: 'Missing required field: "code"', executionTime: 0
-            });
-        }
-
-        const langKey = language.toLowerCase().replace(/[^a-z+]/g, '').replace('c++', 'cpp');
-        const result = await executeCode(langKey, code, input || '', timeout || 5000);
-
-        return res.json({
-            success: result.success,
-            output: result.output || '',
-            error: result.error || '',
-            executionTime: result.executionTime || (Date.now() - startTime),
-            timedOut: result.timedOut || false,
-            language: langKey,
-        });
-    } catch (error) {
-        console.error('Error proxying request:', error);
-        res.status(500).json({ success: false, output: '', error: 'Internal Server Error' });
-    }
-});
-
-// --- Exams CRUD API ---
-
-// GET all exams
-app.get('/api/exams', (req, res) => {
-    try {
-        ensureExamsFile();
-        const data = fs.readFileSync(EXAMS_FILE, 'utf8');
-        res.json(JSON.parse(data));
-    } catch (error) {
-        console.error('Error reading exams:', error);
-        res.status(500).json({ error: 'Failed to read exams data' });
-    }
-});
-
-// POST to save (create or update) an exam
-app.post('/api/exams', (req, res) => {
-    try {
-        ensureExamsFile();
-        const exam = req.body;
-        if (!exam || !exam.id) {
-            return res.status(400).json({ error: 'Invalid exam data. ID is required.' });
-        }
-
-        const data = fs.readFileSync(EXAMS_FILE, 'utf8');
-        let exams = JSON.parse(data);
-
-        const index = exams.findIndex(e => e.id === exam.id);
-        if (index > -1) {
-            exams[index] = exam; // Update
+        if (!language || !code?.trim())
+            return res.status(400).json({success:false,output:'',error:'Missing language or code'});
+        const lk = language.toLowerCase().replace(/\s+/g,'').replace('c++','cpp').replace('c#','csharp').replace(/[^a-z0-9]/g,'');
+        let result;
+        if (LOCAL_LANGS.has(lk)) {
+            result = await executeCode(lk, code, input||'', timeout||5000);
+            if (!result.success && result.error?.includes('not installed'))
+                result = await runWandbox(lk, code, input||'');
         } else {
-            exams.push(exam); // Create
+            result = await runWandbox(lk, code, input||'');
         }
-
-        fs.writeFileSync(EXAMS_FILE, JSON.stringify(exams, null, 2));
-        res.json({ success: true, exam });
-    } catch (error) {
-        console.error('Error saving exam:', error);
-        res.status(500).json({ error: 'Failed to save exam data' });
-    }
+        res.json({success:result.success,output:result.output||'',error:result.error||'',
+            executionTime:result.executionTime||(Date.now()-t0),timedOut:result.timedOut||false,language:lk});
+    } catch(e){ res.status(500).json({success:false,output:'',error:'Server error: '+e.message}); }
 });
 
-// DELETE an exam by ID
-app.delete('/api/exams/:id', (req, res) => {
+// ─── GET /api/exams ───────────────────────────────────────────────────────────
+app.get('/api/exams', async (req,res) => {
     try {
-        ensureExamsFile();
-        const { id } = req.params;
-        const data = fs.readFileSync(EXAMS_FILE, 'utf8');
-        let exams = JSON.parse(data);
+        if (USE_PG) return res.json(await DB.getExams());
+        res.json(readJSON(EXAMS_FILE,'[]'));
+    } catch(e){ res.status(500).json({error:e.message}); }
+});
 
-        const initialLength = exams.length;
-        exams = exams.filter(e => e.id !== id);
+// ─── POST /api/exams ──────────────────────────────────────────────────────────
+app.post('/api/exams', async (req,res) => {
+    try {
+        const exam = req.body;
+        if (!exam?.id) return res.status(400).json({error:'id required'});
+        if (USE_PG) { await DB.saveExam(exam); return res.json({success:true,exam}); }
+        let exams = readJSON(EXAMS_FILE,'[]');
+        const i = exams.findIndex(e=>e.id===exam.id);
+        if (i>-1) exams[i]=exam; else exams.push(exam);
+        writeJSON(EXAMS_FILE, exams);
+        res.json({success:true,exam});
+    } catch(e){ res.status(500).json({error:e.message}); }
+});
 
-        if (exams.length === initialLength) {
-            return res.status(404).json({ error: 'Exam not found' });
+// ─── DELETE /api/exams/:id ────────────────────────────────────────────────────
+app.delete('/api/exams/:id', async (req,res) => {
+    try {
+        if (USE_PG) {
+            const ok = await DB.deleteExam(req.params.id);
+            return ok ? res.json({success:true}) : res.status(404).json({error:'Not found'});
         }
-
-        fs.writeFileSync(EXAMS_FILE, JSON.stringify(exams, null, 2));
-        res.json({ success: true, message: 'Exam deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting exam:', error);
-        res.status(500).json({ error: 'Failed to delete exam data' });
-    }
+        let exams = readJSON(EXAMS_FILE,'[]');
+        const n = exams.length;
+        exams = exams.filter(e=>e.id!==req.params.id);
+        if (exams.length===n) return res.status(404).json({error:'Not found'});
+        writeJSON(EXAMS_FILE, exams);
+        res.json({success:true});
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// --- Results CRUD API ---
-
-const RESULTS_FILE = path.join(__dirname, 'results.json');
-
-function ensureResultsFile() {
-    if (!fs.existsSync(RESULTS_FILE)) {
-        fs.writeFileSync(RESULTS_FILE, JSON.stringify([]));
-    }
-}
-
-// GET all results
-app.get('/api/results', (req, res) => {
+// ─── GET /api/results ─────────────────────────────────────────────────────────
+app.get('/api/results', async (req,res) => {
     try {
-        ensureResultsFile();
-        const data = fs.readFileSync(RESULTS_FILE, 'utf8');
-        res.json(JSON.parse(data));
-    } catch (error) {
-        console.error('Error reading results:', error);
-        res.status(500).json({ error: 'Failed to read results data' });
-    }
+        if (USE_PG) return res.json(await DB.getResults());
+        res.json(readJSON(RESULTS_FILE,'[]'));
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// POST to save a result
-app.post('/api/results', (req, res) => {
+// ─── POST /api/results ────────────────────────────────────────────────────────
+app.post('/api/results', async (req,res) => {
     try {
-        ensureResultsFile();
         const result = req.body;
-        if (!result || !result.examId || !result.studentId) {
-            return res.status(400).json({ error: 'Invalid result data. examId and studentId are required.' });
-        }
-
-        const data = fs.readFileSync(RESULTS_FILE, 'utf8');
-        let results = JSON.parse(data);
-
+        if (!result?.examId || !result?.studentId)
+            return res.status(400).json({error:'examId and studentId required'});
+        if (USE_PG) { await DB.saveResult(result); return res.json({success:true}); }
+        let results = readJSON(RESULTS_FILE,'[]');
         results.push(result);
-
-        fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error saving result:', error);
-        res.status(500).json({ error: 'Failed to save result data' });
-    }
+        writeJSON(RESULTS_FILE, results);
+        res.json({success:true});
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// --- Users CRUD API ---
-
-const USERS_FILE = path.join(__dirname, 'users.json');
-
-function ensureUsersFile() {
-    if (!fs.existsSync(USERS_FILE)) {
-        fs.writeFileSync(USERS_FILE, JSON.stringify({}));
-    }
-}
-
-// GET all users
-app.get('/api/users', (req, res) => {
+// ─── GET /api/users ───────────────────────────────────────────────────────────
+app.get('/api/users', async (req,res) => {
     try {
-        ensureUsersFile();
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        res.json(JSON.parse(data));
-    } catch (error) {
-        console.error('Error reading users:', error);
-        res.status(500).json({ error: 'Failed to read users data' });
-    }
+        if (USE_PG) return res.json(await DB.getUsers());
+        res.json(readJSON(USERS_FILE,'{}'));
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// POST to save (create or update) a single user
-app.post('/api/users', (req, res) => {
+// ─── POST /api/users ──────────────────────────────────────────────────────────
+app.post('/api/users', async (req,res) => {
     try {
-        ensureUsersFile();
         const user = req.body;
-        if (!user || !user.id) {
-            return res.status(400).json({ error: 'Invalid user data. ID is required.' });
-        }
-
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        let users = JSON.parse(data);
-
+        if (!user?.id) return res.status(400).json({error:'id required'});
+        if (USE_PG) { await DB.saveUser(user); return res.json({success:true,user}); }
+        let users = readJSON(USERS_FILE,'{}');
         users[user.id] = user;
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        res.json({ success: true, user });
-    } catch (error) {
-        console.error('Error saving user:', error);
-        res.status(500).json({ error: 'Failed to save user data' });
-    }
+        writeJSON(USERS_FILE, users);
+        res.json({success:true,user});
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// POST to save (create or update) multiple users in bulk
-app.post('/api/users/bulk', (req, res) => {
+// ─── POST /api/users/bulk ─────────────────────────────────────────────────────
+app.post('/api/users/bulk', async (req,res) => {
     try {
-        ensureUsersFile();
-        const newUsers = req.body; // Expecting a dictionary object
-        if (!newUsers || typeof newUsers !== 'object') {
-            return res.status(400).json({ error: 'Invalid data. Expected an object dictionary of users.' });
-        }
-
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        let users = JSON.parse(data);
-
-        // Merge the new users into the existing db
-        users = { ...users, ...newUsers };
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        res.json({ success: true, count: Object.keys(newUsers).length });
-    } catch (error) {
-        console.error('Error saving bulk users:', error);
-        res.status(500).json({ error: 'Failed to save bulk user data' });
-    }
+        const bulk = req.body;
+        if (!bulk || typeof bulk!=='object') return res.status(400).json({error:'Expected object'});
+        if (USE_PG) { await DB.bulkSaveUsers(bulk); return res.json({success:true,count:Object.keys(bulk).length}); }
+        let users = readJSON(USERS_FILE,'{}');
+        Object.assign(users, bulk);
+        writeJSON(USERS_FILE, users);
+        res.json({success:true,count:Object.keys(bulk).length});
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// DELETE a user by ID
-app.delete('/api/users/:id', (req, res) => {
+// ─── DELETE /api/users/:id ────────────────────────────────────────────────────
+app.delete('/api/users/:id', async (req,res) => {
     try {
-        ensureUsersFile();
-        const { id } = req.params;
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        let users = JSON.parse(data);
-
-        if (!users[id]) {
-            return res.status(404).json({ error: 'User not found' });
+        if (USE_PG) {
+            const ok = await DB.deleteUser(req.params.id);
+            return ok ? res.json({success:true}) : res.status(404).json({error:'Not found'});
         }
-
-        delete users[id];
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        res.json({ success: true, message: 'User deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ error: 'Failed to delete user data' });
-    }
+        let users = readJSON(USERS_FILE,'{}');
+        if (!users[req.params.id]) return res.status(404).json({error:'Not found'});
+        delete users[req.params.id];
+        writeJSON(USERS_FILE, users);
+        res.json({success:true});
+    } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// --- Authentication API ---
-app.post('/api/login', (req, res) => {
+// ─── POST /api/login ──────────────────────────────────────────────────────────
+app.post('/api/login', async (req,res) => {
     try {
         const { username, password, role } = req.body;
+        if (!username || !password || !role)
+            return res.status(400).json({error:'username, password and role required'});
 
-        if (!username || !password || !role) {
-            return res.status(400).json({ error: 'Username, password, and role are required.' });
+        if (role==='admin') {
+            if (username==='admin' && password==='Vm@cse5')
+                return res.json({success:true,session:{id:'admin_01',name:'Administrator',role:'admin',timestamp:Date.now()}});
+            return res.status(401).json({error:'Invalid admin credentials'});
         }
 
-        if (role === 'admin') {
-            if (username === 'admin' && password === 'Vm@cse5') {
-                return res.json({
-                    success: true,
-                    session: {
-                        id: 'admin_01',
-                        name: 'Administrator',
-                        role: 'admin',
-                        timestamp: Date.now()
-                    }
-                });
+        if (role==='student') {
+            if (username==='admin' && password==='Vm@cse5')
+                return res.json({success:true,session:{id:'admin_01',name:'Administrator',role:'admin',timestamp:Date.now()}});
+
+            const sid = String(username).trim().toUpperCase();
+            let student = null;
+            if (USE_PG) {
+                student = await DB.getUserById(sid);
             } else {
-                return res.status(401).json({ error: 'Invalid admin credentials' });
+                const users = readJSON(USERS_FILE,'{}');
+                student = users[sid] || null;
             }
-        } else if (role === 'student') {
-            // Check if admin is logging in via student portal
-            if (username === 'admin' && password === 'Vm@cse5') {
-                return res.json({
-                    success: true,
-                    session: {
-                        id: 'admin_01',
-                        name: 'Administrator',
-                        role: 'admin',
-                        timestamp: Date.now()
-                    }
-                });
-            }
-
-            ensureUsersFile();
-            const data = fs.readFileSync(USERS_FILE, 'utf8');
-            const users = JSON.parse(data);
-
-            const studentIdNorm = String(username).trim().toUpperCase();
-            const student = users[studentIdNorm];
-
-            if (student) {
-                if (String(student.password) === String(password)) {
-                    return res.json({
-                        success: true,
-                        session: {
-                            id: student.id,
-                            name: student.name,
-                            role: 'student',
-                            branch: student.branch || 'General',
-                            year: student.year || '1',
-                            batch: student.batch || '',
-                            timestamp: Date.now()
-                        }
-                    });
-                } else {
-                    return res.status(401).json({ error: 'Invalid password' });
-                }
-            } else {
-                return res.status(404).json({ error: 'Student ID not found. Contact Admin.' });
-            }
-        } else {
-            return res.status(400).json({ error: 'Invalid role specified.' });
+            if (!student) return res.status(404).json({error:'Student ID not found. Contact Admin.'});
+            if (String(student.password) !== String(password))
+                return res.status(401).json({error:'Invalid password'});
+            return res.json({success:true,session:{id:student.id,name:student.name,role:'student',
+                branch:student.branch||'',year:student.year||'',batch:student.batch||'',
+                section:student.section||'',timestamp:Date.now()}});
         }
-    } catch (error) {
-        console.error('Error during login:', error);
-        res.status(500).json({ error: 'Internal Server Error during login' });
-    }
+        res.status(400).json({error:'Invalid role'});
+    } catch(e){ res.status(500).json({error:'Login error: '+e.message}); }
 });
 
-app.listen(port, () => {
-    console.log(`Backend server running at http://localhost:${port}`);
+// ─── GET /api/db-status (diagnostics) ────────────────────────────────────────
+app.get('/api/db-status', async (req, res) => {
+    try {
+        const status = {
+            mode: USE_PG ? 'PostgreSQL' : 'JSON files',
+            DATABASE_URL_set: !!process.env.DATABASE_URL,
+            tables: {},
+            json_files: {}
+        };
+        ['users.json','exams.json','results.json'].forEach(f => {
+            const fp = path.join(__dirname, f);
+            if (fs.existsSync(fp)) {
+                const d = JSON.parse(fs.readFileSync(fp, 'utf8'));
+                status.json_files[f] = Array.isArray(d) ? d.length : Object.keys(d).length;
+            } else {
+                status.json_files[f] = 'NOT FOUND';
+            }
+        });
+        if (USE_PG) {
+            const { Pool } = require('pg');
+            const p = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+            for (const t of ['users','exams','questions','options','hidden_cases','question_constraints','results','answers']) {
+                try {
+                    const r = await p.query(`SELECT COUNT(*) FROM ${t}`);
+                    status.tables[t] = parseInt(r.rows[0].count);
+                } catch(e) { status.tables[t] = 'ERROR: ' + e.message; }
+            }
+            await p.end();
+        }
+        res.json(status);
+    } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── POST /api/db-force-migrate ───────────────────────────────────────────────
+app.post('/api/db-force-migrate', async (req, res) => {
+    if (!USE_PG) return res.json({ message: 'Not in PostgreSQL mode' });
+    try {
+        await DB.initDB();
+        res.json({ success: true, message: 'Migration triggered — check Render logs' });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+app.listen(port, async () => {
+    console.log(`\n✅ Backend server running at http://localhost:${port}`);
+    console.log(`   Storage: ${USE_PG ? 'PostgreSQL (normalized columns)' : 'JSON files (local dev)'}`);
+    if (USE_PG) await DB.initDB().catch(e => console.error('[DB] Init failed:', e.message));
+});

@@ -13,10 +13,13 @@
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         /* ══════════════════════════════════════════
-           GLOBAL RESET — suppress dark theme bleed
+           GOOGLE FONTS — must be first in stylesheet
            ══════════════════════════════════════════ */
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 
+        /* ══════════════════════════════════════════
+           GLOBAL RESET — suppress dark theme bleed
+           ══════════════════════════════════════════ */
         body {
             background: #e8edf2 !important;
             color: #1e293b !important;
@@ -398,7 +401,7 @@
 
         // Populate Basics
         document.getElementById('stuName').innerText = session.name;
-        document.getElementById('stuId').innerText = session.username || 'UNASSIGNED';
+        document.getElementById('stuId').innerText = session.username || session.id || 'UNASSIGNED';
         document.getElementById('stuBranch').innerText = `${session.branch || 'N/A'} / ${session.batch || 'N/A'}`;
         document.getElementById('genDate').innerText = new Date().toLocaleDateString();
 

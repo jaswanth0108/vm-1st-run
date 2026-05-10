@@ -482,15 +482,7 @@
             gap: 1.5rem;
         }
 
-        .question-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1rem;
-            position: relative;
-            box-shadow: var(--shadow-sm);
-        }
+
 
         .badge {
             padding: 0.2rem 0.6rem;
@@ -2315,7 +2307,7 @@
 
             // Map Results to these groups
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || { branch: 'Unknown', batch: 'Unknown' };
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || { branch: 'Unknown', batch: 'Unknown' };
                 const sBranch = String(student.branch || 'Unknown').trim().toUpperCase();
                 const sBatch = String(student.batch || 'Unknown').trim();
                 const key = `${sBranch}|${sBatch}`;
@@ -2374,7 +2366,7 @@
             // Apply Context Filter (Branch Drill-down)
             if (window.activeBranchFilter) {
                 filteredResults = filteredResults.filter(r => {
-                    const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                    const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                     if (!student) return false;
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2422,14 +2414,15 @@
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No students found for this category.</td></tr>';
             } else {
                 tbody.innerHTML = filteredResults.map(r => {
-                    const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                    const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                     // Determine Score Color
                     let scoreColor = 'var(--text-main)';
                     if (r.score >= 80) scoreColor = 'var(--success)';
                     if (r.score < 40) scoreColor = 'var(--danger)';
 
-                    const isNumericId = r.username && r.username.length < 5 && !isNaN(r.username);
-                    const idDisplay = (r.username && !isNumericId) ? r.username : 'UNASSIGNED';
+                    const rId = r.username || r.studentId;
+                    const isNumericId = rId && rId.length < 5 && !isNaN(rId);
+                    const idDisplay = (rId && !isNumericId) ? rId : 'UNASSIGNED';
 
                     return `
                         <tr style="border-bottom: 1px solid var(--border);">
@@ -2572,8 +2565,15 @@
                 });
                 if (resp.ok) {
                     const result = await resp.json();
-                    const arr = Array.isArray(result) ? result : (result.data || []);
-                    students = arr.filter(u => u.role === 'Student' || u.role === 'student');
+                    let arr = [];
+                    if (Array.isArray(result)) {
+                        arr = result;
+                    } else if (result && result.data && Array.isArray(result.data)) {
+                        arr = result.data;
+                    } else if (result && typeof result === 'object') {
+                        arr = Object.values(result);
+                    }
+                    students = arr.filter(u => u.role === 'Student' || u.role === 'student' || !u.role); // Backend sometimes doesn't store role explicitly, they are just in users table.
                 }
             } catch(e) {
                 console.error('Failed to fetch students:', e);
@@ -2592,11 +2592,12 @@
             }
 
             tbody.innerHTML = students.map(s => {
-                const isNumericId = s.username && s.username.length < 5 && !isNaN(s.username);
-                const idDisplay = s.username 
+                const studentId = s.id || s.username;
+                const isNumericId = studentId && studentId.length < 5 && !isNaN(studentId);
+                const idDisplay = studentId 
                     ? (isNumericId 
-                        ? `<span style="color:var(--danger); cursor:help;" title="Numeric/Legacy ID found. Consider removing this student and re-adding with a valid Roll No.">${s.username} (Invalid)</span>` 
-                        : s.username)
+                        ? `<span style="color:var(--danger); cursor:help;" title="Numeric/Legacy ID found. Consider removing this student and re-adding with a valid Roll No.">${studentId} (Invalid)</span>` 
+                        : studentId)
                     : '<span style="color:var(--danger)">No ID</span>';
 
                 return `
@@ -2609,11 +2610,11 @@
                     <td style="padding: 0.75rem;">
                         <button class="btn btn-outline" 
                             style="padding: 0.25rem 0.5rem; margin-right: 0.5rem; font-size: 0.8rem;" 
-                            data-id="${(s.username || '').toString().replace(/"/g, '&quot;')}"
+                            data-id="${(studentId || '').toString().replace(/"/g, '&quot;')}"
                             onclick="openEditStudentModal(this.getAttribute('data-id'))">Edit</button>
                         <button class="btn btn-outline" 
                             style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: var(--danger); font-size: 0.8rem;" 
-                            data-id="${(s.username || '').toString().replace(/"/g, '&quot;')}"
+                            data-id="${(studentId || '').toString().replace(/"/g, '&quot;')}"
                             onclick="deleteStudent(this.getAttribute('data-id'))">Delete</button>
                     </td>
                 </tr>
@@ -2843,7 +2844,7 @@
 
             // Iterate ALL results to find those belonging to this branch/batch
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2899,7 +2900,7 @@
 
             // 3. Map Results
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3005,7 +3006,7 @@
             // Iterate ALL results to find those belonging to this branch/batch/section
             // (Efficiently we could map filtered students to results, but let's stick to result iteration for score accuracy)
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3069,7 +3070,7 @@
                 tbody.innerHTML = targetStudents.map(s => {
                     // Find Result
                     const result = currentReportResults.find(r => 
-                        String(r.username || '').toUpperCase() === String(s.username || s.id).toUpperCase() ||
+                        String(r.username || r.studentId || '').toUpperCase() === String(s.username || s.id).toUpperCase() ||
                         r.studentId === s.id
                     );
 

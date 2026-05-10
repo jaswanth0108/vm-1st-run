@@ -5,6 +5,10 @@ const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 const { LANGUAGES, isCommandAvailable } = require('./languages');
 
+// Cross-platform: Linux (Docker/Render) uses 'program', Windows uses 'program.exe'
+const IS_WINDOWS = process.platform === 'win32';
+const COMPILED_OUTPUT = IS_WINDOWS ? 'program.exe' : 'program';
+
 // ─── Configuration ───────────────────────────────────────────────────────────
 const MAX_TIMEOUT_MS = 10000;    // 10 seconds max
 const DEFAULT_TIMEOUT_MS = 5000; // 5 seconds default
@@ -197,7 +201,7 @@ async function compileCode(language, sourceFile, tempDir) {
     command = 'javac';
     args = [sourceFile, '-d', tempDir];
   } else {
-    const outputFile = path.join(tempDir, 'program.exe');
+    const outputFile = path.join(tempDir, COMPILED_OUTPUT);
     const compiler = language === 'c' ? 'gcc' : 'g++';
     command = compiler;
     args = [sourceFile, '-o', outputFile, '-lm'];
@@ -230,15 +234,21 @@ async function executeCode(language, code, input = '', timeout = DEFAULT_TIMEOUT
   }
 
   // Check compiler availability
-  const compilerMap = { c: 'gcc', cpp: 'g++', java: 'javac', python: 'python', javascript: 'node' };
+  // Try python3 first (Linux/Render), then python (Windows fallback)
+  const compilerMap = { c: 'gcc', cpp: 'g++', java: 'javac', python: 'python3', javascript: 'node' };
   const compiler = compilerMap[language];
   if (!isCommandAvailable(compiler)) {
-    return {
-      success: false,
-      output: '',
-      error: `${lang.name} compiler/runtime "${compiler}" is not installed on this system. Please install it and try again.`,
-      executionTime: 0,
-    };
+    // Secondary fallback for python: try plain 'python'
+    if (language === 'python' && isCommandAvailable('python')) {
+      // proceed — will use python in the run step below
+    } else {
+      return {
+        success: false,
+        output: '',
+        error: `${lang.name} compiler/runtime is not installed on this system. Please install it and try again.`,
+        executionTime: 0,
+      };
+    }
   }
 
   // Create temp directory
@@ -283,13 +293,14 @@ async function executeCode(language, code, input = '', timeout = DEFAULT_TIMEOUT
       args = ['-cp', tempDir, className];
       useShell = true;
     } else if (lang.compiled) {
-      // C / C++ — run the compiled executable directly (no shell)
-      const exePath = path.join(tempDir, 'program.exe');
+      // C / C++ — run the compiled executable directly
+      const exePath = path.join(tempDir, COMPILED_OUTPUT);
       command = exePath;
       args = [];
-      useShell = false; // Run .exe directly without shell wrapper
+      useShell = false;
     } else if (language === 'python') {
-      command = 'python';
+      // Use python3 if available (Linux/Docker/Render), fall back to python (Windows)
+      command = isCommandAvailable('python3') ? 'python3' : 'python';
       args = [sourceFile];
       useShell = true;
     } else if (language === 'javascript') {
