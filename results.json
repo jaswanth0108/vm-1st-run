@@ -1,0 +1,667 @@
+[
+  {
+    "examId": "exam_123",
+    "studentId": "student_abc",
+    "score": 95,
+    "answers": {},
+    "questionScores": {},
+    "warnings": 0,
+    "timestamp": 1678123456789
+  },
+  {
+    "examId": "exam_mfc913m3v",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_17724673631782tckl": "1",
+      "q_1772467363180v5b9u": "1",
+      "q_17724673631806abgo": "2",
+      "q_1772467363183o39l6": "1",
+      "q_1772467363185s54l8": "2"
+    },
+    "questionScores": {
+      "q_17724673631782tckl": 10,
+      "q_1772467363180v5b9u": 10,
+      "q_17724673631806abgo": 10,
+      "q_1772467363181gnenx": 0,
+      "q_1772467363183o39l6": 10,
+      "q_1772467363184v02sr": 0,
+      "q_1772467363185s54l8": 10,
+      "q_17724673631865vvlk": 0,
+      "q_1772467363188uiajo": 0,
+      "q_177246736318928d7p": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_17724673631782tckl": 12,
+      "q_1772467363180v5b9u": 3,
+      "q_17724673631806abgo": 2,
+      "q_1772467363181gnenx": 1,
+      "q_1772467363183o39l6": 3,
+      "q_1772467363184v02sr": 0,
+      "q_1772467363185s54l8": 2,
+      "q_17724673631865vvlk": 4
+    },
+    "score": 50,
+    "warnings": 1,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T06:10:59.722Z"
+      }
+    ],
+    "autoSubmitted": false,
+    "timestamp": 1772518284901
+  },
+  {
+    "examId": "exam_n7eie8s3u",
+    "studentId": "25L31A05W8",
+    "studentName": "M Sai Kumar",
+    "answers": {
+      "q_17724676811031mzop": "1",
+      "q_1772467681105hbagz": "print(\"Hello\")"
+    },
+    "questionScores": {
+      "q_17724676811031mzop": 10,
+      "q_1772467681103tldq6": 0,
+      "q_1772467681104v3dh5": 0,
+      "q_1772467681105hbagz": 0,
+      "q_1772467681106nt3nu": 0,
+      "q_1772467681107svvzg": 0,
+      "q_1772467681108eaz8l": 0,
+      "q_17724676811093a8q4": 0,
+      "q_17724676811102zcvl": 0,
+      "q_1772467681110xnh5t": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_17724676811031mzop": 114,
+      "q_1772467681103tldq6": 0,
+      "q_1772467681104v3dh5": 0,
+      "q_1772467681105hbagz": 407
+    },
+    "score": 10,
+    "warnings": 1,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T06:31:37.314Z"
+      }
+    ],
+    "autoSubmitted": false,
+    "timestamp": 1772519503753
+  },
+  {
+    "examId": "exam_5fcylv3xd",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_177246751641663m7q": "print(\"Hello\")"
+    },
+    "questionScores": {
+      "q_1772467516413og2ya": 0,
+      "q_177246751641414pq6": 0,
+      "q_17724675164153bz48": 0,
+      "q_177246751641663m7q": 0,
+      "q_177246751641701len": 0,
+      "q_1772467516417w7q16": 0,
+      "q_1772467516418101yi": 0,
+      "q_1772467516419yfvpe": 0,
+      "q_17724675164199myx5": 0,
+      "q_1772467516420mwd8f": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772467516413og2ya": 871,
+      "q_177246751641414pq6": 1,
+      "q_17724675164153bz48": 0,
+      "q_177246751641663m7q": 133
+    },
+    "score": 0,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T06:40:31.901Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T06:41:13.900Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T06:42:25.044Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T06:42:25.044Z",
+    "timestamp": 1772520145044
+  },
+  {
+    "examId": "exam_n7eie8s3u",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_17724676811031mzop": "1",
+      "q_1772467681103tldq6": "1",
+      "q_1772467681104v3dh5": "2",
+      "q_1772467681105hbagz": "print(\"Hello\")",
+      "q_1772467681106nt3nu": "1",
+      "q_1772467681107svvzg": "print(\"10\")",
+      "q_1772467681108eaz8l": "1",
+      "q_17724676811093a8q4": "a=input(\"\")\nprint(a)",
+      "q_17724676811102zcvl": "2",
+      "q_1772467681110xnh5t": "print(\"Good Morning\")"
+    },
+    "questionScores": {
+      "q_17724676811031mzop": 10,
+      "q_1772467681103tldq6": 10,
+      "q_1772467681104v3dh5": 10,
+      "q_1772467681105hbagz": 10,
+      "q_1772467681106nt3nu": 10,
+      "q_1772467681107svvzg": 10,
+      "q_1772467681108eaz8l": 0,
+      "q_17724676811093a8q4": 10,
+      "q_17724676811102zcvl": 10,
+      "q_1772467681110xnh5t": 10
+    },
+    "codingTestCaseData": {
+      "q_1772467681105hbagz": {
+        "passed": 1,
+        "total": 1
+      },
+      "q_1772467681107svvzg": {
+        "passed": 1,
+        "total": 1
+      },
+      "q_17724676811093a8q4": {
+        "passed": 1,
+        "total": 1
+      },
+      "q_1772467681110xnh5t": {
+        "passed": 1,
+        "total": 1
+      }
+    },
+    "questionTimeData": {
+      "q_17724676811031mzop": 5,
+      "q_1772467681103tldq6": 2,
+      "q_1772467681104v3dh5": 2,
+      "q_1772467681105hbagz": 27,
+      "q_1772467681106nt3nu": 3,
+      "q_1772467681107svvzg": 21,
+      "q_1772467681108eaz8l": 5,
+      "q_17724676811093a8q4": 44,
+      "q_17724676811102zcvl": 4,
+      "q_1772467681110xnh5t": 31
+    },
+    "score": 90,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T07:13:22.518Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T07:13:25.750Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T07:13:29.250Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T07:13:29.251Z",
+    "timestamp": 1772522009251
+  },
+  {
+    "examId": "exam_n7eie8s3u",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_17724676811031mzop": "1",
+      "q_1772467681103tldq6": "1",
+      "q_1772467681105hbagz": "print(\"Hello\")"
+    },
+    "questionScores": {
+      "q_17724676811031mzop": 10,
+      "q_1772467681103tldq6": 10,
+      "q_1772467681104v3dh5": 0,
+      "q_1772467681105hbagz": 10,
+      "q_1772467681106nt3nu": 0,
+      "q_1772467681107svvzg": 0,
+      "q_1772467681108eaz8l": 0,
+      "q_17724676811093a8q4": 0,
+      "q_17724676811102zcvl": 0,
+      "q_1772467681110xnh5t": 0
+    },
+    "codingTestCaseData": {
+      "q_1772467681105hbagz": {
+        "passed": 1,
+        "total": 1
+      }
+    },
+    "questionTimeData": {
+      "q_17724676811031mzop": 12,
+      "q_1772467681103tldq6": 3,
+      "q_1772467681104v3dh5": 0,
+      "q_1772467681105hbagz": 24
+    },
+    "score": 30,
+    "warnings": 2,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T07:13:36.067Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T07:14:04.913Z"
+      }
+    ],
+    "autoSubmitted": false,
+    "timestamp": 1772522050164
+  },
+  {
+    "examId": "exam_n7eie8s3u",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_17724676811031mzop": "1",
+      "q_1772467681103tldq6": "1",
+      "q_1772467681105hbagz": "print(\"Hello\")"
+    },
+    "questionScores": {
+      "q_17724676811031mzop": 10,
+      "q_1772467681103tldq6": 10,
+      "q_1772467681104v3dh5": 0,
+      "q_1772467681105hbagz": 10,
+      "q_1772467681106nt3nu": 0,
+      "q_1772467681107svvzg": 0,
+      "q_1772467681108eaz8l": 0,
+      "q_17724676811093a8q4": 0,
+      "q_17724676811102zcvl": 0,
+      "q_1772467681110xnh5t": 0
+    },
+    "codingTestCaseData": {
+      "q_1772467681105hbagz": {
+        "passed": 1,
+        "total": 1
+      }
+    },
+    "questionTimeData": {
+      "q_17724676811031mzop": 12,
+      "q_1772467681103tldq6": 3,
+      "q_1772467681104v3dh5": 0,
+      "q_1772467681105hbagz": 48
+    },
+    "score": 30,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T07:13:36.067Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T07:14:04.913Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T07:14:10.175Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T07:14:10.175Z",
+    "timestamp": 1772522050175
+  },
+  {
+    "examId": "exam_na1bw360e",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_177252219121451u7t": "print(\"reverse\")"
+    },
+    "questionScores": {
+      "q_1772522191213nlqa0": 0,
+      "q_1772522191214mtqxm": 0,
+      "q_177252219121451u7t": 0,
+      "q_1772522191214lqjo9": 0,
+      "q_1772522191215dkel3": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522191213nlqa0": 10,
+      "q_1772522191214lqjo9": 4,
+      "q_177252219121451u7t": 34
+    },
+    "score": 0,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T08:57:45.717Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T08:58:22.209Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T08:58:30.864Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T08:58:30.865Z",
+    "timestamp": 1772528310865
+  },
+  {
+    "examId": "exam_na1bw360e",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {},
+    "questionScores": {
+      "q_1772522191213nlqa0": 0,
+      "q_1772522191214mtqxm": 0,
+      "q_177252219121451u7t": 0,
+      "q_1772522191214lqjo9": 0,
+      "q_1772522191215dkel3": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522191213nlqa0": 7
+    },
+    "score": 0,
+    "warnings": 0,
+    "warningLog": [],
+    "autoSubmitted": false,
+    "timestamp": 1772528321102
+  },
+  {
+    "examId": "exam_5m54u3i9t",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {},
+    "questionScores": {
+      "q_1772522202909lgfh7": 0,
+      "q_1772522202910xkmg4": 0,
+      "q_1772522202910l1y4r": 0,
+      "q_1772522202910dlsj2": 0,
+      "q_1772522202910svmlg": 0,
+      "q_1772522202910lql46": 0,
+      "q_1772522202911j7nn5": 0,
+      "q_17725222029118mdh1": 0,
+      "q_1772522202911zlxze": 0,
+      "q_1772522202911z24xq": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522202909lgfh7": 3,
+      "q_1772522202911z24xq": 10
+    },
+    "score": 0,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T09:25:23.215Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T09:25:29.213Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T09:25:33.220Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T09:25:33.221Z",
+    "timestamp": 1772529933221
+  },
+  {
+    "examId": "exam_iv058twla",
+    "studentId": "25L31A05Z5",
+    "studentName": "Nanepalli Venkata Sai Jaswanth",
+    "answers": {
+      "q_1772522269646hqof2": "1",
+      "q_1772522269646vamrt": "1",
+      "q_1772522269647bupox": "1",
+      "q_17725222696470nlks": "print(\"Hello\")",
+      "q_1772522269647rnwhq": "1",
+      "q_1772522269648b868l": "2"
+    },
+    "questionScores": {
+      "q_1772522269646hqof2": 10,
+      "q_1772522269646vamrt": 10,
+      "q_1772522269647bupox": 0,
+      "q_17725222696470nlks": 10,
+      "q_1772522269647rnwhq": 10,
+      "q_1772522269648o21cp": 0,
+      "q_1772522269648b868l": 10,
+      "q_177252226964885v09": 0,
+      "q_1772522269649nmxh6": 0,
+      "q_1772522269649psczn": 0
+    },
+    "codingTestCaseData": {
+      "q_17725222696470nlks": {
+        "passed": 1,
+        "total": 1
+      }
+    },
+    "questionTimeData": {
+      "q_1772522269646hqof2": 4,
+      "q_1772522269646vamrt": 2,
+      "q_1772522269647bupox": 3,
+      "q_17725222696470nlks": 28,
+      "q_1772522269647rnwhq": 4,
+      "q_1772522269648o21cp": 2,
+      "q_1772522269648b868l": 4,
+      "q_177252226964885v09": 13
+    },
+    "score": 50,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:08:28.375Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:08:34.153Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:08:39.876Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T10:08:39.877Z",
+    "timestamp": 1772532519877
+  },
+  {
+    "examId": "exam_na1bw360e",
+    "studentId": "25L31A05Z3",
+    "studentName": "Keerthana",
+    "answers": {},
+    "questionScores": {
+      "q_1772522191213nlqa0": 0,
+      "q_1772522191214mtqxm": 0,
+      "q_177252219121451u7t": 0,
+      "q_1772522191214lqjo9": 0,
+      "q_1772522191215dkel3": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522191213nlqa0": 144,
+      "q_1772522191214mtqxm": 0,
+      "q_177252219121451u7t": 0,
+      "q_1772522191214lqjo9": 8
+    },
+    "score": 0,
+    "warnings": 3,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:53:39.151Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:53:44.159Z"
+      },
+      {
+        "warningNumber": 3,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:53:45.905Z"
+      }
+    ],
+    "autoSubmitted": true,
+    "autoSubmittedAt": "2026-03-03T10:53:45.906Z",
+    "timestamp": 1772535225906
+  },
+  {
+    "examId": "exam_mfc913m3v",
+    "studentId": "25L31A05Z3",
+    "studentName": "Keerthana",
+    "answers": {
+      "q_1772522165860ikhss": ""
+    },
+    "questionScores": {
+      "q_1772522165859gyl69": 0,
+      "q_1772522165859ph40o": 0,
+      "q_1772522165860tv307": 0,
+      "q_1772522165860ikhss": 0,
+      "q_1772522165860s81vl": 0,
+      "q_1772522165860idsbe": 0,
+      "q_1772522165861ki91r": 0,
+      "q_1772522165861o4f0w": 0,
+      "q_1772522165861ezxp0": 0,
+      "q_1772522165862t2q5g": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522165859gyl69": 14,
+      "q_1772522165860ikhss": 74
+    },
+    "score": 0,
+    "warnings": 2,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Clipboard Usage Prohibited",
+        "timestamp": "2026-03-03T10:56:08.820Z"
+      },
+      {
+        "warningNumber": 2,
+        "reason": "Focus Lost (Active Polling)",
+        "timestamp": "2026-03-03T10:56:14.703Z"
+      }
+    ],
+    "autoSubmitted": false,
+    "timestamp": 1772535440680
+  },
+  {
+    "examId": "exam_n7eie8s3u",
+    "studentId": "25L31A05Z3",
+    "studentName": "Keerthana",
+    "answers": {
+      "q_1772522157974iumt7": "1",
+      "q_1772522157975j8t6q": "1",
+      "q_1772522157975n4cf6": "2",
+      "q_17725221579766f1hn": "1",
+      "q_1772522157976k9jz0": "2",
+      "q_17725221579764ojq6": "2"
+    },
+    "questionScores": {
+      "q_1772522157974iumt7": 10,
+      "q_1772522157975j8t6q": 10,
+      "q_1772522157975n4cf6": 10,
+      "q_1772522157975g3ec8": 0,
+      "q_17725221579766f1hn": 10,
+      "q_1772522157976sdfho": 0,
+      "q_1772522157976k9jz0": 10,
+      "q_1772522157976w5hku": 0,
+      "q_17725221579764ojq6": 10,
+      "q_1772522157976j2s9a": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522157974iumt7": 12,
+      "q_1772522157975j8t6q": 3,
+      "q_1772522157975n4cf6": 2,
+      "q_1772522157975g3ec8": 2,
+      "q_17725221579766f1hn": 2,
+      "q_1772522157976sdfho": 1,
+      "q_1772522157976k9jz0": 2,
+      "q_1772522157976w5hku": 1,
+      "q_17725221579764ojq6": 3,
+      "q_1772522157976j2s9a": 10
+    },
+    "score": 60,
+    "warnings": 1,
+    "warningLog": [
+      {
+        "warningNumber": 1,
+        "reason": "Exam Violation Detected",
+        "timestamp": "2026-03-03T11:00:44.939Z"
+      }
+    ],
+    "autoSubmitted": false,
+    "timestamp": 1772535652873
+  },
+  {
+    "examId": "exam_5fcylv3xd",
+    "studentId": "25L31A05Z3",
+    "studentName": "Keerthana",
+    "answers": {
+      "q_1772522178708dtf5t": "1"
+    },
+    "questionScores": {
+      "q_1772522178708dtf5t": 10,
+      "q_1772522178709e30xe": 0,
+      "q_1772522178709zqnly": 0,
+      "q_17725221787094ugga": 0,
+      "q_1772522178709pmlat": 0,
+      "q_17725221787102tivp": 0,
+      "q_1772522178710ar2sl": 0,
+      "q_1772522178710cu4km": 0,
+      "q_1772522178710vbz9d": 0,
+      "q_1772522178711d9355": 0
+    },
+    "codingTestCaseData": {},
+    "questionTimeData": {
+      "q_1772522178708dtf5t": 7,
+      "q_1772522178709e30xe": 6
+    },
+    "score": 10,
+    "warnings": 0,
+    "warningLog": [],
+    "autoSubmitted": false,
+    "timestamp": 1772538312265
+  }
+]

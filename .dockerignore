@@ -1,0 +1,11 @@
+node_modules
+.git
+.gitignore
+*.log
+npm-debug.log*
+.env
+.vscode
+debug_input.py
+transform_students.py
+test_*.js
+check_*.js
