@@ -12,6 +12,18 @@
         rel="stylesheet">
     <!-- Styles -->
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        /* Scoped override for Reports & Leaderboard to use attractive colors instead of grey */
+        #tab-reports {
+            --text-muted: #a5b4fc; /* Light Indigo */
+        }
+        #tab-reports .sub-value {
+            color: #818cf8 !important; /* Vibrant Indigo */
+        }
+        #tab-reports th {
+            color: #22d3ee; /* Cyan for table headers */
+        }
+    </style>
     <!-- Mammoth.js for Word Import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <!-- SheetJS for Excel Import -->
@@ -362,7 +374,7 @@
 
         .stat-card .sub-value {
             font-size: 0.8rem;
-            color: #475569;
+            color: #818cf8; /* Changed from grey to attractive indigo */
             margin-top: 0.4rem;
             font-weight: 500;
         }
@@ -3234,7 +3246,7 @@
                         r.studentId === s.id
                     );
 
-                    let attemptStr = '<span style="color:var(--text-muted)">Not Attempted</span>';
+                    let attemptStr = '<span style="color:#f87171; opacity: 0.8;">Not Attempted</span>';
                     let scoreStr = '--';
                     let testCasesStr = '--';
                     let totalQs = currentReportExam ? currentReportExam.questions.length : '--';
