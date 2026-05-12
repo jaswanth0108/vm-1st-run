@@ -1261,10 +1261,9 @@
             <h3 id="actionModalTitle" style="margin-bottom: 2rem;">Exam Options</h3>
 
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <button class="btn btn-primary" onclick="triggerAction('live')">🚀 Publish / Make Live</button>
-                <button class="btn btn-outline" onclick="triggerAction('edit')">✏️ Edit Exam</button>
-                <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);"
-                    onclick="triggerAction('delete')">🗑️ Delete Exam</button>
+                <button id="btnActionLive" class="btn btn-primary">🚀 Publish / Make Live</button>
+                <button id="idActionEdit" class="btn btn-outline">✏️ Edit Exam</button>
+                <button id="btnActionDelete" class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);">🗑️ Delete Exam</button>
             </div>
         </div>
     </div>
@@ -2168,7 +2167,11 @@
         }
 
         async function triggerAction(action) {
-            if (!selectedExamId) return;
+            console.log(`Triggering action: ${action} for exam: ${selectedExamId}`);
+            if (!selectedExamId) {
+                console.error("No selectedExamId found for action:", action);
+                return;
+            }
 
             try {
                 let exam;
@@ -2283,6 +2286,12 @@
                 alert('An unexpected error occurred: ' + globalErr.message);
             }
         }
+        
+        // --- Attach Event Listeners to Action Modal Buttons ---
+        document.getElementById('btnActionLive').addEventListener('click', () => triggerAction('live'));
+        document.getElementById('idActionEdit').addEventListener('click', () => triggerAction('edit'));
+        document.getElementById('btnActionDelete').addEventListener('click', () => triggerAction('delete'));
+
 
         // Reports Logic
         async function loadReportExams() {
