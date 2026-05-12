@@ -334,7 +334,7 @@
         /* ── Print ── */
         @page { size: A4 portrait; margin: 1.5cm; }
         @media print {
-            .print-btn, .back-btn, .view-full-btn, .modal-overlay { display: none !important; }
+            .print-btn, .back-btn, .view-full-btn, .modal-overlay, .vignan-header-bar { display: none !important; }
             body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .report-container { box-shadow: none; margin: 0; max-width: 100%; border: none; border-radius: 0; }
             .answer-content, .solution-content { max-height: none !important; overflow: visible !important; }
@@ -347,6 +347,12 @@
 </head>
 
 <body>
+
+    <!-- Vignan Institution Header -->
+    <header style="background: white; width: 100%; display: flex; justify-content: center; align-items: center; padding: 0.4rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" class="vignan-header-bar">
+        <img src="../assets/img/vignan_header.png" alt="Vignan's Institute of Information Technology"
+            style="display: block; width: 100%; max-height: 100px; object-fit: contain;">
+    </header>
 
     <button onclick="window.location.href='index.html'" class="btn btn-outline back-btn" style="color: #1e293b; border-color: #cbd5e1; background: white;">← Back to Dashboard</button>
     <button onclick="window.print()" class="btn btn-primary print-btn">🖨 Print Report</button>

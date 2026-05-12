@@ -1,0 +1,47 @@
+# ExamiNation App Walkthrough
+
+This guide details how to run the newly connected internal API structure. The backend and frontend previously had port conflicts, so we have properly isolated them.
+
+## 1. Running the Backend Server
+The backend handles authentication, database logic, and API requests. It is built using Node.js and Express.
+
+### Steps:
+1. Open a new terminal window.
+2. Navigate to the backend directory:
+   ```bash
+   cd Backend/college-exam-api
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+5. You should see a message stating: `Server is listening on port 5000 in development mode`.
+
+## 2. Running the Frontend Server
+The frontend handles the client interface, compiler fetching, and UI logic. It runs an Express server solely to proxy the compiler requests securely on port 3000.
+
+### Steps:
+1. Open a **second** terminal window.
+2. Navigate to the frontend directory:
+   ```bash
+   cd Frontend/"masteryv1-main - Copy"
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the frontend server:
+   ```bash
+   node server.js
+   ```
+5. You should see a message stating: `Backend server running at http://localhost:3000` (Note: This is the compiler proxy port, not the auth/DB port).
+
+## 3. Accessing the UI
+Now that both the `5000` backend server and `3000` frontend proxy are running, you can interact with the app.
+
+1. In your browser, open the application by serving the frontend HTML files through a Live Server or navigating directly to `http://localhost:3000/index.html`.
+2. Login seamlessly. Your frontend will now connect properly to `localhost:5000` for all heavy DB operations while using `localhost:3000` for IDE compilations!

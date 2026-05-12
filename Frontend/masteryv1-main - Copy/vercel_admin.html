@@ -5,13 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Examination</title>
-    <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
     <!-- Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <!-- Styles -->
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <!-- Mammoth.js for Word Import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <!-- SheetJS for Excel Import -->
@@ -44,21 +43,16 @@
             top: 120px;
             left: 0;
             height: calc(100vh - 120px);
-            background: rgba(10, 9, 20, 0.88);
+            background: rgba(10, 9, 20, 0.82);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
-            border-right: 1px solid rgba(108, 99, 255, 0.18);
+            border-right: 1px solid rgba(108, 99, 255, 0.14);
             padding: 2rem 1rem;
             display: flex;
             flex-direction: column;
             z-index: 50;
             overflow-y: auto;
-            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        .sidebar:hover {
-            border-right-color: rgba(108, 99, 255, 0.25);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.35);
         }
 
         /* Sidebar gradient logo */
@@ -72,22 +66,6 @@
             letter-spacing: -0.02em;
             margin-bottom: 0.25rem;
             line-height: 1.1;
-            position: relative;
-        }
-
-        .sidebar-logo::after {
-            content: '';
-            position: absolute;
-            inset: -5px;
-            background: linear-gradient(135deg, rgba(108, 99, 255, 0.3), transparent);
-            filter: blur(10px);
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .sidebar-logo:hover::after {
-            opacity: 1;
         }
 
         .sidebar-logo-sub {
@@ -103,7 +81,7 @@
         /* Sidebar divider */
         .sidebar-divider {
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.25), transparent);
             margin: 1rem 0;
         }
 
@@ -121,7 +99,7 @@
 
         .main-content {
             margin-left: 250px;
-            padding: 2rem 2.5rem;
+            padding: 2rem;
             min-height: 100vh;
         }
 
@@ -139,20 +117,6 @@
             font-size: 0.9rem;
             letter-spacing: 0.01em;
             position: relative;
-            overflow: hidden;
-        }
-
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.5s ease;
-        }
-
-        .nav-link:hover::before {
-            transform: translateX(100%);
         }
 
         .nav-link .nav-icon {
@@ -163,18 +127,17 @@
         }
 
         .nav-link:hover {
-            background: rgba(108, 99, 255, 0.12);
+            background: rgba(108, 99, 255, 0.1);
             color: #e2e8f0;
             transform: translateX(5px);
-            box-shadow: 0 2px 15px rgba(108, 99, 255, 0.15);
         }
 
         .nav-link.active {
-            background: linear-gradient(90deg, rgba(108, 99, 255, 0.22), rgba(108, 99, 255, 0.08));
+            background: linear-gradient(90deg, rgba(108, 99, 255, 0.18), rgba(108, 99, 255, 0.05));
             color: #a78bfa;
             font-weight: 700;
-            box-shadow: inset 3px 0 0 #6c63ff, 0 2px 15px rgba(108, 99, 255, 0.2);
-            border: 1px solid rgba(108, 99, 255, 0.2);
+            box-shadow: inset 3px 0 0 #6c63ff, 0 2px 12px rgba(108, 99, 255, 0.15);
+            border: 1px solid rgba(108, 99, 255, 0.15);
         }
 
         .nav-link-logout {
@@ -183,10 +146,9 @@
         }
 
         .nav-link-logout:hover {
-            background: rgba(248, 113, 113, 0.15) !important;
+            background: rgba(248, 113, 113, 0.1) !important;
             color: #fca5a5 !important;
             transform: translateX(5px);
-            box-shadow: 0 2px 15px rgba(248, 113, 113, 0.2);
         }
 
         /* ── TABLE ── */
@@ -202,49 +164,28 @@
             font-size: 0.75rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            background: rgba(108, 99, 255, 0.1);
+            background: rgba(108, 99, 255, 0.07);
             padding: 0.85rem 1rem;
-            position: relative;
-        }
-
-        thead th::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.3), transparent);
         }
 
         tbody td {
             padding: 0.85rem 1rem;
             font-size: 0.9rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            transition: background 0.2s ease;
-        }
-
-        tbody tr {
-            transition: all 0.2s ease;
         }
 
         tbody tr:hover td {
-            background: rgba(108, 99, 255, 0.08);
-        }
-
-        tbody tr:hover {
-            transform: translateX(2px);
+            background: rgba(108, 99, 255, 0.05);
         }
 
         /* ── SECTION TITLE ── */
         .section-title {
             margin-bottom: 2rem;
             padding-bottom: 1.25rem;
-            border-bottom: 1px solid rgba(108, 99, 255, 0.2);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
         }
 
         .section-title h2 {
@@ -264,7 +205,6 @@
             height: 3px;
             background: linear-gradient(90deg, #6c63ff, #a78bfa);
             border-radius: 2px;
-            box-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
         }
 
         /* ── ADMIN GREETING ── */
@@ -272,8 +212,8 @@
             font-size: 0.9rem;
             font-weight: 600;
             color: #64748b;
-            background: rgba(108, 99, 255, 0.1);
-            border: 1px solid rgba(108, 99, 255, 0.2);
+            background: rgba(108, 99, 255, 0.08);
+            border: 1px solid rgba(108, 99, 255, 0.15);
             padding: 0.35rem 0.9rem;
             border-radius: 99px;
             letter-spacing: 0.02em;
@@ -288,13 +228,13 @@
         }
 
         .stat-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             padding: 1.6rem 1.4rem;
             border-radius: 1.1rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -309,38 +249,11 @@
             right: 0;
             height: 2px;
             background: linear-gradient(90deg, #6c63ff, #a78bfa, #22d3ee);
-            background-size: 200% 100%;
-            animation: shimmerBar 3s linear infinite;
-        }
-
-        @keyframes shimmerBar {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            bottom: -50px;
-            right: -50px;
-            width: 120px;
-            height: 120px;
-            background: radial-gradient(circle, rgba(108, 99, 255, 0.15), transparent 70%);
-            border-radius: 50%;
-            transition: all 0.5s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 12px 40px -8px rgba(108, 99, 255, 0.4);
-            border-color: rgba(108, 99, 255, 0.25);
-        }
-
-        .stat-card:hover::after {
-            width: 180px;
-            height: 180px;
-            bottom: -30px;
-            right: -30px;
+            box-shadow: 0 12px 40px -8px rgba(108, 99, 255, 0.35);
         }
 
         .stat-card h3 {
@@ -374,36 +287,20 @@
             font-weight: 700;
             width: 100%;
             padding: 0.5rem;
-            background: rgba(108, 99, 255, 0.12);
-            border: 1px solid rgba(108, 99, 255, 0.3);
+            background: rgba(108, 99, 255, 0.1);
+            border: 1px solid rgba(108, 99, 255, 0.25);
             color: #a78bfa;
             border-radius: 0.6rem;
             cursor: pointer;
             transition: all 0.25s;
             letter-spacing: 0.02em;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card .btn-view::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.5s ease;
-        }
-
-        .stat-card .btn-view:hover::before {
-            transform: translateX(100%);
         }
 
         .stat-card .btn-view:hover {
             background: linear-gradient(135deg, #6c63ff, #a78bfa);
             color: white;
             border-color: transparent;
-            box-shadow: 0 4px 20px -3px rgba(108, 99, 255, 0.5);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 15px -3px rgba(108, 99, 255, 0.5);
         }
 
         /* Modal */
@@ -465,15 +362,10 @@
         /* Tab Content */
         .tab-pane {
             display: none;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .tab-pane.active {
             display: block;
-            opacity: 1;
-            transform: translateY(0);
             animation: fadeIn 0.3s ease;
         }
 
@@ -484,7 +376,15 @@
             gap: 1.5rem;
         }
 
-
+        .question-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
 
         .badge {
             padding: 0.2rem 0.6rem;
@@ -571,86 +471,12 @@
                 border: 1px solid #ddd !important;
             }
         }
-
-        /* ── RESPONSIVE STYLES ── */
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .sidebar.active {
-                transform: translateX(0);
-                box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            }
-            .main-content {
-                margin-left: 0 !important;
-                padding: 1.5rem 1rem !important;
-                width: 100%;
-                overflow-x: hidden;
-            }
-            .mobile-toggle {
-                display: flex !important;
-            }
-            .form-grid {
-                grid-template-columns: 1fr !important;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr !important;
-            }
-            .section-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            .section-title h2 {
-                font-size: 1.4rem;
-            }
-        }
-
-        .mobile-toggle {
-            display: none;
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--primary);
-            color: white;
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 50%;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.5);
-            z-index: 1000;
-            cursor: pointer;
-            border: none;
-            font-size: 1.5rem;
-            transition: transform 0.2s, background 0.2s;
-        }
-        .mobile-toggle:active {
-            transform: scale(0.95);
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin-bottom: 2rem;
-            border-radius: 0.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
     </style>
 </head>
 
 <body>
-    <!-- Mobile Sidebar Toggle -->
-    <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
-        ☰
-    </button>
+    <!-- Header Image Fixed at Top -->
 
-    <header style="background: rgba(10, 9, 20, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(108, 99, 255, 0.18); width: 100%; position: fixed; top: 0; left: 0; z-index: 1000; height: 120px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 30px rgba(0,0,0,0.4);">
-        <img src="../assets/img/vignan_header.png" alt="Header"
-            style="display: block; width: 100%; max-height: 110px; object-fit: contain; filter: brightness(1.05);">
-    </header>
     <!-- Sidebar -->
     <aside class="sidebar">
 
@@ -664,7 +490,7 @@
             <div class="nav-link active" onclick="switchTab('dashboard')">
                 <span class="nav-icon">🏠</span> Dashboard
             </div>
-            <div class="nav-link" onclick="switchTab('create_exam', true)">
+            <div class="nav-link" onclick="switchTab('create_exam')">
                 <span class="nav-icon">✏️</span> Create Exam
             </div>
             <div class="nav-link" onclick="switchTab('reports')">
@@ -685,7 +511,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content" style="margin-top: 120px; padding-top: 2.5rem;">
+    <main class="main-content" style="margin-top: 120px;">
 
         <!-- DASHBOARD TAB -->
         <div id="tab-dashboard" class="tab-pane active">
@@ -708,20 +534,16 @@
                 <div class="stat-card">
                     <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎓</div>
                     <h3>Total Students</h3>
-                    <div class="value" id="stat-total-students" style="color:#22d3ee;">0</div>
+                    <div class="value" id="stat-total-students" style="color:#22d3ee;">6000</div>
                     <div class="sub-value">Registered students</div>
                 </div>
 
             </div>
 
             <!-- Recent Exams Heading -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3
-                    style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#e2e8f0; letter-spacing:-0.01em;">
-                    🗂 Recent Exams</h3>
-                <button class="btn btn-primary" style="font-size: 0.85rem; padding: 0.45rem 1.1rem;"
-                    onclick="switchTab('create_exam', true)">+ New Exam</button>
-            </div>
+            <h3
+                style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#e2e8f0; margin-bottom:1rem; letter-spacing:-0.01em;">
+                🗂 Recent Exams</h3>
             <div id="recentExamsList" style="margin-top: 0.5rem;">
                 <!-- List populated by JS -->
                 <p style="color:#475569; font-style:italic;">No exams created yet.</p>
@@ -941,11 +763,10 @@
                     <!-- Questions will be added here -->
                 </div>
 
-                <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
                     <button class="btn btn-outline" onclick="addQuestion('mcq')">+ Add MCQ</button>
                     <button class="btn btn-outline" onclick="addQuestion('coding')">+ Add Coding</button>
                     <button class="btn btn-outline" onclick="addQuestion('text')">+ Add Text</button>
-                    <button class="btn btn-outline" onclick="addQuestion('typing')" style="border-color: rgba(34, 211, 238, 0.4); color: #22d3ee;">⌨️ Add Typing Check</button>
                     <div style="margin-left: auto;">
                         <input type="file" id="wordUpload" hidden onchange="parseWordFile(this)">
                         <button class="btn btn-outline" onclick="openFormatModal()" style="margin-right: 0.5rem;">View
@@ -1378,71 +1199,13 @@
         let selectedExamId = null;
         let editingExamId = null;
 
-        // UI Helper Functions for Branch/Batch
-        function toggleSelectAllBranches(checkbox) {
-            const checkboxes = document.querySelectorAll('input[name="examBranch"]:not([value="All"])');
-            checkboxes.forEach(cb => cb.checked = checkbox.checked);
-        }
-
-        function toggleBatchDropdown() {
-            const dropdown = document.getElementById('batchDropdownOptions');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // Close batch dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('batchDropdownOptions');
-            const toggle = document.getElementById('batchDropdown');
-            if (dropdown && toggle && !dropdown.contains(event.target) && !toggle.contains(event.target)) {
-                dropdown.style.display = 'none';
-            }
-        });
-
-        function toggleSelectAllBatches(checkbox) {
-            const checkboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]');
-            checkboxes.forEach(cb => cb.checked = checkbox.checked);
-            updateBatchText();
-        }
-
-        function clearBatchSelection() {
-            const selectAll = document.getElementById('batchSelectAll');
-            if (selectAll) selectAll.checked = false;
-            const checkboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]');
-            checkboxes.forEach(cb => cb.checked = false);
-            updateBatchText();
-        }
-
-        function updateBatchText() {
-            const checkboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]:checked');
-            const textElement = document.getElementById('batchDropdownText');
-            if (!textElement) return;
-            
-            if (checkboxes.length === 0) {
-                textElement.innerText = 'Select Batches...';
-                textElement.style.color = 'var(--text-muted)';
-            } else if (checkboxes.length === 1) {
-                textElement.innerText = checkboxes[0].value;
-                textElement.style.color = '#f1f5f9';
-            } else if (checkboxes.length === document.querySelectorAll('#batchCheckboxes input[name="examBatch"]').length) {
-                textElement.innerText = 'All Batches';
-                textElement.style.color = '#f1f5f9';
-                const selectAll = document.getElementById('batchSelectAll');
-                if(selectAll) selectAll.checked = true;
-            } else {
-                textElement.innerText = checkboxes.length + ' Batches Selected';
-                textElement.style.color = '#f1f5f9';
-                const selectAll = document.getElementById('batchSelectAll');
-                if(selectAll) selectAll.checked = false;
-            }
-        }
-
         // Tabs
         function resetReportView() {
             // Hide loaded report content and reset to default "select exam" state
             const reportContent = document.getElementById('reportContent');
             if (reportContent) reportContent.style.display = 'none';
 
-            // Reset the exam dropdown to blank
+            // Reset the exam dropdown to the blank/placeholder option
             const examSelect = document.getElementById('reportExamSelect');
             if (examSelect) examSelect.value = '';
 
@@ -1454,7 +1217,7 @@
             if (sectionView) sectionView.style.display = 'none';
             if (studentView) studentView.style.display = 'none';
 
-            // Clear active filters and cached report data
+            // Clear any active branch filters and cached report data
             window.activeBranchFilter = null;
             window.reportGlobalStats = null;
             window.reportBranchStats = null;
@@ -1462,22 +1225,11 @@
             currentReportExam = null;
         }
 
-        function switchTab(tabId, forceReset = false) {
+        function switchTab(tabId) {
             // If leaving the reports tab, reset it to default state
             const activePane = document.querySelector('.tab-pane.active');
             if (activePane && activePane.id === 'tab-reports' && tabId !== 'reports') {
                 resetReportView();
-            }
-
-            // If leaving create_exam tab to go somewhere else (like Dashboard), cancel the edit state
-            if (activePane && activePane.id === 'tab-create_exam' && tabId !== 'create_exam') {
-                resetCreateForm();
-            }
-
-            // If navigating to create_exam from the sidebar (not from edit), reset the form
-            if (tabId === 'create_exam' && (forceReset || !editingExamId)) {
-                // Only reset if we are not in the middle of an edit operation, or if explicitly requested
-                resetCreateForm();
             }
 
             // Hide all
@@ -1490,16 +1242,11 @@
             // Highlight nav
             const navs = document.querySelectorAll('.nav-link');
             navs.forEach(n => n.classList.remove('active'));
-            // Use attribute startsWith or contains to be flexible with the forceReset parameter
-            const link = document.querySelector(`.nav-link[onclick^="switchTab('${tabId}'"]`) || 
-                         document.querySelector(`.nav-link[onclick*="switchTab('${tabId}')"]`);
+            const link = document.querySelector(`.nav-link[onclick="switchTab('${tabId}')"]`);
             if (link) link.classList.add('active');
 
             if (tabId === 'students') renderStudents();
-            if (tabId === 'dashboard') {
-                renderExamsList();
-                loadReportExams(); // Reload report exam list in background
-            }
+            if (tabId === 'dashboard') renderExamsList();
         }
 
         // Render Recent Exams
@@ -1517,7 +1264,7 @@
                     list.innerHTML = `
                         <div style="text-align:center; padding: 2rem; border: 1px dashed var(--border); border-radius: 0.5rem; color: var(--text-muted);">
                             <p style="margin-bottom:1rem;">No exams created yet.</p>
-                            <button class="btn btn-primary" onclick="switchTab('create_exam', true)">Create New Exam</button>
+                            <button class="btn btn-primary" onclick="switchTab('create_exam')">Create New Exam</button>
                         </div>
                     `;
                     return;
@@ -1534,40 +1281,20 @@
                     if (!exam) return '';
                     const qCount = exam.questions ? (exam.questions.length || 0) : 0;
                     const status = exam.status || 'published';
-                    const branchDisplay = Array.isArray(exam.branch) ? exam.branch.join(', ') : (exam.branch || 'All');
-                    const batchDisplay = Array.isArray(exam.batch) ? exam.batch.join(', ') : (exam.batch || 'All');
-                    const borderColor = status === 'published' ? 'var(--success)' : 'rgba(100,116,139,0.5)';
                     
                     return `
-                        <div onclick="openActionModal('${exam.id}')" class="glass-panel"
-                            style="padding: 1.25rem 1.5rem; border-left: 4px solid ${borderColor};
-                                   margin-bottom: 1rem; display: flex; justify-content: space-between;
-                                   align-items: center; cursor: pointer;
-                                   transition: transform 0.2s ease, box-shadow 0.2s ease;
-                                   border-radius: 0.85rem;"
-                            onmouseover="this.style.transform='translateX(4px)'; this.style.boxShadow='0 4px 20px rgba(108,99,255,0.2)'"
-                            onmouseout="this.style.transform=''; this.style.boxShadow=''">
-                            <div style="flex: 1;">
-                                <h4 style="margin-bottom: 0.4rem; font-size: 1.05rem; color: #f1f5f9;">${exam.title || 'Untitled Exam'}</h4>
-                                <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                                    <span>📚 ${exam.subject || 'No Subject'}</span>
-                                    <span>❓ ${qCount} Questions</span>
-                                    <span>🏫 ${branchDisplay}</span>
-                                    <span>🗓 ${batchDisplay}</span>
-                                    ${exam.duration ? `<span>⏱ ${exam.duration} min</span>` : ''}
-                                </div>
+                        <div onclick="openActionModal('${exam.id}')" class="glass-panel" style="padding:1rem; border-left: 4px solid var(${status === 'published' ? '--success' : '--text-muted'}); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s;">
+                            <div>
+                                <h4 style="margin-bottom: 0.25rem;">${exam.title || 'Untitled Exam'}</h4>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">${exam.subject || 'No Subject'} • ${qCount} Questions</div>
                             </div>
-                            <div class="badge ${status === 'published' ? 'badge-published' : 'badge-draft'}" style="margin-left: 1rem; flex-shrink: 0;">${status}</div>
+                            <div class="badge ${status === 'published' ? 'badge-published' : 'badge-draft'}">${status}</div>
                         </div>
                     `;
                 }).join('');
             } catch (error) {
                 console.error('Error rendering exams:', error);
-                const feedback = error.message.includes('401') || error.message.includes('Unauthorized')
-                    ? 'Session expired. Please <a href="../index.html" style="color:var(--primary); text-decoration:underline;">login again</a>.'
-                    : 'Error loading exams. Please refresh or check connection.';
-                
-                document.getElementById('recentExamsList').innerHTML = `<p style="color:var(--danger); text-align:center; padding:1rem;">${feedback}</p>`;
+                document.getElementById('recentExamsList').innerHTML = `<p style="color:var(--danger); text-align:center; padding:1rem;">Error loading exams. Please refresh.</p>`;
             }
         }
 
@@ -1633,26 +1360,12 @@
             const div = document.createElement('div');
             div.className = 'question-card fade-in';
             div.dataset.id = id;
-
-            // Determine the displayed label for the card header
-            const typeLabel = type === 'typing' ? '⌨️ TYPING SPEED CHECK' : `${type.toUpperCase()} Question`;
-
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; align-items:center;">
-                    <strong style="${type === 'typing' ? 'color:#22d3ee;' : ''}">${typeLabel}</strong>
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                    <strong>${type.toUpperCase()} Question</strong>
                     <button style="color:var(--danger); background:none; border:none;" onclick="this.parentElement.parentElement.remove()">Remove</button>
                 </div>
-                <input type="hidden" class="q-type" value="${type}">
-                ${type === 'typing' ? `
-                    <div style="background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.2); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.5rem;">
-                        <label style="font-size:0.8rem; color:#22d3ee; font-weight:600; display:block; margin-bottom:0.5rem;">📝 Question / Instruction (instructions to show to student)</label>
-                        <textarea class="input-field q-text" placeholder="e.g. Type the following passage as fast and accurately as you can." rows="2" style="margin-bottom:0.75rem;">${q.text || ''}</textarea>
-                        <label style="font-size:0.8rem; color:#22d3ee; font-weight:600; display:block; margin-bottom:0.5rem;">📖 Passage to Type (students will retype this exactly)</label>
-                        <textarea class="input-field q-typing-passage" placeholder="Enter the passage here. Students must retype this exactly. E.g: The quick brown fox jumps over the lazy dog." rows="5" style="font-family: 'JetBrains Mono', monospace; font-size:0.9rem; line-height:1.6;">${q.typingPassage || (q.correct && typeof q.correct === 'string' && q.correct.startsWith('TYPING_PASSAGE::') ? q.correct.replace('TYPING_PASSAGE::', '') : '')}</textarea>
-                        <div style="margin-top:0.5rem; font-size:0.75rem; color:rgba(34,211,238,0.6);">ℹ️ Students are graded on WPM (typing speed) and accuracy. Score = 10 × (accuracy/100).</div>
-                    </div>
-                ` : `
-                <textarea class="input-field q-text" placeholder="Enter question text..." rows="3" style="margin-bottom:1rem;">${q.text || ''}</textarea>
+                <textarea class="input-field q-text" placeholder="Enter question text..." rows="3" style="margin-bottom:1rem;">${q.text}</textarea>
                 ${type === 'mcq' ? `
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;">
                         <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -1725,7 +1438,6 @@
                         </div>
                     </div>
                 ` : ''}
-                `}
                 <input type="hidden" class="q-type" value="${type}">
             `;
             container.appendChild(div);
@@ -1773,7 +1485,6 @@
             // Patterns
             const qStartPattern = /^(?:Q[\.|:]|\d+[\.|:])\s*(.+)/i;
             const typePattern = /^Type:\s*(.+)/i;
-            const passagePattern = /^(?:Passage|Typing\s*Passage):?\s*(.+)/i;
 
             // MCQ Patterns
             const optPattern = /^([a-d])[\)|\.]\s*(.+)/i;
@@ -1820,18 +1531,6 @@
                     const t = typeMatch[1].toLowerCase();
                     if (t.includes('coding')) currentQ.type = 'coding';
                     else if (t.includes('mcq')) currentQ.type = 'mcq';
-                    else if (t.includes('typing') || t.includes('speed')) {
-                        currentQ.type = 'typing';
-                    }
-                    return;
-                }
-
-                // 2.5 Passage Detection
-                const passageMatch = line.match(passagePattern);
-                if (passageMatch) {
-                    currentQ.type = 'typing';
-                    currentQ.correct = passageMatch[1];
-                    readMode = 'passage';
                     return;
                 }
 
@@ -1931,10 +1630,6 @@
                 }
                 if (readMode === 'hiddenOut' && currentHiddenIdx >= 0) {
                     currentQ.hiddenCases[currentHiddenIdx].output += (currentQ.hiddenCases[currentHiddenIdx].output ? '\n' : '') + line;
-                    return;
-                }
-                if (readMode === 'passage') {
-                    currentQ.correct += (currentQ.correct ? '\n' : '') + line;
                     return;
                 }
 
@@ -2068,20 +1763,6 @@
                             });
                         }
                     });
-                    qData.correct = qData.testOut;
-                }
-                // Typing Speed Check: store passage in correct_answer with prefix identifier.
-                // The type is sent as 'text' so the DB stores it as 'Descriptive' (already allowed).
-                if (type === 'typing') {
-                    const passageEl = card.querySelector('.q-typing-passage');
-                    const passage = passageEl ? passageEl.value.trim() : '';
-                    if (!passage) {
-                        alert('Please enter a passage for the Typing Speed Check question.');
-                        return;
-                    }
-                    qData.correct = 'TYPING_PASSAGE::' + passage;
-                    // Map to 'text' type — the backend normalizes this to 'Descriptive'
-                    qData.type = 'text';
                 }
                 questions.push(qData);
             });
@@ -2146,15 +1827,11 @@
             document.getElementById('questionsContainer').innerHTML = '';
             document.getElementById('examName').value = '';
             clearBatchSelection(); // Reset Batch Dropdown
-            // Reset branch checkboxes
-            document.querySelectorAll('input[name="examBranch"]').forEach(cb => cb.checked = false);
             document.getElementById('examSubject').value = '';
             document.getElementById('examDuration').value = '60';
-            const limitEl = document.getElementById('examLimit');
-            if (limitEl) limitEl.value = '1';
+            document.getElementById('examLimit').value = '1';
             editingExamId = null;
-            const h2El = document.querySelector('#tab-create_exam h2');
-            if (h2El) h2El.innerText = 'Create New Exam';
+            document.querySelector('#tab-create_exam h2').innerText = 'Create New Exam';
         }
 
         // Modal Actions
@@ -2169,118 +1846,60 @@
 
         async function triggerAction(action) {
             if (!selectedExamId) return;
+            const exam = await ExamService.getExamById(selectedExamId);
+            if (!exam) {
+                alert('Could not load exam details.');
+                return;
+            }
 
-            try {
-                let exam;
-                try {
-                    exam = await ExamService.getExamById(selectedExamId);
-                } catch (err) {
-                    alert('Could not load exam details. Error: ' + err.message);
-                    return;
-                }
-
-                if (!exam) {
-                    alert('Exam not found.');
-                    return;
-                }
-
-                if (action === 'delete') {
-                    if (confirm('Are you sure you want to delete this exam? This cannot be undone.')) {
-                        try {
-                            await ExamService.deleteExam(selectedExamId);
-                            closeActionModal();
-                            renderExamsList();
-                            loadReportExams();
-                        } catch (err) {
-                            alert('Failed to delete exam: ' + err.message);
-                        }
-                    }
-                } else if (action === 'live') {
-                    try {
-                        await ExamService.updateExamStatus(selectedExamId, 'published');
-                        closeActionModal();
-                        renderExamsList();
-                        loadReportExams();
-                        alert('Exam is now Live!');
-                    } catch (err) {
-                        alert('Failed to publish exam: ' + err.message);
-                    }
-                } else if (action === 'edit') {
-                    // ── Set editing state BEFORE calling switchTab ──
-                    editingExamId = exam.id;
-
-                    // Populate Exam Name
-                    document.getElementById('examName').value = exam.title || '';
-
-                    // ── Handle Branch Checkboxes ──
-                    const branchCheckboxes = document.querySelectorAll('input[name="examBranch"]');
-                    branchCheckboxes.forEach(cb => cb.checked = false);
-                    const branches = Array.isArray(exam.branch) ? exam.branch : [exam.branch].filter(Boolean);
-                    const branchSet = new Set(branches.map(String));
-                    branchCheckboxes.forEach(cb => {
-                        if (branchSet.has(cb.value)) cb.checked = true;
-                    });
-
-                    // ── Handle Batch Dropdown ──
-                    clearBatchSelection();
-                    const examBatches = Array.isArray(exam.batch)
-                        ? exam.batch
-                        : (exam.batch ? [String(exam.batch)] : []);
-                    const batchSet = new Set(examBatches.map(String));
-                    document.querySelectorAll('#batchCheckboxes input[name="examBatch"]').forEach(cb => {
-                        if (batchSet.has(cb.value)) cb.checked = true;
-                    });
-                    updateBatchText();
-
-                    // ── Populate Subject, Duration, Attempt Limit ──
-                    document.getElementById('examSubject').value = exam.subject || '';
-                    document.getElementById('examDuration').value = exam.duration || 60;
-
-                    // Populate Attempt Limit (select element)
-                    const limitEl = document.getElementById('examLimit');
-                    if (limitEl) {
-                        const attemptLimit = exam.attemptLimit !== undefined ? String(exam.attemptLimit) : '1';
-                        // Try exact match first, fallback to '1'
-                        const matchOpt = Array.from(limitEl.options).find(o => o.value === attemptLimit);
-                        limitEl.value = matchOpt ? attemptLimit : '1';
-                    }
-
-                    // ── Populate Questions ──
-                    document.getElementById('questionsContainer').innerHTML = '';
-                    const questionsToLoad = Array.isArray(exam.questions) ? exam.questions : [];
-                    questionsToLoad.forEach(q => {
-                        if (!q) return;
-                        // Determine effective question type
-                        let qType = q.type || 'text';
-                        // Normalize backend type names
-                        if (qType === 'Descriptive' || qType === 'descriptive') qType = 'text';
-                        if (qType === 'MCQ') qType = 'mcq';
-                        if (qType === 'Coding') qType = 'coding';
-
-                        // Detect typing questions by the TYPING_PASSAGE:: prefix in correct_answer
-                        const isTypingQ = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
-                        if (isTypingQ) {
-                            addQuestion('typing', {
-                                ...q,
-                                type: 'typing',
-                                typingPassage: String(q.correct).replace('TYPING_PASSAGE::', '')
-                            });
-                        } else {
-                            addQuestion(qType, q);
-                        }
-                    });
-
-                    // ── Update Form Title ──
-                    const h2El = document.querySelector('#tab-create_exam h2');
-                    if (h2El) h2El.innerText = 'Edit Exam';
-
+            if (action === 'delete') {
+                if (confirm('Are you sure you want to delete this exam?')) {
+                    await ExamService.deleteExam(selectedExamId);
+                    renderExamsList();
                     closeActionModal();
-                    // switchTab will NOT reset the form because editingExamId is set
-                    switchTab('create_exam');
                 }
-            } catch (globalErr) {
-                console.error('Error in triggerAction:', globalErr);
-                alert('An unexpected error occurred: ' + globalErr.message);
+            } else if (action === 'live') {
+                exam.status = 'published';
+                await ExamService.saveExam(exam);
+                renderExamsList();
+                closeActionModal();
+                alert('Exam is now Live!');
+            } else if (action === 'edit') {
+                // Load into Create Form
+                editingExamId = exam.id;
+                document.getElementById('examName').value = exam.title;
+                // document.getElementById('examYear').value = exam.year; // Year removed
+
+                // Handle Checkboxes for Branch
+                const checkboxes = document.querySelectorAll('input[name="examBranch"]');
+                checkboxes.forEach(cb => cb.checked = false); // Reset
+
+                const branches = Array.isArray(exam.branch) ? exam.branch : [exam.branch];
+                branches.forEach(b => {
+                    const cb = document.querySelector(`input[name="examBranch"][value="${b}"]`);
+                    if (cb) cb.checked = true;
+                });
+
+                // Handle Batch Dropdown population
+                clearBatchSelection();
+                const examBatches = Array.isArray(exam.batch) ? exam.batch : [exam.batch];
+                const batchCheckboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]');
+                batchCheckboxes.forEach(cb => {
+                    if (examBatches.includes(cb.value)) cb.checked = true;
+                });
+                updateBatchText();
+
+                document.getElementById('examSubject').value = exam.subject;
+                document.getElementById('examDuration').value = exam.duration;
+
+                // Clear and add questions
+                document.getElementById('questionsContainer').innerHTML = '';
+                exam.questions.forEach(q => addQuestion(q.type, q));
+
+                document.querySelector('#tab-create_exam h2').innerText = 'Edit Exam';
+
+                closeActionModal();
+                switchTab('create_exam');
             }
         }
 
@@ -2308,15 +1927,15 @@
 
             // Fetch Exam & Results
             const exams = await ExamService.getExams();
-            const exam = exams.find(e => String(e.id) === String(examId));
+            const exam = exams.find(e => e.id === examId);
             currentReportExam = exam;
 
             document.getElementById('reportExamTitle').innerText = exam.title;
 
             // Get Results
+            // Get Results (All attempts)
             const allResultsFetcher = await ExamService.getResults();
-            const allResults = allResultsFetcher.filter(r => String(r.examId) === String(examId));
-
+            const allResults = allResultsFetcher.filter(r => r.examId === examId);
 
             // Filter: Keep only LATEST attempt per student
             const latestResultsMap = {};
@@ -2363,12 +1982,12 @@
                 // If exam has no batch, assume open? Or maybe failed data. Assume strict.
                 let batchMatch = false;
                 if (examBatches.length > 0) {
+                    // Check if student batch is in exam batches
+                    // A bit loose on spaces to avoid frustration
                     const sBatchNorm = normalize(sBatch);
-                    batchMatch = examBatches.some(eb => {
-                        const ebNorm = normalize(eb);
-                        return ebNorm === 'all' || ebNorm === sBatchNorm;
-                    });
+                    batchMatch = examBatches.some(eb => normalize(eb) === sBatchNorm);
                 } else {
+                    // Legacy fallback: check exam.year? No, stick to batch.
                     // If no batch defined on exam, maybe it matches none.
                     batchMatch = false;
                 }
@@ -2458,20 +2077,21 @@
 
             // Map Results to these groups
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || { branch: 'Unknown', batch: 'Unknown' };
-                const sBranch = String(student.branch || 'Unknown').trim().toUpperCase();
-                const sBatch = String(student.batch || 'Unknown').trim();
-                const key = `${sBranch}|${sBatch}`;
+                const student = usersDB[r.studentId];
+                if (student) {
+                    const sBranch = String(student.branch || 'Unknown').trim().toUpperCase();
+                    const sBatch = String(student.batch || 'Unknown').trim();
+                    const key = `${sBranch}|${sBatch}`;
 
+                    if (!branchBatchData[key]) {
+                        // Fallback if student wasn't in original 'selected' list (e.g. metadata changed)
+                        branchBatchData[key] = { branch: sBranch, batch: sBatch, total: 0, attempted: 0, passed: 0 };
+                    }
 
-                if (!branchBatchData[key]) {
-                    // Fallback if student wasn't in original 'selected' list (e.g. metadata changed)
-                    branchBatchData[key] = { branch: sBranch, batch: sBatch, total: 0, attempted: 0, passed: 0 };
-                }
-
-                branchBatchData[key].attempted++;
-                if (r.score >= 40) {
-                    branchBatchData[key].passed++;
+                    branchBatchData[key].attempted++;
+                    if (r.score >= 40) {
+                        branchBatchData[key].passed++;
+                    }
                 }
             });
 
@@ -2517,7 +2137,7 @@
             // Apply Context Filter (Branch Drill-down)
             if (window.activeBranchFilter) {
                 filteredResults = filteredResults.filter(r => {
-                    const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
+                    const student = usersDB[r.studentId];
                     if (!student) return false;
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2565,19 +2185,15 @@
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No students found for this category.</td></tr>';
             } else {
                 tbody.innerHTML = filteredResults.map(r => {
-                    const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
+                    const student = usersDB[r.studentId] || { name: 'Unknown', branch: '--', section: '--' };
                     // Determine Score Color
                     let scoreColor = 'var(--text-main)';
                     if (r.score >= 80) scoreColor = 'var(--success)';
                     if (r.score < 40) scoreColor = 'var(--danger)';
 
-                    const rId = r.username || r.studentId;
-                    const isNumericId = rId && rId.length < 5 && !isNaN(rId);
-                    const idDisplay = (rId && !isNumericId) ? rId : 'UNASSIGNED';
-
                     return `
                         <tr style="border-bottom: 1px solid var(--border);">
-                            <td style="padding: 0.75rem;">${idDisplay}</td>
+                            <td style="padding: 0.75rem;">${r.studentId}</td>
                             <td style="padding: 0.75rem; font-weight:500;">${student.name}</td>
                             <td style="padding: 0.75rem;">${student.branch}</td>
                             <td style="padding: 0.75rem;">${student.batch || 'N/A'} - ${student.section || 'A'}</td>
@@ -2640,49 +2256,33 @@
             }
 
             data.forEach(row => {
-                // Normalize keys to handle case sensitivity and spaces
+                // Normalize keys to handle case sensitivity
                 const rowNormalized = {};
                 Object.keys(row).forEach(k => {
                     rowNormalized[cleanKey(k)] = row[k];
                 });
 
-                // Find key by partial match helper
-                const findVal = (prefixes) => {
-                    const match = Object.keys(rowNormalized).find(k => 
-                        prefixes.some(p => k.includes(p))
-                    );
-                    return match ? rowNormalized[match] : null;
-                };
-
                 // Check required fields (support various column name formats)
-                const id = findVal(['studentid', 'rollno', 'username', 'htno', 'regno']); // Removed 'id' to avoid auto-increment collisions
-                const pass = findVal(['password', 'pass', 'pwd']);
-                const name = findVal(['name', 'studentname', 'fullname']) || 'Student';
-                const branch = findVal(['branch', 'dept', 'specialization']) || 'General';
-                const year = findVal(['year', 'studyingyear', 'currentyear']) || '1';
-                const section = findVal(['section', 'sec', 'class']) || 'A';
-                const batch = findVal(['batch', 'jdate', 'yearofjoining']) || '';
+                // "Student ID", "Roll No", "ID", "Username"
+                const id = rowNormalized['studentid'] || rowNormalized['id'] || rowNormalized['username'] || rowNormalized['rollno'];
+                // "Password", "Pwd", "Pass"
+                const pass = rowNormalized['password'] || rowNormalized['pass'] || rowNormalized['pwd'];
 
                 if (id && pass) {
-                    const uID = String(id).trim().toUpperCase();
-                    // Basic validation: Roll numbers should likely be alphanumeric and at least 5 chars
-                    if (uID.length < 5 && !isNaN(uID)) {
-                        console.warn(`Skipping student with suspicious numeric ID: ${uID}`);
-                        return;
-                    }
                     // Extract digit from year (e.g. "1st Year" -> "1", "Year 2" -> "2")
-                    let cleanYear = String(year).replace(/\D/g, '').charAt(0) || '1';
+                    let cleanYear = String(rowNormalized['year'] || '1').replace(/\D/g, '').charAt(0) || '1';
 
                     // Store strict credentials with robust normalization
-                    // uID already declared above
+                    const uID = String(id).trim().toUpperCase();
                     usersDB[uID] = {
                         id: uID,
                         password: String(pass).trim().toUpperCase(),
-                        name: String(name).trim(),
-                        branch: String(branch).trim().toUpperCase(),
+                        name: String(rowNormalized['name'] || 'Student').trim(),
+                        branch: String(rowNormalized['branch'] || 'General').trim().toUpperCase(),
                         year: cleanYear,
-                        section: String(section).trim().toUpperCase(),
-                        batch: String(batch).trim(),
+                        // Map Batch column to Section if Section is missing
+                        section: String(rowNormalized['section'] || 'A').trim().toUpperCase(),
+                        batch: String(rowNormalized['batch'] || '').trim(),
                         addedAt: Date.now()
                     };
                     newUsersToSave[uID] = usersDB[uID];
@@ -2706,84 +2306,74 @@
         async function renderStudents() {
             const tbody = document.getElementById('studentListBody');
             const searchVal = document.getElementById('studentSearchInput').value.trim().toLowerCase();
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">Loading students...</td></tr>';
 
-            let students = [];
             try {
-                const token = localStorage.getItem('college_exam_portal_token');
-                const resp = await fetch(`${window.CONFIG.API_BASE_URL}/api/users`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (resp.ok) {
-                    const result = await resp.json();
-                    let arr = [];
-                    if (Array.isArray(result)) {
-                        arr = result;
-                    } else if (result && result.data && Array.isArray(result.data)) {
-                        arr = result.data;
-                    } else if (result && typeof result === 'object') {
-                        arr = Object.values(result);
-                    }
-                    students = arr.filter(u => u.role === 'Student' || u.role === 'student' || !u.role); // Backend sometimes doesn't store role explicitly, they are just in users table.
+                // Show loading if first load
+                if (!searchVal && tbody.innerHTML.trim() === '') {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Loading students...</td></tr>';
                 }
-            } catch(e) {
-                console.error('Failed to fetch students:', e);
+
+                const usersDB = await UserService.getUsers();
+                
+                // Convert DB object to array
+                let students = Object.values(usersDB).sort((a, b) => {
+                    const dateB = b && b.addedAt ? b.addedAt : 0;
+                    const dateA = a && a.addedAt ? a.addedAt : 0;
+                    return dateB - dateA;
+                });
+
+                // Filter if search exists
+                if (searchVal) {
+                    students = students.filter(s =>
+                        (s.name || '').toLowerCase().includes(searchVal) ||
+                        (s.id || '').toLowerCase().includes(searchVal)
+                    );
+                }
+
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">' + (searchVal ? 'No students match your search.' : 'No students uploaded yet. Admin must upload Excel file.') + '</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = students.map(s => {
+                    if (!s) return '';
+                    // Always use username (roll number) as the identifier, not the internal id
+                    const safeUsername = String(s.username || s.id || '').replace(/"/g, '&quot;');
+                    const displayId = s.username || s.id || '--';
+                    return `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 0.75rem;">${displayId}</td>
+                            <td style="padding: 0.75rem;">${s.name || 'Student'}</td>
+                            <td style="padding: 0.75rem;">${s.branch || '--'}</td>
+                            <td style="padding: 0.75rem;">${s.section || 'A'}</td>
+                            <td style="padding: 0.75rem;">${s.batch || '--'}</td>
+                            <td style="padding: 0.75rem;">
+                                <button class="btn btn-outline" 
+                                    style="padding: 0.25rem 0.5rem; margin-right: 0.5rem; font-size: 0.8rem;" 
+                                    data-id="${safeUsername}"
+                                    onclick="openEditStudentModal(this.getAttribute('data-id'))">Edit</button>
+                                <button class="btn btn-outline" 
+                                    style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: var(--danger); font-size: 0.8rem;" 
+                                    data-id="${safeUsername}"
+                                    onclick="deleteStudent(this.getAttribute('data-id'))">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Render students error:', error);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error loading students: ' + error.message + '</td></tr>';
             }
-
-            if (searchVal) {
-                students = students.filter(s =>
-                    (s.name || '').toLowerCase().includes(searchVal) ||
-                    (s.username || '').toLowerCase().includes(searchVal)
-                );
-            }
-
-            if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No students found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = students.map(s => {
-                const studentId = s.id || s.username;
-                const isNumericId = studentId && studentId.length < 5 && !isNaN(studentId);
-                const idDisplay = studentId 
-                    ? (isNumericId 
-                        ? `<span style="color:var(--danger); cursor:help;" title="Numeric/Legacy ID found. Consider removing this student and re-adding with a valid Roll No.">${studentId} (Invalid)</span>` 
-                        : studentId)
-                    : '<span style="color:var(--danger)">No ID</span>';
-
-                return `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 0.75rem;">${idDisplay}</td>
-                    <td style="padding: 0.75rem;">${s.name}</td>
-                    <td style="padding: 0.75rem;">${s.branch || '--'}</td>
-                    <td style="padding: 0.75rem;">${s.section || 'A'}</td>
-                    <td style="padding: 0.75rem;">${s.batch || '--'}</td>
-                    <td style="padding: 0.75rem;">
-                        <button class="btn btn-outline" 
-                            style="padding: 0.25rem 0.5rem; margin-right: 0.5rem; font-size: 0.8rem;" 
-                            data-id="${(studentId || '').toString().replace(/"/g, '&quot;')}"
-                            onclick="openEditStudentModal(this.getAttribute('data-id'))">Edit</button>
-                        <button class="btn btn-outline" 
-                            style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: var(--danger); font-size: 0.8rem;" 
-                            data-id="${(studentId || '').toString().replace(/"/g, '&quot;')}"
-                            onclick="deleteStudent(this.getAttribute('data-id'))">Delete</button>
-                    </td>
-                </tr>
-            `;
-            }).join('');
         }
 
         async function deleteStudent(id) {
-            id = String(id).toUpperCase();
             if (!confirm('Are you sure you want to delete student ' + id + '?')) return;
 
-            try {
-                const success = await UserService.deleteUser(id);
-                if (success) {
-                    renderStudents();
-                }
-            } catch (error) {
-                alert('Failed to delete student. Note: If the backend was just updated, it may take 1-2 minutes for the "Delete" endpoint to become active on Render. Error: ' + error.message);
+            const success = await UserService.deleteUser(id);
+            if (success) {
+                renderStudents();
+            } else {
+                alert('Failed to delete student.');
             }
         }
 
@@ -2800,20 +2390,18 @@
         }
 
         async function openEditStudentModal(id) {
-            id = String(id).toUpperCase();
             const usersDB = await UserService.getUsers();
             const student = usersDB[id];
-            if (!student) {
-                alert('Student not found.');
-                return;
-            }
+            if (!student) return;
 
             isEditingStudent = true;
-            document.getElementById('newStudentId').value = student.username || '';
+            document.getElementById('newStudentId').value = student.id;
             document.getElementById('newStudentId').disabled = true; // Cannot change ID
             document.getElementById('newStudentName').value = student.name;
             document.getElementById('newStudentPass').value = student.password || ''; // Password might be missing in old data
-            document.getElementById('newStudentBranch').value = student.branch || 'CSE';
+            document.getElementById('newStudentBranch').value = student.branch;
+            document.getElementById('newStudentBranch').value = student.branch;
+            // document.getElementById('newStudentYear').value = student.year; // Year Removed
             document.getElementById('newStudentSection').value = student.section || 'A';
             document.getElementById('newStudentBatch').value = student.batch || '2022-2026'; // Default if missing
 
@@ -2835,11 +2423,6 @@
         async function saveNewStudent(e) {
             e.preventDefault();
             const id = document.getElementById('newStudentId').value.trim().toUpperCase();
-            const rollNoRegex = /^[A-Z0-9]{5,20}$/; // Basic Roll No format
-            if (!rollNoRegex.test(id)) {
-                alert('Invalid Student ID format. Please use a valid Roll Number (e.g., 25L31A05Z5). Numeric-only IDs under 5 digits are not allowed.');
-                return;
-            }
             const name = document.getElementById('newStudentName').value.trim();
             const pass = document.getElementById('newStudentPass').value.trim().toUpperCase();
             const branch = document.getElementById('newStudentBranch').value;
@@ -2847,12 +2430,8 @@
             const section = document.getElementById('newStudentSection').value.trim().toUpperCase() || 'A';
             const batch = document.getElementById('newStudentBatch').value.trim();
 
-            if (!id || !name) {
-                alert("ID and Name are required.");
-                return;
-            }
-            if (!isEditingStudent && !pass) {
-                alert("Password is required for new students.");
+            if (!id || !name || !pass) {
+                alert("ID, Name and Password are required.");
                 return;
             }
 
@@ -2995,7 +2574,7 @@
 
             // Iterate ALL results to find those belonging to this branch/batch
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
+                const student = usersDB[r.studentId];
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3051,7 +2630,7 @@
 
             // 3. Map Results
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
+                const student = usersDB[r.studentId];
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3157,7 +2736,7 @@
             // Iterate ALL results to find those belonging to this branch/batch/section
             // (Efficiently we could map filtered students to results, but let's stick to result iteration for score accuracy)
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
+                const student = usersDB[r.studentId];
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3220,10 +2799,7 @@
             } else {
                 tbody.innerHTML = targetStudents.map(s => {
                     // Find Result
-                    const result = currentReportResults.find(r => 
-                        String(r.username || r.studentId || '').toUpperCase() === String(s.username || s.id).toUpperCase() ||
-                        r.studentId === s.id
-                    );
+                    const result = currentReportResults.find(r => r.studentId === s.id);
 
                     let attemptStr = '<span style="color:var(--text-muted)">Not Attempted</span>';
                     let scoreStr = '--';
@@ -3233,31 +2809,23 @@
 
                     if (result) {
                         // Attempted
-                        attemptStr = '<span style="color:var(--success)">Attempted</span>';
+                        const answers = result.answers || {};
+                        attemptedQs = Object.keys(answers).length;
+                        attemptStr = attemptedQs;
                         scoreStr = `${result.score}%`;
 
                         // Test Cases Logic
                         // result.codingTestCaseData = { qId: { passed: X, total: Y } }
-                        // Values may be objects or JSON strings from PostgreSQL json_object_agg
-                        const ctcData = result.codingTestCaseData;
-                        const ctcKeys = ctcData ? Object.keys(ctcData) : [];
-                        if (ctcKeys.length > 0) {
+                        if (result.codingTestCaseData) {
                             let totalPassed = 0;
                             let totalCases = 0;
-                            ctcKeys.forEach(key => {
-                                let d = ctcData[key];
-                                // Handle string-encoded JSON from PostgreSQL
-                                if (typeof d === 'string') {
-                                    try { d = JSON.parse(d); } catch(e) { d = null; }
-                                }
-                                if (d && typeof d === 'object') {
-                                    totalPassed += (parseInt(d.passed, 10) || 0);
-                                    totalCases += (parseInt(d.total, 10) || 0);
-                                }
+                            Object.values(result.codingTestCaseData).forEach(d => {
+                                totalPassed += (d.passed || 0);
+                                totalCases += (d.total || 0);
                             });
-                            testCasesStr = totalCases > 0 ? `${totalPassed} / ${totalCases}` : (totalPassed > 0 ? `${totalPassed}` : '0');
+                            testCasesStr = `${totalPassed}`;
                         } else {
-                            // Non-coding exam or student didn't run/submit any code
+                            // Fallback for old data or non-coding exams
                             testCasesStr = 'N/A';
                         }
                     }
@@ -3265,13 +2833,13 @@
                     return `
                         <tr style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 0.75rem; font-weight: 500;">${s.name}</td>
-                            <td style="padding: 0.75rem; color: var(--text-muted);">${s.username || 'N/A'}</td>
+                            <td style="padding: 0.75rem; color: var(--text-muted);">${s.id}</td>
                             <td style="padding: 0.75rem;">${totalQs}</td>
                             <td style="padding: 0.75rem;">${attemptStr}</td>
                             <td style="padding: 0.75rem; font-weight: 600;">${scoreStr}</td>
                             <td style="padding: 0.75rem;">${testCasesStr}</td>
                         </tr>
-                    `;
+                     `;
                 }).join('');
             }
 

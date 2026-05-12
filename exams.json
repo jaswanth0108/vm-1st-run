@@ -965,5 +965,33 @@
     ],
     "status": "published",
     "createdAt": 1772522211236
+  },
+  {
+    "id": "exam_test1",
+    "title": "Test Exam 1",
+    "branch": [
+      "All"
+    ],
+    "batch": [
+      "2024-2028"
+    ],
+    "subject": "Test",
+    "duration": "60",
+    "attemptLimit": 1,
+    "questions": []
+  },
+  {
+    "id": "exam_test2",
+    "title": "Test Exam 2",
+    "branch": [
+      "All"
+    ],
+    "batch": [
+      "2024-2028"
+    ],
+    "subject": "Test",
+    "duration": "60",
+    "attemptLimit": 1,
+    "questions": []
   }
 ]

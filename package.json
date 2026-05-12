@@ -6,8 +6,10 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "jsdom": "^29.1.1",
     "node-fetch": "^3.3.2",
     "pg": "^8.13.3",
+    "playwright": "^1.60.0",
     "uuid": "^9.0.1"
   }
 }

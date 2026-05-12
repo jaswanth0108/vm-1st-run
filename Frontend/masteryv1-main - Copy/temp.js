@@ -1,0 +1,1437 @@
+
+        // Security & State
+        let isSubmitting = false; // Prevent multiple submission triggers
+        let warnings = 0;
+        const MAX_WARNINGS = 3;
+        const warningLog = []; // { warningNumber, reason, timestamp }
+        let currentExam = null;
+        let currentAnswers = {}; // { qId: answer }
+        let codingResults = {}; // { qId: 'PASS' | 'FAIL' | null } - Strict Scoring
+
+        // ── PROCTOR GATE ── Only true after initExam() succeeds
+        let examActive = false;
+
+        // Time Tracking State
+        let questionTimeData = {}; // { qId: seconds (integer) }
+        let currentQuestionStartTime = null;
+        let activeQuestionId = null;
+
+        // Typing Speed State (NEW — does not affect existing question types)
+        let typingStats = {};    // { qId: { wpm: N, accuracy: N, typingStartTime: T } }
+        let typingIntervals = {}; // { qId: intervalId } — live WPM refresh per question
+
+        // Init
+        const params = new URLSearchParams(window.location.search);
+        const examId = params.get('id');
+        // Allow both student and admin roles to access the exam runner
+        const session = Auth.checkSession();
+        if (!session || (session.role !== 'student' && session.role !== 'admin')) {
+             window.location.href = '../index.html';
+             throw new Error('Unauthorized');
+        }
+
+        if (session) {
+            const displayName = session.name && session.name !== 'Student' ? session.name : (session.username || 'Student');
+            document.getElementById('studentInfo').innerText = `${displayName} (${session.id})`;
+        }
+
+        if (!examId) {
+            // Auto-redirect to dashboard
+            window.location.href = '../student/index.html';
+            throw new Error('No ID');
+        }
+
+        // Load Exam
+        (async () => {
+            currentExam = await ExamService.getExamById(examId);
+            console.log('[Exam Runner] Loaded Exam:', currentExam);
+
+            if (!currentExam) {
+                window.location.replace('../student/index.html');
+                return;
+            }
+
+            // Safety check for empty questions
+            if (!currentExam.questions || currentExam.questions.length === 0) {
+                document.getElementById('questionArea').innerHTML = `
+                    <div style="text-align:center; padding:5rem; color:var(--text-muted);">
+                        <h2 style="margin-bottom:1rem;">⚠️ No Questions Available</h2>
+                        <p>This exam currently has no questions. Please contact your administrator.</p>
+                        <a href="../student/index.html" class="btn btn-outline" style="margin-top:2rem;">Back to Dashboard</a>
+                    </div>
+                `;
+                document.getElementById('startOverlay').style.display = 'none';
+                return;
+            }
+
+            // Check attempt limit immediately
+            const studentResults = await ExamService.getStudentResults(session.id);
+            const previousAttempts = studentResults.filter(r => String(r.examId) === String(examId));
+            const limit = currentExam.attemptLimit || 1;
+
+            if (session.role === 'student' && limit !== -1 && previousAttempts.length >= limit) {
+                alert('You have reached the maximum number of attempts for this exam.');
+                window.location.replace('../student/index.html');
+                return;
+            }
+
+            // Initial Render
+            renderQuestionNav();
+            renderQuestion(0);
+        })();
+
+        function showError(msg) {
+            console.error(msg);
+        }
+
+        // --- Timer & State Logic ---
+        let time = 0;
+        let timerInterval = null;
+        const TIMER_KEY = `exam_start_${examId}_${session.id}`;
+
+        function initExam() {
+            // ── Step 1: Fullscreen MUST be called synchronously within the user gesture
+            const elem = document.documentElement;
+            try {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => console.warn('Fullscreen denied:', err));
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            } catch (err) {
+                console.warn('Fullscreen request failed:', err);
+            }
+
+            // ── Step 2: Activate proctoring now (fullscreen request is in-flight)
+            examActive = true;
+
+            // ── Step 3: Hide the start overlay immediately
+            document.getElementById('startOverlay').style.display = 'none';
+
+            // ── Step 4: Continue async logic
+            _initExamAsync();
+        }
+
+        async function _initExamAsync() {
+            const now = Date.now();
+
+            // Check if this is a fresh attempt or a resumed one
+            const studentResults = await ExamService.getStudentResults(session.id);
+            const previousAttempts = studentResults.filter(r => String(r.examId) === String(examId));
+
+            let startTime = localStorage.getItem(TIMER_KEY);
+
+            if (previousAttempts.length > 0 && startTime) {
+                const lastAttemptTime = Math.max(...previousAttempts.map(r => r.timestamp || 0));
+                if (parseInt(startTime) < lastAttemptTime) {
+                    // Stale timer from a previous completed attempt — reset
+                    localStorage.removeItem(TIMER_KEY);
+                    startTime = null;
+                }
+            }
+
+            if (!startTime) {
+                startTime = now;
+                localStorage.setItem(TIMER_KEY, String(startTime));
+            }
+
+            const elapsedSeconds = Math.floor((now - parseInt(startTime)) / 1000);
+            time = (currentExam.duration * 60) - elapsedSeconds;
+
+            if (time <= 0) {
+                alert('Time has expired for this exam. Auto-submitting.');
+                examActive = false;
+                submitExam(true); // pass flag to skip confirm dialog
+                return;
+            }
+
+            startTimer();
+        }
+
+        function startTimer() {
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                time--;
+                updateTimerDisplay();
+
+                if (time <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            if (time < 0) time = 0;
+            const m = Math.floor(time / 60).toString().padStart(2, '0');
+            const s = (time % 60).toString().padStart(2, '0');
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `${m}:${s}`;
+            
+            // Add warning class when time is low (< 5 minutes)
+            if (time <= 300 && time > 0) {
+                timerEl.classList.add('warning');
+            } else {
+                timerEl.classList.remove('warning');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  PROCTORING EVENT LISTENERS
+        //  All guarded by `examActive` — prevents any false positives
+        //  during page load, start overlay, or result overlay.
+        // ═══════════════════════════════════════════════════════════
+
+        // 1. Fullscreen exit detection (standard + webkit)
+        let _fsJustEntered = false; // suppress the initial entry event
+        document.addEventListener('fullscreenchange', () => {
+            if (!examActive) return;
+            if (document.fullscreenElement) {
+                _fsJustEntered = true; // entering fullscreen — ignore
+                return;
+            }
+            if (!isSubmitting) triggerWarning('Exited Fullscreen Mode');
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!examActive) return;
+            if (document.webkitFullscreenElement) return;
+            if (!isSubmitting) triggerWarning('Exited Fullscreen Mode');
+        });
+
+        // 2. Tab switch / minimise (visibilitychange)
+        let _visDebounce = null;
+        document.addEventListener('visibilitychange', () => {
+            if (!examActive || isSubmitting) return;
+            if (document.visibilityState === 'hidden') {
+                // small debounce to avoid page-load flicker
+                clearTimeout(_visDebounce);
+                _visDebounce = setTimeout(() => {
+                    if (!examActive || isSubmitting) return;
+                    triggerWarning('Tab Switch / Window Hidden');
+                }, 300);
+            }
+        });
+
+        // 3. Active focus polling (800ms interval, 2-tick debounce)
+        let _focusLostCount = 0;
+        setInterval(() => {
+            if (!examActive || isSubmitting) {
+                _focusLostCount = 0;
+                return;
+            }
+            if (!document.hasFocus()) {
+                _focusLostCount++;
+                if (_focusLostCount < 2) return; // wait for 2nd consecutive check
+                _focusLostCount = 0;
+                triggerWarning('Focus Lost — Window Switched');
+            } else {
+                _focusLostCount = 0;
+            }
+
+            // Anti-tamper: keep warning overlay at top z-index
+            const warningOverlay = document.getElementById('warningOverlay');
+            if (warningOverlay) {
+                warningOverlay.style.zIndex = '2147483647';
+                if (warningOverlay.parentElement !== document.body) {
+                    document.body.appendChild(warningOverlay);
+                }
+            }
+        }, 800);
+
+
+        // 2. Clipboard & Interaction Lockdown
+        ['copy', 'cut', 'paste', 'dragstart', 'drop'].forEach(event => {
+            document.addEventListener(event, e => {
+                e.preventDefault();
+                if (['copy', 'cut', 'paste'].includes(event)) {
+                    triggerWarning('Clipboard Usage Prohibited');
+                }
+            });
+        });
+
+        // 3. DevTools & Key Blocking
+        document.addEventListener('keydown', (e) => {
+            // Block F12, Ctrl+Shift+I/J/C, Ctrl+U
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+                (e.ctrlKey && e.key.toLowerCase() === 'u')
+            ) {
+                e.preventDefault();
+                triggerWarning('DevTools/Inspection Attempt Detected');
+                return;
+            }
+
+            // Detect Alt+Tab, Ctrl+Tab, Win Key, Ctrl+N, Ctrl+W
+            if (
+                (e.altKey && e.key === 'Tab') ||
+                (e.ctrlKey && e.key === 'Tab') ||
+                (e.ctrlKey && e.key === 't') ||
+                (e.ctrlKey && e.key === 'n') || // New Window
+                (e.ctrlKey && e.key === 'w') || // Close Tab/Window
+                (e.metaKey)
+            ) {
+                triggerWarning('Restricted Key Combination');
+            }
+
+            // Block Reload
+            if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+                e.preventDefault();
+                triggerWarning('Reload Attempt blocked');
+            }
+        });
+
+        // 4. Context Menu Block
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        function logWarningEvent(reason) {
+            const entry = {
+                warningNumber: warnings,
+                reason: reason,
+                timestamp: new Date().toISOString()
+            };
+            warningLog.push(entry);
+            console.warn('[WarningLog]', JSON.stringify(entry));
+        }
+
+        function triggerWarning(reason = 'Exam Violation Detected') {
+            // Hard gate: only fire during active exam
+            if (!examActive || isSubmitting) return;
+
+            warnings++;
+            logWarningEvent(reason);
+
+            // Update live badge
+            const badge = document.getElementById('warningsBadge');
+            if (badge) {
+                badge.style.display = 'flex';
+                document.getElementById('warningsBadgeCount').innerText = warnings;
+            }
+
+            if (warnings >= MAX_WARNINGS) {
+                // 3rd (or more) warning — auto-submit immediately
+                console.warn(`[PROCTOR] Auto-submit triggered after ${warnings} warnings: "${reason}"`);
+                autoSubmitExam();
+                return;
+            }
+
+            // Warnings 1 & 2: show warning overlay with reason
+            const warningTitle = document.querySelector('#warningOverlay h2');
+            if (warningTitle) warningTitle.innerText = `⚠️ ${reason}`;
+            document.getElementById('warningCountDisplay').innerText = warnings;
+            document.getElementById('warningOverlay').style.display = 'flex';
+            console.warn(`[PROCTOR] Warning ${warnings}/${MAX_WARNINGS}: ${reason}`);
+        }
+
+        async function autoSubmitExam() {
+            if (isSubmitting) return;
+            isSubmitting = true;
+            examActive = false; // STOP all further warnings immediately
+
+            clearInterval(timerInterval);
+            document.getElementById('warningOverlay').style.display = 'none';
+
+            // Show submitting immediately to prevent user interaction
+            const content = document.getElementById('resultContent');
+            const overlay = document.getElementById('resultOverlay');
+            if (content && overlay) {
+                content.innerHTML = `
+                    <div style="text-align: center; color: var(--text-main); padding: 2rem;">
+                        <h2 style="font-size: 2rem; margin-bottom: 1rem;">Auto-Submitting Exam...</h2>
+                        <p style="color: var(--text-muted);">Warning limit reached. Please wait.</p>
+                    </div>
+                `;
+                overlay.style.display = 'flex';
+            }
+
+            // Calculate Score
+            let score = 0;
+            const total = currentExam.questions.length * 10;
+            const questionScores = {};
+
+            currentExam.questions.forEach((q) => {
+                let qScore = 0;
+                if (q.type === 'mcq') {
+                    if (currentAnswers[q.id] === q.correct) qScore = 10;
+                } else if (q.type === 'coding') {
+                    if (typeof codingResults[q.id] === 'number') {
+                        qScore = codingResults[q.id];
+                    }
+                } else {
+                    // Check if this is a Typing Speed Check question
+                    if (q.correct && String(q.correct).startsWith('TYPING_PASSAGE::')) {
+                        const stats = typingStats[q.id];
+                        const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                        const typed = currentAnswers[q.id] || '';
+                        const accuracy = computeTypingAccuracy(passage, typed);
+                        // Score out of 10 based purely on accuracy
+                        qScore = Math.round((accuracy / 100) * 10);
+                    } else {
+                        if (currentAnswers[q.id] && currentAnswers[q.id].trim().length > 0) qScore = 10;
+                    }
+                }
+                questionScores[q.id] = qScore;
+                score += qScore;
+            });
+
+            const percentage = Math.round((score / total) * 100);
+
+            // Time Tracking
+            const now = Date.now();
+            if (activeQuestionId !== null && currentQuestionStartTime !== null) {
+                const elapsed = Math.floor((now - currentQuestionStartTime) / 1000);
+                if (!questionTimeData[activeQuestionId]) questionTimeData[activeQuestionId] = 0;
+                questionTimeData[activeQuestionId] += elapsed;
+            }
+
+            const result = {
+                examId: currentExam.id,
+                studentId: session.id,
+                studentName: session.name,
+                answers: currentAnswers,
+                questionScores: questionScores,
+                codingTestCaseData: window.codingTestCaseData || {},
+                questionTimeData: questionTimeData,
+                score: percentage,
+                warnings: warnings,
+                warningLog: warningLog,
+                autoSubmitted: true,
+                autoSubmittedAt: new Date().toISOString(),
+                timestamp: Date.now()
+            };
+
+            try {
+                await ExamService.submitResult(result);
+                console.warn(`[AutoSubmit] Exam submitted at ${result.autoSubmittedAt} with score ${percentage}%`);
+
+                // For violation auto-submissions, redirect quickly
+                setTimeout(() => {
+                    window.location.replace('../student/index.html');
+                }, 1000);
+            } catch (err) {
+                console.error('AutoSubmit failed:', err);
+                alert('An error occurred during auto-submission: ' + err.message + '. Your details have been saved locally. Please contact your administrator.');
+                setTimeout(() => {
+                    window.location.replace('../student/index.html');
+                }, 3000);
+            }
+        }
+
+        function resumeExam() {
+            if (isSubmitting) return;
+            // Re-enter fullscreen when student acknowledges warning
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(e => console.warn('Fullscreen failed on resume:', e));
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                }
+            } catch(e) {}
+            document.getElementById('warningOverlay').style.display = 'none';
+        }
+
+        function confirmExit() {
+            if (confirm('Are you sure you want to quit? Your progress will logically be lost or unsubmitted.')) {
+                window.location.href = '../student/index.html';
+            }
+        }
+
+        async function submitExam(skipConfirm = false) {
+            if (isSubmitting) return;
+            // Strict boolean check to prevent Event objects (from onclick) bypassing confirmation
+            if (skipConfirm !== true && !confirm('Are you sure you want to finish the exam?')) return;
+
+            isSubmitting = true;
+            examActive = false; // Stop all proctoring warnings
+
+            // Stop Timer
+            clearInterval(timerInterval);
+
+            // Show submitting immediately to prevent user interaction
+            const content = document.getElementById('resultContent');
+            const overlay = document.getElementById('resultOverlay');
+            if (content && overlay) {
+                content.innerHTML = `
+                    <div style="text-align: center; color: var(--text-main); padding: 2rem;">
+                        <h2 style="font-size: 2rem; margin-bottom: 1rem;">Submitting Exam...</h2>
+                        <p style="color: var(--text-muted);">Please wait while we save your results.</p>
+                    </div>
+                `;
+                overlay.style.display = 'flex';
+            }
+
+            // Calculate Score
+            let score = 0;
+            const total = currentExam.questions.length * 10; // 10 points per question
+            const questionScores = {}; // Map: qId -> score
+
+            currentExam.questions.forEach((q, index) => {
+                let qScore = 0;
+                if (q.type === 'mcq') {
+                    if (currentAnswers[q.id] === q.correct) qScore = 10;
+                } else if (q.type === 'coding') {
+                    // Advanced Scoring
+                    if (typeof codingResults[q.id] === 'number') {
+                        qScore = codingResults[q.id];
+                    }
+                } else {
+                    // Check if this is a Typing Speed Check question
+                    if (q.correct && String(q.correct).startsWith('TYPING_PASSAGE::')) {
+                        const stats = typingStats[q.id];
+                        const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                        const typed = currentAnswers[q.id] || '';
+                        const accuracy = computeTypingAccuracy(passage, typed);
+                        // Score out of 10 based purely on accuracy
+                        qScore = Math.round((accuracy / 100) * 10);
+                    } else {
+                        if (currentAnswers[q.id] && currentAnswers[q.id].trim().length > 0) qScore = 10;
+                    }
+                }
+
+                questionScores[q.id] = qScore;
+                score += qScore;
+            });
+
+            const percentage = Math.round((score / total) * 100);
+
+            // Time Tracking: Save time for the very last active question
+            const now = Date.now();
+            if (activeQuestionId !== null && currentQuestionStartTime !== null) {
+                const elapsed = Math.floor((now - currentQuestionStartTime) / 1000);
+                if (!questionTimeData[activeQuestionId]) questionTimeData[activeQuestionId] = 0;
+                questionTimeData[activeQuestionId] += elapsed;
+            }
+
+            const result = {
+                examId: currentExam.id,
+                studentId: session.id,
+                studentName: session.name,
+                answers: currentAnswers,
+                questionScores: questionScores,
+                codingTestCaseData: window.codingTestCaseData || {},
+                questionTimeData: questionTimeData,
+                score: percentage,
+                warnings: warnings,
+                warningLog: warningLog,       // full log for review
+                autoSubmitted: false,
+                timestamp: Date.now()
+            };
+
+            try {
+                await ExamService.submitResult(result);
+                // Show animated result overlay
+                showResultAnimation(percentage);
+            } catch (err) {
+                isSubmitting = false;
+                console.error('Submit Failed:', err);
+                // Hide submitting overlay
+                const overlay = document.getElementById('resultOverlay');
+                if (overlay) overlay.style.display = 'none';
+                
+                alert('CRITICAL ERROR: Could not save exam to the server.\\n\\nReason: ' + err.message + '\\n\\nPlease check your internet connection and try again.');
+            }
+        }
+
+        // ═══ Post-Exam Result Animation System ═══
+
+        function showResultAnimation(percentage) {
+            const isPassed = percentage >= 40;
+            const overlay = document.getElementById('resultOverlay');
+            const content = document.getElementById('resultContent');
+
+            if (isPassed) {
+                // ── CELEBRATION MODE (≥40%) ──
+                content.innerHTML = `
+                    <div class="celebration-emoji">🎉</div>
+                    <h1 class="celebration-title">Congratulations!</h1>
+                    <p class="result-subtitle">
+                        You've successfully completed the exam. Your hard work paid off!
+                    </p>
+                    <div class="score-orb pass">
+                        <div>
+                            <div class="score-number pass" id="animatedScore">0%</div>
+                            <div class="score-label" style="color: #a78bfa;">Final Score</div>
+                        </div>
+                    </div>
+                    <p class="result-subtitle" style="margin-top: 1.5rem;">
+                        ${percentage >= 80 ? '🌟 Outstanding performance! You\'re a star!' :
+                        percentage >= 60 ? '🔥 Great job! Keep up the excellent work!' :
+                            '✨ Well done! You passed with flying colors!'}
+                    </p>
+                    <button class="result-btn pass-btn" style="cursor: default;">
+                        Redirecting to Dashboard...
+                    </button>
+                `;
+
+                overlay.style.display = 'flex';
+                animateScoreCounter(percentage);
+                startConfetti();
+
+            } else {
+                // ── CONSOLATION MODE (<40%) ──
+                content.innerHTML = `
+                    <div class="consolation-emoji">😔</div>
+                    <h1 class="consolation-title">Better Luck Next Time</h1>
+                    <p class="result-subtitle">
+                        Don't be discouraged — every attempt is a step closer to success.
+                    </p>
+                    <div class="score-orb fail">
+                        <div>
+                            <div class="score-number fail" id="animatedScore">0%</div>
+                            <div class="score-label" style="color: #64748b;">Final Score</div>
+                        </div>
+                    </div>
+                    <p class="result-subtitle" style="margin-top: 1.5rem;">
+                        📚 Review the material and try again. You've got this!
+                    </p>
+                    <button class="result-btn fail-btn" style="cursor: default;">
+                        Redirecting to Dashboard...
+                    </button>
+                `;
+
+                overlay.style.display = 'flex';
+                animateScoreCounter(percentage);
+                startRainEffect();
+            }
+
+            // Auto-redirect after 3.5 seconds
+            setTimeout(() => {
+                window.location.href = '../student/index.html';
+            }, 3500);
+        }
+
+        // Animated score counter (0 → final %)
+        function animateScoreCounter(target) {
+            const el = document.getElementById('animatedScore');
+            if (!el) return;
+            let current = 0;
+            const duration = 1500; // ms
+            const startTime = Date.now();
+
+            function tick() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease-out cubic
+                const eased = 1 - Math.pow(1 - progress, 3);
+                current = Math.round(eased * target);
+                el.textContent = current + '%';
+                if (progress < 1) {
+                    requestAnimationFrame(tick);
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // ── Confetti Paper Squares Blast ──
+        function startConfetti() {
+            const container = document.getElementById('confettiContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            const colors = [
+                '#ff006e', '#fb5607', '#ffbe0b', '#8338ec', '#3a86ff',
+                '#06d6a0', '#ef476f', '#ffd166', '#22d3ee', '#a78bfa',
+                '#ff595e', '#ffca3a', '#8ac926', '#f472b6', '#6366f1'
+            ];
+
+            function createBurst() {
+                const cx = window.innerWidth / 2;
+                const cy = window.innerHeight / 2;
+
+                for (let i = 0; i < 60; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    const size = Math.random() * 10 + 6;
+                    const tx = (Math.random() - 0.5) * window.innerWidth * 1.2;
+                    const tyStart = (Math.random() - 0.8) * window.innerHeight * 0.6;
+                    const tyEnd = tyStart + window.innerHeight * 0.5 + Math.random() * 200;
+                    const rot = (Math.random() * 1080 - 540) + 'deg';
+                    const delay = Math.random() * 0.3;
+                    const duration = Math.random() * 1.5 + 2;
+
+                    piece.style.cssText = `
+                        left: ${cx}px;
+                        top: ${cy}px;
+                        width: ${size}px;
+                        height: ${size}px;
+                        background: ${color};
+                        --tx: ${tx}px;
+                        --ty-start: ${tyStart}px;
+                        --ty-end: ${tyEnd}px;
+                        --rot: ${rot};
+                        animation-delay: ${delay}s;
+                        animation-duration: ${duration}s;
+                        border-radius: ${Math.random() > 0.5 ? '2px' : '0'};
+                    `;
+
+                    container.appendChild(piece);
+
+                    // Remove after animation
+                    setTimeout(() => piece.remove(), (delay + duration) * 1000 + 100);
+                }
+            }
+
+            // Multiple bursts for a rich effect
+            createBurst();
+            setTimeout(createBurst, 500);
+            setTimeout(createBurst, 1200);
+            setTimeout(createBurst, 2000);
+        }
+
+        // ── Rain Effect for Consolation ──
+        function startRainEffect() {
+            const container = document.getElementById('rainContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            for (let i = 0; i < 80; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'raindrop';
+                drop.style.left = Math.random() * 100 + '%';
+                drop.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                drop.style.animationDelay = (Math.random() * 3) + 's';
+                drop.style.opacity = Math.random() * 0.5 + 0.2;
+                drop.style.height = (Math.random() * 15 + 8) + 'px';
+                container.appendChild(drop);
+            }
+        }
+
+        // Render Functions
+        function renderQuestionNav() {
+            const grid = document.getElementById('qNavGrid');
+            grid.innerHTML = '';
+            currentExam.questions.forEach((q, index) => {
+                const btn = document.createElement('div');
+                btn.className = `q-btn ${index === 0 ? 'active' : ''}`;
+                btn.innerText = index + 1;
+                btn.onclick = () => renderQuestion(index);
+
+                // Color Logic
+                if (q.type === 'coding' && codingResults[q.id] !== undefined) {
+                    const s = codingResults[q.id];
+                    if (s === 10) btn.classList.add('res-full');
+                    else if (s === 5) btn.classList.add('res-half');
+                    else if (s === 2) btn.classList.add('res-partial');
+                    else if (s === 0) btn.classList.add('res-fail');
+                } else if (currentAnswers[q.id]) {
+                    btn.classList.add('answered');
+                }
+
+                btn.id = `nav-btn-${index}`;
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderQuestion(index) {
+            try {
+                // Time Tracking Logic: Save time for previous question
+                const now = Date.now();
+                if (activeQuestionId !== null && currentQuestionStartTime !== null) {
+                    const elapsed = Math.floor((now - currentQuestionStartTime) / 1000);
+                    if (!questionTimeData[activeQuestionId]) questionTimeData[activeQuestionId] = 0;
+                    questionTimeData[activeQuestionId] += elapsed;
+                }
+
+                if (!currentExam || !currentExam.questions || !currentExam.questions[index]) {
+                    console.error('[Render] Invalid question index:', index);
+                    return;
+                }
+
+                // Update Nav Active State
+                document.querySelectorAll('.q-btn').forEach(b => b.classList.remove('active'));
+                const navBtn = document.getElementById(`nav-btn-${index}`);
+                if (navBtn) navBtn.classList.add('active');
+
+                const q = currentExam.questions[index];
+
+                // Start timer for new question
+                activeQuestionId = q.id;
+                currentQuestionStartTime = Date.now();
+
+                const area = document.getElementById('questionArea');
+
+                // Hoist this flag so it's accessible after innerHTML is set (line ~1819)
+                const isTypingQuestion = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
+
+                let inputHtml = '';
+                if (q.type === 'mcq') {
+                    if (!q.options || !Array.isArray(q.options)) {
+                         inputHtml = `<div style="color:var(--danger); padding:1rem;">Error: MCQ options missing for this question.</div>`;
+                    } else {
+                        inputHtml = `<div style="display: grid; gap: 1rem; margin-top: 1rem;">
+                            ${q.options.map((opt, i) => `
+                                <label style="display: flex; align-items: center; gap: 1rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 0.5rem; cursor: pointer; transition: background 0.2s;">
+                                    <input type="radio" name="q_${q.id}" value="${i}" ${currentAnswers[q.id] === String(i) ? 'checked' : ''} onchange="saveAnswer('${q.id}', this.value, ${index})">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
+                         </div>`;
+                    }
+                    // Hide Compiler
+                    document.getElementById('compilerPanel').style.display = 'none';
+                    area.parentElement.style.gridTemplateColumns = '250px 1fr';
+                } else if (q.type === 'coding') {
+                    // ... (coding logic remains same but inside try-catch)
+                    inputHtml = `<div style="color: var(--text-muted); margin-top: 1rem;">Use the compiler on the right to write your code.</div>`;
+                    document.getElementById('compilerPanel').style.display = 'flex';
+                    area.parentElement.style.gridTemplateColumns = '250px 30% 1fr';
+
+                    const consoleOut = document.getElementById('consoleOutput');
+                    const customIn = document.getElementById('customInput');
+                    if (consoleOut) consoleOut.innerHTML = '> Ready...';
+                    if (customIn) customIn.value = '';
+
+                    let defaultCode = '// Write your solution here\n// Select language above';
+                    const existingCode = currentAnswers[q.id] || defaultCode;
+
+                    setTimeout(() => {
+                        initMonaco(existingCode, q.id, index);
+                    }, 100);
+                } else {
+                    if (isTypingQuestion) {
+                        // ... (typing logic remains same)
+                        if (typingIntervals[q.id]) {
+                            clearInterval(typingIntervals[q.id]);
+                            typingIntervals[q.id] = null;
+                        }
+                        const passage = String(q.correct).replace('TYPING_PASSAGE::', '');
+                                              inputHtml = `
+                            <div style="margin-top:0.75rem;">
+
+                                <!-- Stats Row: WPM / Accuracy / Errors / Progress -->
+                                <div style="display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">WPM</div>
+                                        <div id="typing-wpm-${q.id}" style="font-size:1.6rem; font-weight:800; color:#22d3ee; line-height:1.1;">0</div>
+                                    </div>
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Accuracy</div>
+                                        <div id="typing-acc-${q.id}" style="font-size:1.6rem; font-weight:800; color:#22d3ee; line-height:1.1;">—</div>
+                                    </div>
+                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#f87171; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Errors</div>
+                                        <div id="typing-errors-${q.id}" style="font-size:1.6rem; font-weight:800; color:#f87171; line-height:1.1;">0</div>
+                                    </div>
+                                    <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.25); border-radius:0.6rem; padding:0.5rem 1rem; text-align:center; min-width:80px;">
+                                        <div style="font-size:0.6rem; color:#22d3ee; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">Progress</div>
+                                        <div id="typing-progress-${q.id}" style="font-size:1.6rem; font-weight:800; color:#22d3ee; line-height:1.1;">0%</div>
+                                    </div>
+                                    <div style="margin-left:auto; display:flex; align-items:center; font-size:0.75rem; color:#475569;">
+                                        <span id="typing-hint-${q.id}" style="color:rgba(167,139,250,0.7); font-style:italic;">&#9654; Click the passage below to start typing</span>
+                                    </div>
+                                </div>
+
+                                <!-- Typing Master Passage Box -->
+                                <div style="font-size:0.65rem; color:rgba(34,211,238,0.6); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.5rem;">&#128214; Passage — type the highlighted text</div>
+                                <div class="tm-wrapper unfocused" id="tm-wrapper-${q.id}"
+                                    onclick="focusTypingInput('${q.id}')">
+
+                                    <!-- Hidden textarea that captures all keystrokes -->
+                                    <textarea
+                                        id="typing-input-${q.id}"
+                                        class="tm-hidden-input"
+                                        autocomplete="off" autocorrect="off"
+                                        autocapitalize="off" spellcheck="false"
+                                        oninput="handleTypingInput('${q.id}', this.value, ${index}, ${JSON.stringify(passage).replace(/"/g, '&quot;')})"
+                                        onfocus="onTypingFocus('${q.id}')"
+                                        onblur="onTypingBlur('${q.id}')"
+                                    >${currentAnswers[q.id] || ''}</textarea>
+
+                                    <!-- The full passage rendered as coloured character spans -->
+                                    <div class="tm-passage" id="typing-passage-${q.id}">${
+                                        Array.from(passage).map((ch, i) => {
+                                            const safe = ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch;
+                                            const display = ch === ' ' ? '&nbsp;' : ch === '\n' ? '&crarr;\n' : safe;
+                                            return '<span class="tc pending" data-i="' + i + '">' + display + '</span>';
+                                        }).join('')
+                                    }</div>
+                                </div>
+
+                                <!-- Keyboard shortcut hint -->
+                                <div style="margin-top:0.5rem; font-size:0.75rem; color:#334155; text-align:right;">
+                                    <span style="background:rgba(255,255,255,0.05); padding:0.2rem 0.5rem; border-radius:0.3rem; font-family:'JetBrains Mono',monospace;">Esc</span>
+                                    to unfocus &nbsp;|&nbsp; Green = correct &nbsp;&#10007;&nbsp; Red = wrong
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('compilerPanel').style.display = 'none';
+                        area.parentElement.style.gridTemplateColumns = '250px 1fr';
+                        window._typingPassageMap = window._typingPassageMap || {};
+                        window._typingPassageMap[q.id] = passage;
+                    } else {
+                        inputHtml = `<textarea class="input-field" rows="10" style="width:100%;" placeholder="Type your answer here..." oninput="saveAnswer('${q.id}', this.value, ${index})">${currentAnswers[q.id] || ''}</textarea>`;
+                        document.getElementById('compilerPanel').style.display = 'none';
+                        area.parentElement.style.gridTemplateColumns = '250px 1fr';
+                    }
+                }
+
+                area.innerHTML = `
+                    <div class="fade-in" style="height: 100%; display: flex; flex-direction: column;">
+                        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; color: var(--text-main);">Question ${index + 1}</h3>
+                        <div style="flex: 1; overflow-y: auto; padding-right: 0.5rem;">
+                            <p style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; color: var(--text-main); font-weight: 500;">${q.text || q.problem_statement || ''}</p>
+                            
+                            ${q.type === 'coding' && q.constraints && q.constraints.length > 0 ? `
+                                <div style="margin-top: 1.5rem;">
+                                    <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Constraints</h4>
+                                    <ul style="list-style-type: disc; padding-left: 1.5rem; font-size: 0.85rem; color: var(--text-main);">
+                                        ${q.constraints.map(c => `<li>${c}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${q.type === 'coding' && q.testIn ? `
+                                <div style="margin-top: 1.5rem;">
+                                    <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Sample Test Case</h4>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                        <div style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 0.5rem;">
+                                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Input</div>
+                                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-main);">${q.testIn.replace(/\n/g, '<br>')}</div>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 0.5rem;">
+                                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Output</div>
+                                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-main);">${q.testOut.replace(/\n/g, '<br>')}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            ${inputHtml}
+                        </div>
+                        <div style="margin-top: 2rem; display: flex; justify-content: space-between; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
+                            <div>
+                                ${index > 0 ? `<button class="btn btn-outline" style="min-width: 120px;" onclick="renderQuestion(${index - 1})">← Previous</button>` : ''}
+                            </div>
+                            <div>
+                                ${index < currentExam.questions.length - 1 ? `<button class="btn btn-primary" style="min-width: 120px;" onclick="renderQuestion(${index + 1})">Next →</button>` : ' <button class="btn btn-success" style="min-width: 120px;" onclick="submitExam()">Submit Exam</button>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Post-render typing interval logic
+                if (isTypingQuestion) {
+                    typingIntervals[q.id] = setInterval(() => {
+                        if (typingStats[q.id] && typingStats[q.id].typingStartTime) {
+                            updateTypingDisplay(q.id, window._typingPassageMap[q.id], currentAnswers[q.id] || '');
+                        }
+                    }, 1000);
+                }
+            } catch (err) {
+                console.error('[Render Error]', err);
+                document.getElementById('questionArea').innerHTML = `
+                    <div style="color:var(--danger); padding:2rem; background:rgba(239,68,68,0.1); border-radius:0.5rem;">
+                        <h3>Failed to render question ${index + 1}</h3>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function saveAnswer(qId, value, index) {
+            currentAnswers[qId] = value;
+            document.getElementById(`nav-btn-${index}`).classList.add('answered');
+        }
+
+        // ══════════════════════════════════════════════════
+        // TYPING SPEED CHECK — Helper Functions
+        // These are NEW and do NOT affect any existing logic.
+        // ══════════════════════════════════════════════════
+
+        /** Called on textarea onfocus — records start time on first keystroke */
+        function startTypingTimer(qId) {
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
+            if (!typingStats[qId].typingStartTime) {
+                typingStats[qId].typingStartTime = Date.now();
+            }
+        }
+
+        /** Called on every input event in the hidden typing textarea */
+        function handleTypingInput(qId, typed, navIndex, passage) {
+            // Ensure timer starts
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, typingStartTime: null };
+            if (!typingStats[qId].typingStartTime) typingStats[qId].typingStartTime = Date.now();
+
+            // Hide the click-to-start hint once typing starts
+            const hint = document.getElementById(`typing-hint-${qId}`);
+            if (hint && typed.length > 0) hint.style.display = 'none';
+
+            // Save raw answer
+            currentAnswers[qId] = typed;
+            const navBtn = document.getElementById(`nav-btn-${navIndex}`);
+            if (navBtn && typed.length > 0) navBtn.classList.add('answered');
+
+            // Live passage highlight (Typing Master mode)
+            updatePassageHighlights(qId, passage, typed);
+
+            // Update stats display
+            updateTypingDisplay(qId, passage, typed);
+        }
+
+        /** Focus the hidden textarea when user clicks the passage box */
+        function focusTypingInput(qId) {
+            const input = document.getElementById(`typing-input-${qId}`);
+            if (input) {
+                input.focus();
+                // Move cursor to end of existing text
+                const len = input.value.length;
+                input.setSelectionRange(len, len);
+            }
+        }
+
+        function onTypingFocus(qId) {
+            startTypingTimer(qId);
+            const wrapper = document.getElementById(`tm-wrapper-${qId}`);
+            if (wrapper) wrapper.classList.remove('unfocused');
+        }
+
+        function onTypingBlur(qId) {
+            const wrapper = document.getElementById(`tm-wrapper-${qId}`);
+            if (wrapper) wrapper.classList.add('unfocused');
+        }
+
+        /**
+         * Renders per-character colour coding directly on the passage spans
+         * like typing.com: correct=light, wrong=red bg, cursor=blinking underline
+         */
+        function updatePassageHighlights(qId, passage, typed) {
+            const container = document.getElementById(`typing-passage-${qId}`);
+            if (!container) return;
+            const spans = container.querySelectorAll('.tc');
+            const typedLen = typed.length;
+            let cursorSpan = null;
+
+            spans.forEach((span, i) => {
+                span.className = 'tc'; // reset
+
+                if (i < typedLen) {
+                    if (typed[i] === passage[i]) {
+                        span.classList.add('correct');
+                    } else {
+                        span.classList.add('wrong');
+                    }
+                } else if (i === typedLen) {
+                    span.classList.add('pending', 'cursor');
+                    cursorSpan = span;
+                } else {
+                    span.classList.add('pending');
+                }
+            });
+
+            // Auto-scroll: keep cursor span visible within the passage box
+            if (cursorSpan) {
+                cursorSpan.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        /** Computes character-level accuracy between typed and target passage */
+        function computeTypingAccuracy(passage, typed) {
+            return computeTypingAccuracyAndErrors(passage, typed).accuracy;
+        }
+
+        /**
+         * Returns { accuracy, errors } where:
+         *   errors = number of wrongly typed characters (red marks)
+         *   accuracy = % of passage characters typed correctly
+         */
+        function computeTypingAccuracyAndErrors(passage, typed) {
+            if (!typed || typed.length === 0) return { accuracy: 0, errors: 0 };
+            const compareLen = Math.min(passage.length, typed.length);
+            let correct = 0;
+            let errors  = 0;
+            for (let i = 0; i < compareLen; i++) {
+                if (typed[i] === passage[i]) {
+                    correct++;
+                } else {
+                    errors++;
+                }
+            }
+            // Characters typed beyond the passage length are extra errors
+            if (typed.length > passage.length) {
+                errors += typed.length - passage.length;
+            }
+            const accuracy = Math.round((correct / passage.length) * 100);
+            return { accuracy, errors };
+        }
+
+        /** Computes WPM = (typed chars / 5) / elapsed minutes */
+        function computeTypingWPM(typed, startTime) {
+            if (!startTime || !typed || typed.length === 0) return 0;
+            const elapsedMs = Date.now() - startTime;
+            const elapsedMinutes = elapsedMs / 60000;
+            if (elapsedMinutes < 0.01) return 0; // avoid division by near-zero
+            const words = typed.length / 5; // standard: 1 word = 5 chars
+            return Math.round(words / elapsedMinutes);
+        }
+
+        /** Refreshes the live WPM, accuracy, errors, and progress display elements */
+        function updateTypingDisplay(qId, passage, typed) {
+            const wpmEl  = document.getElementById(`typing-wpm-${qId}`);
+            const accEl  = document.getElementById(`typing-acc-${qId}`);
+            const errEl  = document.getElementById(`typing-errors-${qId}`);
+            const progEl = document.getElementById(`typing-progress-${qId}`);
+            if (!wpmEl || !accEl || !progEl) return; // not rendered yet
+
+            const startTime = typingStats[qId] ? typingStats[qId].typingStartTime : null;
+            const wpm = computeTypingWPM(typed, startTime);
+            const { accuracy, errors } = computeTypingAccuracyAndErrors(passage, typed);
+            const progress = passage.length > 0 ? Math.min(100, Math.round((typed.length / passage.length) * 100)) : 0;
+
+            // Store latest stats
+            if (!typingStats[qId]) typingStats[qId] = { wpm: 0, accuracy: 0, errors: 0, typingStartTime: null };
+            typingStats[qId].wpm = wpm;
+            typingStats[qId].accuracy = accuracy;
+            typingStats[qId].errors = errors;
+
+            wpmEl.textContent = wpm;
+            accEl.textContent = accuracy + '%';
+            progEl.textContent = progress + '%';
+            if (errEl) {
+                errEl.textContent = errors;
+                errEl.style.color = errors === 0 ? '#34d399' : errors <= 5 ? '#f59e0b' : '#ef4444';
+            }
+
+            // Colour-code accuracy badge
+            const color = accuracy >= 90 ? '#22c55e' : accuracy >= 70 ? '#f59e0b' : '#ef4444';
+            accEl.style.color = color;
+        }
+
+        // Monaco Editor
+        let monacoEditor = null;
+        let currentEditorDisposable = null; // Track the current listener
+
+        function initMonaco(initialValue = '// Write your code here', questionId = null, index = null) {
+            // Dispose previous listener if exists (ALWAYS do this first to prevent leaks/overlap)
+            if (currentEditorDisposable) {
+                currentEditorDisposable.dispose();
+                currentEditorDisposable = null;
+            }
+
+            if (monacoEditor) {
+                // If already init, just update value and layout
+                monacoEditor.setValue(initialValue);
+                monacoEditor.layout();
+
+                // Attach new listener if questionId is provided
+                if (questionId !== null) {
+                    currentEditorDisposable = monacoEditor.onDidChangeModelContent(() => {
+                        saveAnswer(questionId, monacoEditor.getValue(), index);
+                    });
+                }
+                return;
+            }
+
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } });
+            require(['vs/editor/editor.main'], function () {
+                monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+                    value: initialValue,
+                    language: 'c', // Default
+                    theme: 'vs-dark',
+                    automaticLayout: true,
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    fontFamily: "JetBrains Mono, monospace",
+                    fontLigatures: true,
+                    scrollBeyondLastLine: false
+                });
+
+                // Sync initial language assignment
+                updateEditorMode();
+
+                // Attach listener for the first time
+                if (questionId !== null) {
+                    currentEditorDisposable = monacoEditor.onDidChangeModelContent(() => {
+                        saveAnswer(questionId, monacoEditor.getValue(), index);
+                    });
+                }
+
+                // Re-measure fonts after web fonts finish loading
+                document.fonts.ready.then(() => {
+                    monacoEditor.updateOptions({ fontFamily: "JetBrains Mono, monospace" });
+                    monaco.editor.remeasureFonts();
+                });
+
+                // Safety net: re-measure again after 2 seconds
+                setTimeout(() => {
+                    monacoEditor.updateOptions({ fontFamily: "JetBrains Mono, monospace" });
+                    monaco.editor.remeasureFonts();
+                }, 2000);
+            });
+
+            // Block Paste
+            const container = document.getElementById('monaco-container');
+            container.addEventListener('paste', (e) => {
+                e.preventDefault();
+                alert('Paste is disabled during the exam.');
+            }, true);
+        }
+
+        function updateEditorMode() {
+            const langSelect = document.getElementById('langSelect');
+            const lang = langSelect.value;
+
+            if (monacoEditor) {
+                // Map to Monaco IDs
+                let monacoLang = lang;
+                if (lang === 'c') monacoLang = 'c';
+                else if (lang === 'cpp') monacoLang = 'cpp';
+                else if (lang === 'python') monacoLang = 'python';
+                else if (lang === 'java') monacoLang = 'java';
+                else if (lang === 'javascript') monacoLang = 'javascript';
+                else if (lang === 'csharp') monacoLang = 'csharp';
+                else if (lang === 'other') monacoLang = 'plaintext';
+                // Most others match (go, ruby, swift, rust, php)
+
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), monacoLang);
+            }
+        }
+
+        // Piston API Runner
+        function processRuntimeInput(input) {
+            if (!input) return "";
+            // Only normalize literal \n (two-char sequence from test case data) to real newlines.
+            // Do NOT split space-separated tokens — each line should be preserved as-is.
+            // Python's input() reads a whole line; splitting "10 20" into "10\n20" is WRONG.
+            return input.replace(/\\n/g, '\n').trimEnd();
+        }
+
+        async function runCode() {
+            // Get Code from Monaco
+            let code = '';
+            if (monacoEditor) {
+                code = monacoEditor.getValue();
+            } else {
+                // Fallback (shouldn't happen)
+                code = '';
+            }
+
+            const outputDiv = document.getElementById('consoleOutput');
+            const rawLang = document.getElementById('langSelect').value;
+            const lang = (rawLang || 'javascript').toLowerCase().replace('c++', 'cpp');
+
+            const activeBtn = document.querySelector('.q-btn.active');
+            if (!activeBtn) return;
+            const activeIdx = parseInt(activeBtn.innerText) - 1;
+            const q = currentExam.questions[activeIdx];
+
+            outputDiv.innerHTML = `> Sending to server (${lang})...<br>`;
+
+            // Prepare Input: Use Custom Input if present, else fallback to Sample Test Case
+            const customInput = document.getElementById('customInput').value;
+            const stdin = customInput || q.testIn || "";
+
+            // Get auth token for secure API calls
+            const authToken = localStorage.getItem('college_exam_portal_token') || '';
+
+            try {
+                const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/compile`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        language: lang,
+                        code: code,
+                        input: processRuntimeInput(stdin)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success !== undefined) {
+                    // Check Output
+                    const output = data.output;
+                    const error = data.error;
+
+                    if (error) {
+                        const errorMsg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
+                        outputDiv.innerHTML += `<span style="color:#ef4444">Error:</span><br>${errorMsg.replace(/\n/g, '<br>')}`;
+                        codingResults[q.id] = 'FAIL';
+                    } else {
+                        outputDiv.innerHTML += `<span style="color:#22c55e">Output:</span><br>${output.replace(/\n/g, '<br>')}`;
+
+                        // Validate against Test Case Output if exists
+                        if (q.testOut) {
+                            if (output.trim() === q.testOut.trim()) {
+                                outputDiv.innerHTML += `<br>> <span style="color:var(--success)">Test Case Passed!</span>`;
+                                codingResults[q.id] = 'PASS';
+                            } else {
+                                outputDiv.innerHTML += `<br>> <span style="color:var(--danger)">Test Case Failed</span>`;
+                                outputDiv.innerHTML += `<br>> Expected: ${q.testOut.trim()}`;
+                                codingResults[q.id] = 'FAIL';
+                            }
+                        }
+                    }
+                } else {
+                    outputDiv.innerHTML += `<span style="color:orange">API Error: ${data.message || 'Unknown error'}</span>`;
+                }
+
+            } catch (err) {
+                console.error(err);
+                outputDiv.innerHTML += `<span style="color:red">Network/Server Error: ${err.message}</span>`;
+            }
+        }
+
+        async function submitCode() {
+            // Get Code
+            let code = '';
+            if (monacoEditor) {
+                code = monacoEditor.getValue();
+            } else {
+                return;
+            }
+
+            const outputDiv = document.getElementById('consoleOutput');
+            const lang = document.getElementById('langSelect').value;
+
+            const activeBtn = document.querySelector('.q-btn.active');
+            if (!activeBtn) return;
+            const activeIdx = parseInt(activeBtn.innerText) - 1;
+            const q = currentExam.questions[activeIdx];
+
+            // Get auth token for secure API calls
+            const authToken = localStorage.getItem('college_exam_portal_token') || '';
+
+            outputDiv.innerHTML = `> <span style="color:var(--primary)">Submitting...</span><br>`;
+
+            // 1. Run Sample Test Case First
+            let samplePassed = false;
+
+            if (q.testIn) {
+                outputDiv.innerHTML += `> Checking Sample Case... `;
+                try {
+                    const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/compile`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({
+                            language: lang,
+                            code: code,
+                            input: processRuntimeInput(q.testIn)
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success && !data.error && data.output.trim() === q.testOut.trim()) {
+                        outputDiv.innerHTML += `<span style="color:var(--success)">PASSED</span><br>`;
+                        samplePassed = true;
+                    } else {
+                        outputDiv.innerHTML += `<span style="color:var(--danger)">FAILED</span><br>`;
+                        samplePassed = false;
+                    }
+                } catch (e) {
+                    outputDiv.innerHTML += `<span style="color:red">Error</span><br>`;
+                    samplePassed = false;
+                }
+            } else {
+                // No sample case, assume passed if code runs? Or just skip to hidden.
+                // Let's assume passed for flow if no sample case defined.
+                samplePassed = true;
+            }
+
+            if (!samplePassed) {
+                outputDiv.innerHTML += `<br>> <span style="color:var(--danger)">Sample Case Failed. Score: 0/10</span>`;
+                codingResults[q.id] = 0; // Red
+                renderQuestionNav();
+                return;
+            }
+
+            // 2. Run Hidden Test Cases
+            if (!q.hiddenCases || q.hiddenCases.length === 0) {
+                // Only sample case existed and passed
+                // Rule says: "if only sample test case is passed then... 1/5th" 
+                // BUT usually if no hidden cases exist, sample is everything.
+                // However, based on user request "if sample and all hidden... full marks", "if sample and some hidden...", "if only sample..."
+                // If there are NO hidden cases, we should probably give full marks if sample passed? 
+                // Or user implies hidden cases ALWAYS exist?
+                // Let's assume if no hidden cases, 1.0 (Full) if sample passed.
+                outputDiv.innerHTML += `> <span style="color:var(--success)">Accepted! (No hidden cases). Score: 10/10</span>`;
+                codingResults[q.id] = 10;
+                renderQuestionNav();
+                return;
+            }
+
+            outputDiv.innerHTML += `> Running ${q.hiddenCases.length} Hidden Test Cases...<br>`;
+
+            let passedHidden = 0;
+            let totalHidden = q.hiddenCases.length;
+
+            for (let i = 0; i < totalHidden; i++) {
+                const testCase = q.hiddenCases[i];
+                // outputDiv.innerHTML += `> Case ${i + 1}... `; 
+                // Minimal log to save space/time perception
+
+                try {
+                    const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/compile`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({
+                            language: lang,
+                            code: code,
+                            input: processRuntimeInput(testCase.input)
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && !data.error && data.output.trim() === testCase.output.trim()) {
+                        passedHidden++;
+                    }
+                } catch (err) {
+                    // Fail
+                }
+            }
+
+            outputDiv.innerHTML += `> Hidden Cases Passed: ${passedHidden}/${totalHidden}<br>`;
+
+            // 3. Calculate Score & Color
+            let score = 0;
+            if (passedHidden === totalHidden) {
+                // All Hidden Passed -> Green, Full
+                score = 10;
+                outputDiv.innerHTML += `> <span style="color:var(--success)">Accepted! All Hidden Passed. Score: 10/10</span>`;
+            } else if (passedHidden > 0) {
+                // Some Hidden Passed -> Orange, Half
+                score = 5;
+                outputDiv.innerHTML += `> <span style="color:#f59e0b">Partial Acceptance. Score: 5/10</span>`;
+            } else {
+                // No Hidden Passed (Only Sample) -> Skyblue, 1/5th
+                score = 2;
+                outputDiv.innerHTML += `> <span style="color:#0ea5e9">Sample Passed Only. Score: 2/10</span>`;
+            }
+
+            codingResults[q.id] = score;
+
+            // Track Test Case Data (New)
+            if (!window.codingTestCaseData) window.codingTestCaseData = {};
+
+            // passedHidden is count of hidden cases passed
+            // If no hidden cases, but sample passed (score 10), we can say 1/1 or just max out?
+            // Let's store: { passed: N, total: M }
+            // If totalHidden > 0: passed = passedHidden, total = totalHidden
+            // If totalHidden == 0: passed = 1, total = 1 (Sample)
+
+            if (totalHidden > 0) {
+                window.codingTestCaseData[q.id] = { passed: passedHidden, total: totalHidden };
+            } else {
+                if (samplePassed) window.codingTestCaseData[q.id] = { passed: 1, total: 1 };
+                else window.codingTestCaseData[q.id] = { passed: 0, total: 1 };
+            }
+
+            renderQuestionNav();
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+
+        // Timer (Moved to startTimer)
+        // setInterval(() => { ... }, 1000);
+
+    
