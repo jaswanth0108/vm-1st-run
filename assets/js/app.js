@@ -128,22 +128,20 @@ class UserService {
         if (!response.ok) throw new Error('Failed to fetch users');
         const result = await response.json();
 
-        // Server returns an object keyed by student ID: { "22A91A0101": { id, name, password, ... }, ... }
-        // If it's already an object, return it directly. If it's an array, convert to keyed object.
+        let arr = [];
         if (Array.isArray(result)) {
-            const dbUsers = {};
-            result.forEach(u => {
-                const key = (u.username || u.id || '').toUpperCase();
-                if (key) dbUsers[key] = { ...u, id: key };
-            });
-            return dbUsers;
+            arr = result;
+        } else if (result && result.data && Array.isArray(result.data)) {
+            arr = result.data;
+        } else if (result && typeof result === 'object') {
+            // Fallback if it's already a keyed object (legacy format)
+            arr = Object.values(result);
         }
 
-        // Already a keyed object — normalize keys to uppercase
         const dbUsers = {};
-        Object.entries(result).forEach(([key, u]) => {
-            const normKey = key.toUpperCase();
-            dbUsers[normKey] = { ...u, id: normKey };
+        arr.forEach(u => {
+            const key = (u.username || u.id || '').toUpperCase();
+            if (key) dbUsers[key] = { ...u, id: key };
         });
         return dbUsers;
     }
