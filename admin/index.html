@@ -120,7 +120,7 @@
 
         .main-content {
             margin-left: 250px;
-            padding: 2rem;
+            padding: 2rem 2.5rem;
             min-height: 100vh;
         }
 
@@ -243,6 +243,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
         }
 
         .section-title h2 {
@@ -645,9 +646,9 @@
         ☰
     </button>
 
-    <header style="background: white; border-bottom: 1px solid var(--border); width: 100%; position: fixed; top: 0; left: 0; z-index: 1000; height: 120px; display: flex; align-items: center; justify-content: center;">
+    <header style="background: rgba(10, 9, 20, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(108, 99, 255, 0.18); width: 100%; position: fixed; top: 0; left: 0; z-index: 1000; height: 120px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 30px rgba(0,0,0,0.4);">
         <img src="../assets/img/vignan_header.png" alt="Header"
-            style="display: block; width: 100%; max-height: 110px; object-fit: contain;">
+            style="display: block; width: 100%; max-height: 110px; object-fit: contain; filter: brightness(1.05);">
     </header>
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -683,7 +684,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content" style="margin-top: 120px;">
+    <main class="main-content" style="margin-top: 120px; padding-top: 2.5rem;">
 
         <!-- DASHBOARD TAB -->
         <div id="tab-dashboard" class="tab-pane active">
@@ -713,9 +714,13 @@
             </div>
 
             <!-- Recent Exams Heading -->
-            <h3
-                style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#e2e8f0; margin-bottom:1rem; letter-spacing:-0.01em;">
-                🗂 Recent Exams</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3
+                    style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#e2e8f0; letter-spacing:-0.01em;">
+                    🗂 Recent Exams</h3>
+                <button class="btn btn-primary" style="font-size: 0.85rem; padding: 0.45rem 1.1rem;"
+                    onclick="switchTab('create_exam')">+ New Exam</button>
+            </div>
             <div id="recentExamsList" style="margin-top: 0.5rem;">
                 <!-- List populated by JS -->
                 <p style="color:#475569; font-style:italic;">No exams created yet.</p>
@@ -1405,6 +1410,12 @@
                 resetReportView();
             }
 
+            // If navigating to create_exam from the sidebar (not from edit), reset the form
+            if (tabId === 'create_exam' && !editingExamId) {
+                // Only reset if we are not in the middle of an edit operation
+                resetCreateForm();
+            }
+
             // Hide all
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
@@ -1419,7 +1430,10 @@
             if (link) link.classList.add('active');
 
             if (tabId === 'students') renderStudents();
-            if (tabId === 'dashboard') renderExamsList();
+            if (tabId === 'dashboard') {
+                renderExamsList();
+                loadReportExams(); // Reload report exam list in background
+            }
         }
 
         // Render Recent Exams
@@ -1454,14 +1468,30 @@
                     if (!exam) return '';
                     const qCount = exam.questions ? (exam.questions.length || 0) : 0;
                     const status = exam.status || 'published';
+                    const branchDisplay = Array.isArray(exam.branch) ? exam.branch.join(', ') : (exam.branch || 'All');
+                    const batchDisplay = Array.isArray(exam.batch) ? exam.batch.join(', ') : (exam.batch || 'All');
+                    const borderColor = status === 'published' ? 'var(--success)' : 'rgba(100,116,139,0.5)';
                     
                     return `
-                        <div onclick="openActionModal('${exam.id}')" class="glass-panel" style="padding:1rem; border-left: 4px solid var(${status === 'published' ? '--success' : '--text-muted'}); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s;">
-                            <div>
-                                <h4 style="margin-bottom: 0.25rem;">${exam.title || 'Untitled Exam'}</h4>
-                                <div style="font-size: 0.8rem; color: var(--text-muted);">${exam.subject || 'No Subject'} • ${qCount} Questions</div>
+                        <div onclick="openActionModal('${exam.id}')" class="glass-panel"
+                            style="padding: 1.25rem 1.5rem; border-left: 4px solid ${borderColor};
+                                   margin-bottom: 1rem; display: flex; justify-content: space-between;
+                                   align-items: center; cursor: pointer;
+                                   transition: transform 0.2s ease, box-shadow 0.2s ease;
+                                   border-radius: 0.85rem;"
+                            onmouseover="this.style.transform='translateX(4px)'; this.style.boxShadow='0 4px 20px rgba(108,99,255,0.2)'"
+                            onmouseout="this.style.transform=''; this.style.boxShadow=''">
+                            <div style="flex: 1;">
+                                <h4 style="margin-bottom: 0.4rem; font-size: 1.05rem; color: #f1f5f9;">${exam.title || 'Untitled Exam'}</h4>
+                                <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                                    <span>📚 ${exam.subject || 'No Subject'}</span>
+                                    <span>❓ ${qCount} Questions</span>
+                                    <span>🏫 ${branchDisplay}</span>
+                                    <span>🗓 ${batchDisplay}</span>
+                                    ${exam.duration ? `<span>⏱ ${exam.duration} min</span>` : ''}
+                                </div>
                             </div>
-                            <div class="badge ${status === 'published' ? 'badge-published' : 'badge-draft'}">${status}</div>
+                            <div class="badge ${status === 'published' ? 'badge-published' : 'badge-draft'}" style="margin-left: 1rem; flex-shrink: 0;">${status}</div>
                         </div>
                     `;
                 }).join('');
@@ -2050,11 +2080,15 @@
             document.getElementById('questionsContainer').innerHTML = '';
             document.getElementById('examName').value = '';
             clearBatchSelection(); // Reset Batch Dropdown
+            // Reset branch checkboxes
+            document.querySelectorAll('input[name="examBranch"]').forEach(cb => cb.checked = false);
             document.getElementById('examSubject').value = '';
             document.getElementById('examDuration').value = '60';
-            document.getElementById('examLimit').value = '1';
+            const limitEl = document.getElementById('examLimit');
+            if (limitEl) limitEl.value = '1';
             editingExamId = null;
-            document.querySelector('#tab-create_exam h2').innerText = 'Create New Exam';
+            const h2El = document.querySelector('#tab-create_exam h2');
+            if (h2El) h2El.innerText = 'Create New Exam';
         }
 
         // Modal Actions
@@ -2069,66 +2103,110 @@
 
         async function triggerAction(action) {
             if (!selectedExamId) return;
-            const exam = await ExamService.getExamById(selectedExamId);
+
+            let exam;
+            try {
+                exam = await ExamService.getExamById(selectedExamId);
+            } catch (err) {
+                alert('Could not load exam details. Error: ' + err.message);
+                return;
+            }
+
             if (!exam) {
-                alert('Could not load exam details.');
+                alert('Exam not found.');
                 return;
             }
 
             if (action === 'delete') {
-                if (confirm('Are you sure you want to delete this exam?')) {
-                    await ExamService.deleteExam(selectedExamId);
-                    renderExamsList();
-                    closeActionModal();
+                if (confirm('Are you sure you want to delete this exam? This cannot be undone.')) {
+                    try {
+                        await ExamService.deleteExam(selectedExamId);
+                        closeActionModal();
+                        renderExamsList();
+                        loadReportExams();
+                    } catch (err) {
+                        alert('Failed to delete exam: ' + err.message);
+                    }
                 }
             } else if (action === 'live') {
-                await ExamService.updateExamStatus(selectedExamId, 'published');
-                renderExamsList();
-                closeActionModal();
-                alert('Exam is now Live!');
+                try {
+                    await ExamService.updateExamStatus(selectedExamId, 'published');
+                    closeActionModal();
+                    renderExamsList();
+                    loadReportExams();
+                    alert('Exam is now Live!');
+                } catch (err) {
+                    alert('Failed to publish exam: ' + err.message);
+                }
             } else if (action === 'edit') {
-                // Load into Create Form
+                // ── Set editing state BEFORE calling switchTab ──
                 editingExamId = exam.id;
-                document.getElementById('examName').value = exam.title;
-                // document.getElementById('examYear').value = exam.year; // Year removed
 
-                // Handle Checkboxes for Branch
-                const checkboxes = document.querySelectorAll('input[name="examBranch"]');
-                checkboxes.forEach(cb => cb.checked = false); // Reset
+                // Populate Exam Name
+                document.getElementById('examName').value = exam.title || '';
 
-                const branches = Array.isArray(exam.branch) ? exam.branch : [exam.branch];
+                // ── Handle Branch Checkboxes ──
+                document.querySelectorAll('input[name="examBranch"]').forEach(cb => cb.checked = false);
+                const branches = Array.isArray(exam.branch) ? exam.branch : [exam.branch].filter(Boolean);
                 branches.forEach(b => {
                     const cb = document.querySelector(`input[name="examBranch"][value="${b}"]`);
                     if (cb) cb.checked = true;
                 });
 
-                // Handle Batch Dropdown population
+                // ── Handle Batch Dropdown ──
                 clearBatchSelection();
-                const examBatches = Array.isArray(exam.batch) ? exam.batch : [exam.batch];
-                const batchCheckboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]');
-                batchCheckboxes.forEach(cb => {
+                const examBatches = Array.isArray(exam.batch)
+                    ? exam.batch
+                    : (exam.batch ? [String(exam.batch)] : []);
+                document.querySelectorAll('#batchCheckboxes input[name="examBatch"]').forEach(cb => {
                     if (examBatches.includes(cb.value)) cb.checked = true;
                 });
                 updateBatchText();
 
-                document.getElementById('examSubject').value = exam.subject;
-                document.getElementById('examDuration').value = exam.duration;
+                // ── Populate Subject, Duration, Attempt Limit ──
+                document.getElementById('examSubject').value = exam.subject || '';
+                document.getElementById('examDuration').value = exam.duration || 60;
 
-                // Clear and add questions
+                // Populate Attempt Limit (select element)
+                const limitEl = document.getElementById('examLimit');
+                if (limitEl) {
+                    const attemptLimit = exam.attemptLimit !== undefined ? String(exam.attemptLimit) : '1';
+                    // Try exact match first, fallback to '1'
+                    const matchOpt = Array.from(limitEl.options).find(o => o.value === attemptLimit);
+                    limitEl.value = matchOpt ? attemptLimit : '1';
+                }
+
+                // ── Populate Questions ──
                 document.getElementById('questionsContainer').innerHTML = '';
-                exam.questions.forEach(q => {
+                const questionsToLoad = Array.isArray(exam.questions) ? exam.questions : [];
+                questionsToLoad.forEach(q => {
+                    if (!q) return;
+                    // Determine effective question type
+                    let qType = q.type || 'text';
+                    // Normalize backend type names
+                    if (qType === 'Descriptive' || qType === 'descriptive') qType = 'text';
+                    if (qType === 'MCQ') qType = 'mcq';
+                    if (qType === 'Coding') qType = 'coding';
+
                     // Detect typing questions by the TYPING_PASSAGE:: prefix in correct_answer
                     const isTypingQ = q.correct && String(q.correct).startsWith('TYPING_PASSAGE::');
                     if (isTypingQ) {
-                        addQuestion('typing', { ...q, type: 'typing', typingPassage: String(q.correct).replace('TYPING_PASSAGE::', '') });
+                        addQuestion('typing', {
+                            ...q,
+                            type: 'typing',
+                            typingPassage: String(q.correct).replace('TYPING_PASSAGE::', '')
+                        });
                     } else {
-                        addQuestion(q.type, q);
+                        addQuestion(qType, q);
                     }
                 });
 
-                document.querySelector('#tab-create_exam h2').innerText = 'Edit Exam';
+                // ── Update Form Title ──
+                const h2El = document.querySelector('#tab-create_exam h2');
+                if (h2El) h2El.innerText = 'Edit Exam';
 
                 closeActionModal();
+                // switchTab will NOT reset the form because editingExamId is set
                 switchTab('create_exam');
             }
         }
