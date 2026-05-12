@@ -1549,11 +1549,11 @@
                             <div style="flex: 1;">
                                 <h4 style="margin-bottom: 0.4rem; font-size: 1.05rem; color: #f1f5f9;">${exam.title || 'Untitled Exam'}</h4>
                                 <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                                    <span>📚 ${exam.subject || 'No Subject'}</span>
-                                    <span>❓ ${qCount} Questions</span>
-                                    <span>🏫 ${branchDisplay}</span>
-                                    <span>🗓 ${batchDisplay}</span>
-                                    ${exam.duration ? `<span>⏱ ${exam.duration} min</span>` : ''}
+                                    <span>Sub: ${exam.subject || 'No Subject'}</span>
+                                    <span>No.of Ques: ${qCount}</span>
+                                    <span>Branch: ${branchDisplay}</span>
+                                    <span>Batch: ${batchDisplay}</span>
+                                    ${exam.duration ? `<span>Duration: ${exam.duration} min</span>` : ''}
                                 </div>
                             </div>
                             <div class="badge ${status === 'published' ? 'badge-published' : 'badge-draft'}" style="margin-left: 1rem; flex-shrink: 0;">${status}</div>
