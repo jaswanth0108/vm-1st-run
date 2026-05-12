@@ -1005,25 +1005,24 @@
                     <!-- Stats Grid -->
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <h3>Total Students Selected</h3>
+                            <h3 style="color: #22d3ee; text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);">Total Students Selected</h3>
                             <div class="value" id="statTotalSelected">--</div>
                             <div class="sub-value">Target Audience</div>
                         </div>
                         <div class="stat-card">
-                            <h3>Attempted</h3>
+                            <h3 style="color: #34d399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);">Attempted</h3>
                             <div class="value" id="statAttempted">--</div>
                             <button class="btn-view" onclick="viewStudentDetails('attempted')">View Students</button>
                         </div>
                         <div class="stat-card">
-                            <h3>Scored > 80%</h3>
+                            <h3 style="color: #a78bfa; text-shadow: 0 0 10px rgba(167, 139, 250, 0.3);">Scored > 80%</h3>
                             <div class="value" id="statAbove80">--</div>
                             <button class="btn-view" onclick="viewStudentDetails('above80')">View Students</button>
                         </div>
                         <div class="stat-card">
-                            <h3>Scored < 40%</h3>
-                                    <div class="value" id="statBelow40">--</div>
-                                    <button class="btn-view" onclick="viewStudentDetails('below40')">View
-                                        Students</button>
+                            <h3 style="color: #f87171; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">Scored < 40%</h3>
+                            <div class="value" id="statBelow40">--</div>
+                            <button class="btn-view" onclick="viewStudentDetails('below40')">View Students</button>
                         </div>
                     </div>
 
@@ -2377,11 +2376,13 @@
             const examBranches = Array.isArray(exam.branch) ? exam.branch : [String(exam.branch || 'All')];
 
             const selectedStudents = allStudents.filter(s => {
-                // Strict Batch Match
+                // Robust Batch & Branch Filtering
                 const sBatch = String(s.batch || '').trim();
-                const normalize = (val) => String(val).toLowerCase().replace(/\s+/g, '');
+                const sBranch = String(s.branch || '').trim().toUpperCase();
+                
+                const normalize = (val) => String(val || '').toLowerCase().replace(/\s+/g, '').trim();
 
-                // If exam has no batch, assume open? Or maybe failed data. Assume strict.
+                // 1. Batch Match
                 let batchMatch = false;
                 if (examBatches.length > 0) {
                     const sBatchNorm = normalize(sBatch);
@@ -2390,16 +2391,20 @@
                         return ebNorm === 'all' || ebNorm === sBatchNorm;
                     });
                 } else {
-                    // If no batch defined on exam, maybe it matches none.
-                    batchMatch = false;
+                    // Fallback: If no batch specified on exam, check if exam is for "All" or if student has no batch
+                    batchMatch = true; 
                 }
 
-                // Branch Match
-                const sBranch = String(s.branch).trim().toUpperCase();
-                const branchMatch = examBranches.some(eb => {
-                    const ebUp = String(eb).toUpperCase();
-                    return ebUp === 'ALL' || ebUp === sBranch;
-                });
+                // 2. Branch Match
+                let branchMatch = false;
+                if (examBranches.length > 0) {
+                    branchMatch = examBranches.some(eb => {
+                        const ebUp = String(eb).toUpperCase().trim();
+                        return ebUp === 'ALL' || ebUp === sBranch;
+                    });
+                } else {
+                    branchMatch = true;
+                }
 
                 return batchMatch && branchMatch;
             });
