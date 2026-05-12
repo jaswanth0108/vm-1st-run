@@ -121,6 +121,7 @@
         .main-content {
             margin-left: 250px;
             padding: 2rem;
+            padding-top: calc(120px + 2rem);
             min-height: 100vh;
         }
 
@@ -2307,7 +2308,7 @@
 
             // Map Results to these groups
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || { branch: 'Unknown', batch: 'Unknown' };
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || { branch: 'Unknown', batch: 'Unknown' };
                 const sBranch = String(student.branch || 'Unknown').trim().toUpperCase();
                 const sBatch = String(student.batch || 'Unknown').trim();
                 const key = `${sBranch}|${sBatch}`;
@@ -2366,7 +2367,7 @@
             // Apply Context Filter (Branch Drill-down)
             if (window.activeBranchFilter) {
                 filteredResults = filteredResults.filter(r => {
-                    const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                    const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                     if (!student) return false;
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2414,14 +2415,15 @@
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No students found for this category.</td></tr>';
             } else {
                 tbody.innerHTML = filteredResults.map(r => {
-                    const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                    const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                     // Determine Score Color
                     let scoreColor = 'var(--text-main)';
                     if (r.score >= 80) scoreColor = 'var(--success)';
                     if (r.score < 40) scoreColor = 'var(--danger)';
 
-                    const isNumericId = r.username && r.username.length < 5 && !isNaN(r.username);
-                    const idDisplay = (r.username && !isNumericId) ? r.username : 'UNASSIGNED';
+                    const rId = r.username || r.studentId;
+                    const isNumericId = rId && rId.length < 5 && !isNaN(rId);
+                    const idDisplay = (rId && !isNumericId) ? rId : 'UNASSIGNED';
 
                     return `
                         <tr style="border-bottom: 1px solid var(--border);">
@@ -2843,7 +2845,7 @@
 
             // Iterate ALL results to find those belonging to this branch/batch
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -2899,7 +2901,7 @@
 
             // 3. Map Results
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3005,7 +3007,7 @@
             // Iterate ALL results to find those belonging to this branch/batch/section
             // (Efficiently we could map filtered students to results, but let's stick to result iteration for score accuracy)
             currentReportResults.forEach(r => {
-                const student = usersDB[String(r.username || '').toUpperCase()] || r;
+                const student = usersDB[String(r.username || r.studentId || '').toUpperCase()] || r;
                 if (student) {
                     const sBranch = String(student.branch || '').toUpperCase().trim();
                     const sBatch = String(student.batch || '').trim();
@@ -3069,7 +3071,7 @@
                 tbody.innerHTML = targetStudents.map(s => {
                     // Find Result
                     const result = currentReportResults.find(r => 
-                        String(r.username || '').toUpperCase() === String(s.username || s.id).toUpperCase() ||
+                        String(r.username || r.studentId || '').toUpperCase() === String(s.username || s.id).toUpperCase() ||
                         r.studentId === s.id
                     );
 
