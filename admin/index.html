@@ -664,7 +664,7 @@
             <div class="nav-link active" onclick="switchTab('dashboard')">
                 <span class="nav-icon">🏠</span> Dashboard
             </div>
-            <div class="nav-link" onclick="switchTab('create_exam')">
+            <div class="nav-link" onclick="switchTab('create_exam', true)">
                 <span class="nav-icon">✏️</span> Create Exam
             </div>
             <div class="nav-link" onclick="switchTab('reports')">
@@ -720,7 +720,7 @@
                     style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#e2e8f0; letter-spacing:-0.01em;">
                     🗂 Recent Exams</h3>
                 <button class="btn btn-primary" style="font-size: 0.85rem; padding: 0.45rem 1.1rem;"
-                    onclick="switchTab('create_exam')">+ New Exam</button>
+                    onclick="switchTab('create_exam', true)">+ New Exam</button>
             </div>
             <div id="recentExamsList" style="margin-top: 0.5rem;">
                 <!-- List populated by JS -->
@@ -1462,16 +1462,21 @@
             currentReportExam = null;
         }
 
-        function switchTab(tabId) {
+        function switchTab(tabId, forceReset = false) {
             // If leaving the reports tab, reset it to default state
             const activePane = document.querySelector('.tab-pane.active');
             if (activePane && activePane.id === 'tab-reports' && tabId !== 'reports') {
                 resetReportView();
             }
 
+            // If leaving create_exam tab to go somewhere else (like Dashboard), cancel the edit state
+            if (activePane && activePane.id === 'tab-create_exam' && tabId !== 'create_exam') {
+                resetCreateForm();
+            }
+
             // If navigating to create_exam from the sidebar (not from edit), reset the form
-            if (tabId === 'create_exam' && !editingExamId) {
-                // Only reset if we are not in the middle of an edit operation
+            if (tabId === 'create_exam' && (forceReset || !editingExamId)) {
+                // Only reset if we are not in the middle of an edit operation, or if explicitly requested
                 resetCreateForm();
             }
 
@@ -1510,7 +1515,7 @@
                     list.innerHTML = `
                         <div style="text-align:center; padding: 2rem; border: 1px dashed var(--border); border-radius: 0.5rem; color: var(--text-muted);">
                             <p style="margin-bottom:1rem;">No exams created yet.</p>
-                            <button class="btn btn-primary" onclick="switchTab('create_exam')">Create New Exam</button>
+                            <button class="btn btn-primary" onclick="switchTab('create_exam', true)">Create New Exam</button>
                         </div>
                     `;
                     return;
