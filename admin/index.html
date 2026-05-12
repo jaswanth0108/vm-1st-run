@@ -1378,6 +1378,64 @@
         let selectedExamId = null;
         let editingExamId = null;
 
+        // UI Helper Functions for Branch/Batch
+        function toggleSelectAllBranches(checkbox) {
+            const checkboxes = document.querySelectorAll('input[name="examBranch"]:not([value="All"])');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        function toggleBatchDropdown() {
+            const dropdown = document.getElementById('batchDropdownOptions');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Close batch dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('batchDropdownOptions');
+            const toggle = document.getElementById('batchDropdown');
+            if (dropdown && toggle && !dropdown.contains(event.target) && !toggle.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function toggleSelectAllBatches(checkbox) {
+            const checkboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateBatchText();
+        }
+
+        function clearBatchSelection() {
+            const selectAll = document.getElementById('batchSelectAll');
+            if (selectAll) selectAll.checked = false;
+            const checkboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateBatchText();
+        }
+
+        function updateBatchText() {
+            const checkboxes = document.querySelectorAll('#batchCheckboxes input[name="examBatch"]:checked');
+            const textElement = document.getElementById('batchDropdownText');
+            if (!textElement) return;
+            
+            if (checkboxes.length === 0) {
+                textElement.innerText = 'Select Batches...';
+                textElement.style.color = 'var(--text-muted)';
+            } else if (checkboxes.length === 1) {
+                textElement.innerText = checkboxes[0].value;
+                textElement.style.color = '#f1f5f9';
+            } else if (checkboxes.length === document.querySelectorAll('#batchCheckboxes input[name="examBatch"]').length) {
+                textElement.innerText = 'All Batches';
+                textElement.style.color = '#f1f5f9';
+                const selectAll = document.getElementById('batchSelectAll');
+                if(selectAll) selectAll.checked = true;
+            } else {
+                textElement.innerText = checkboxes.length + ' Batches Selected';
+                textElement.style.color = '#f1f5f9';
+                const selectAll = document.getElementById('batchSelectAll');
+                if(selectAll) selectAll.checked = false;
+            }
+        }
+
         // Tabs
         function resetReportView() {
             // Hide loaded report content and reset to default "select exam" state
